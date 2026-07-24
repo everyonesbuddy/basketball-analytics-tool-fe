@@ -30,11 +30,9 @@ The UI is now split into focused portal components:
 
 ## Backend Contract (Expected Endpoints)
 
-Base URL defaults to `http://localhost:5000/api` (override with `VITE_API_BASE_URL`).
+Base URL is currently hardcoded in the frontend API client:
 
-Production is configured via `.env.production`:
-
-- `VITE_API_BASE_URL=https://git.heroku.com/basketball-analytics-tool-be.git`
+- `https://git.heroku.com/basketball-analytics-tool-be.git`
 
 - `GET /health`
 - `GET /players/:athleteId`

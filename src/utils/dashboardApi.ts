@@ -15,13 +15,14 @@ import type {
   TeamEfficiencyResponse,
 } from "./dashboardTypes";
 
+const API_BASE_URL = "https://git.heroku.com/basketball-analytics-tool-be.git";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api",
+  baseURL: API_BASE_URL,
   timeout: 15000,
 });
 
-export const getApiBaseUrl = () =>
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api";
+export const getApiBaseUrl = () => API_BASE_URL;
 
 export const fetchHealth = async () => {
   const response = await api.get<HealthResponse>("/health");
