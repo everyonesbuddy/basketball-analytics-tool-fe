@@ -101,9 +101,3 @@ npm run build
 - Team workflow now hydrates efficiency + need-gap analysis from backend in the same load action.
 - Season type controls are integrated for team efficiency.
 - Season/year tagging is integrated across major analytics tables and labels.
-
-## Next Planned Improvements
-
-- Add explicit visual season badges (chip styles) in all row tables.
-- Add URL-deep-link navigation per portal view.
-- Improve bundle size via code splitting.
