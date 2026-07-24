@@ -32,6 +32,10 @@ The UI is now split into focused portal components:
 
 Base URL defaults to `http://localhost:5000/api` (override with `VITE_API_BASE_URL`).
 
+Production is configured via `.env.production`:
+
+- `VITE_API_BASE_URL=https://git.heroku.com/basketball-analytics-tool-be.git`
+
 - `GET /health`
 - `GET /players/:athleteId`
 - `GET /players/:athleteId/impact`
