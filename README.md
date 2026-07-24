@@ -32,7 +32,7 @@ The UI is now split into focused portal components:
 
 Base URL is currently hardcoded in the frontend API client:
 
-- `https://git.heroku.com/basketball-analytics-tool-be.git`
+- `https://basketball-analytics-tool-be-780d720c8c7d.herokuapp.com/api`
 
 - `GET /health`
 - `GET /players/:athleteId`

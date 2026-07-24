@@ -15,7 +15,8 @@ import type {
   TeamEfficiencyResponse,
 } from "./dashboardTypes";
 
-const API_BASE_URL = "https://git.heroku.com/basketball-analytics-tool-be.git";
+const API_BASE_URL =
+  "https://basketball-analytics-tool-be-780d720c8c7d.herokuapp.com/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
