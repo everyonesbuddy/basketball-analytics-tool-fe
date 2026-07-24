@@ -632,6 +632,26 @@ select:focus-visible {
   object-fit: cover;
 }
 
+.headshot--tiny {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.card-title-with-headshot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comp-headshot {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #d9e3f1;
+  object-fit: cover;
+}
+
 .tag,
 .timestamp,
 .muted,

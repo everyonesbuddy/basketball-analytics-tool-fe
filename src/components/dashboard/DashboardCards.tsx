@@ -71,6 +71,51 @@ const formatFactor = (value: number | null | undefined, digits = 2): string => {
   return value.toFixed(digits);
 };
 
+const getHeadshotUrl = (athleteId?: string | number | null): string => {
+  const id = String(athleteId ?? "").trim();
+  if (!id) {
+    return "https://a.espncdn.com/i/headshots/nba/players/full/1966.png";
+  }
+
+  return `https://a.espncdn.com/i/headshots/nba/players/full/${id}.png`;
+};
+
+const getStringFromRecord = (
+  value: unknown,
+  candidates: string[],
+): string | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const bag = value as Record<string, unknown>;
+  for (const key of candidates) {
+    const next = bag[key];
+    if (typeof next === "string" && next.trim()) {
+      return next.trim();
+    }
+  }
+
+  return null;
+};
+
+const getTeamLogoUrl = (
+  team: unknown,
+  teamId?: string | number | null,
+): string => {
+  const fromTeam = getStringFromRecord(team, ["logo", "logoHref", "logoUrl"]);
+  if (fromTeam) {
+    return fromTeam;
+  }
+
+  const id = String(teamId ?? "").trim();
+  if (id) {
+    return `https://a.espncdn.com/i/teamlogos/nba/500/${id}.png`;
+  }
+
+  return "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png";
+};
+
 const formatGameDateTime = (value?: string | null): string => {
   if (!value) {
     return "-";
@@ -710,7 +755,15 @@ export const PlayerImpactCard = ({
 
   return (
     <article className="scout-card">
-      <h3>Player Impact</h3>
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getHeadshotUrl(data.athleteId)}
+          alt={playerLabel}
+          loading="lazy"
+        />
+        <h3>Player Impact</h3>
+      </div>
       <p className="viz-subtitle">
         Recent plus-minus trend for {playerLabel} |{" "}
         {formatSeasonCoverage(data.seasonsCovered, data.seasonTypesCovered)}
@@ -907,9 +960,17 @@ export const PlayerCompsCard = ({
 
   return (
     <article className="scout-card compare-table-card">
-      <h3 title="Player Value Comps are nearest-neighbor matches from normalized summary-stat vectors.">
-        Player Value Comps
-      </h3>
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getHeadshotUrl(data.athleteId)}
+          alt={playerLabel}
+          loading="lazy"
+        />
+        <h3 title="Player Value Comps are nearest-neighbor matches from normalized summary-stat vectors.">
+          Player Value Comps
+        </h3>
+      </div>
       <p className="viz-subtitle">
         Closest similarity matches for {playerLabel} based on normalized stat
         vectors.
@@ -975,6 +1036,7 @@ export const PlayerCompsCard = ({
           <table className="compare-table">
             <thead>
               <tr>
+                <th title="Comparable player headshot.">Img</th>
                 <th title="Comparable player's displayName after enrichment.">
                   Player
                 </th>
@@ -1010,6 +1072,14 @@ export const PlayerCompsCard = ({
             <tbody>
               {comps.map((comp) => (
                 <tr key={`${comp.athleteId}-${comp.displayName}`}>
+                  <td>
+                    <img
+                      className="comp-headshot"
+                      src={comp.headshot || getHeadshotUrl(comp.athleteId)}
+                      alt={safeToText(comp.displayName)}
+                      loading="lazy"
+                    />
+                  </td>
                   <td>{safeToText(comp.displayName)}</td>
                   <td>{safeToText(comp.athleteId)}</td>
                   <td>{safeToText(comp.teamAbbreviation || comp.team)}</td>
@@ -1052,9 +1122,17 @@ export const PlayerTrajectoryCard = ({
 
   return (
     <article className="scout-card">
-      <h3 title="Development Curve uses rolling averages over recent games to smooth variance and reveal trend direction.">
-        Development Curve
-      </h3>
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getHeadshotUrl(data.athleteId)}
+          alt={playerLabel}
+          loading="lazy"
+        />
+        <h3 title="Development Curve uses rolling averages over recent games to smooth variance and reveal trend direction.">
+          Development Curve
+        </h3>
+      </div>
       <p className="viz-subtitle">
         Rolling production trend for {playerLabel} (window {data.window || 5}).
         <InlineInfo label="Rolling Window means each data point uses the average of the latest N valid games up to that game (N = selected window size)." />
@@ -1163,7 +1241,7 @@ export const PlayerTrajectoryCard = ({
               <Tooltip
                 formatter={(value, name) => [
                   formatMetricValue(toFiniteNumber(value)),
-                  name === "tsRolling" ? "Rolling TS%" : "Rolling Points",
+                  String(name || "Value"),
                 ]}
                 labelFormatter={(label, payload) => {
                   const datum = payload?.[0]?.payload as
@@ -1223,9 +1301,17 @@ export const TeamEfficiencyCard = ({
 
   return (
     <article className="scout-card">
-      <h3 title="Team Efficiency summarizes offensive and defensive quality per-possession before need-gap interpretation.">
-        Team Efficiency Baseline
-      </h3>
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getTeamLogoUrl(data.team, data.teamId)}
+          alt={teamLabel}
+          loading="lazy"
+        />
+        <h3 title="Team Efficiency summarizes offensive and defensive quality per-possession before need-gap interpretation.">
+          Team Efficiency Baseline
+        </h3>
+      </div>
       <p className="viz-subtitle">
         Efficiency profile for {teamLabel} used to identify strength and need
         gaps |{" "}
@@ -1400,9 +1486,17 @@ export const TeamNeedGapCard = ({
 
   return (
     <article className="scout-card compare-table-card">
-      <h3 title="Need Gap Analysis compares team efficiency against league averages to surface strengths and weaknesses.">
-        Team Need Gap Analysis
-      </h3>
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getTeamLogoUrl(data.team, data.teamId)}
+          alt={teamLabel}
+          loading="lazy"
+        />
+        <h3 title="Need Gap Analysis compares team efficiency against league averages to surface strengths and weaknesses.">
+          Team Need Gap Analysis
+        </h3>
+      </div>
       <p className="viz-subtitle">
         Delta from league-average benchmarks for {teamLabel}.
       </p>
