@@ -74,6 +74,39 @@ const ComparePortal = ({
     [selectedSplitKey, splitOptions],
   );
 
+  const selectedSplit = activeSplit ?? splitOptions[0] ?? null;
+
+  const selectedSplitLabel = selectedSplit
+    ? formatCompareSplitLabelWithYear(
+        comparison[0],
+        comparison[1],
+        selectedSplit.label,
+      )
+    : "Comparison Split";
+
+  const selectedSplitMetrics = selectedSplit?.metrics ?? [];
+  const playerALabel =
+    comparison[0]?.identity.shortName || comparison[0]?.identity.displayName;
+  const playerBLabel =
+    comparison[1]?.identity.shortName || comparison[1]?.identity.displayName;
+
+  const playerAMetricCount = selectedSplitMetrics.filter(
+    (metric) => metric.playerA !== null,
+  ).length;
+  const playerBMetricCount = selectedSplitMetrics.filter(
+    (metric) => metric.playerB !== null,
+  ).length;
+
+  const hasPartialCoverage =
+    selectedSplitMetrics.length > 0 &&
+    (playerAMetricCount !== playerBMetricCount ||
+      playerAMetricCount === 0 ||
+      playerBMetricCount === 0);
+
+  const coverageMessage = hasPartialCoverage
+    ? `${playerALabel || "Player A"}: ${playerAMetricCount} stats | ${playerBLabel || "Player B"}: ${playerBMetricCount} stats in ${selectedSplitLabel}.`
+    : "";
+
   return (
     <section className="feature-stage feature-stage--compare">
       <form onSubmit={onSubmit}>
@@ -110,59 +143,59 @@ const ComparePortal = ({
           <h2>Comparison Bench</h2>
           {comparison.length ? (
             <>
-              {activeSplit
-                ? (() => {
-                    const splitLabel = formatCompareSplitLabelWithYear(
-                      comparison[0],
-                      comparison[1],
-                      activeSplit.label,
-                    );
-
-                    return (
-                      <>
-                        <ComparisonChart
-                          playerA={comparison[0]}
-                          playerB={comparison[1]}
-                          splitLabel={splitLabel}
-                          metrics={activeSplit.metrics}
-                          headerControl={
-                            <div className="viz-header-controls">
-                              <label
-                                htmlFor="compareSplitSelect"
-                                title="Selects shared split context for comparison metrics; only splits present for both players are shown."
-                              >
-                                Compare Data Source
-                              </label>
-                              <select
-                                id="compareSplitSelect"
-                                value={selectedSplitKey}
-                                onChange={(event) =>
-                                  setSelectedSplitKey(event.target.value)
-                                }
-                              >
-                                {splitOptions.map((split) => (
-                                  <option key={split.key} value={split.key}>
-                                    {formatCompareSplitLabelWithYear(
-                                      comparison[0],
-                                      comparison[1],
-                                      split.label,
-                                    )}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+              {splitOptions.length ? (
+                <>
+                  <ComparisonChart
+                    playerA={comparison[0]}
+                    playerB={comparison[1]}
+                    splitLabel={selectedSplitLabel}
+                    metrics={selectedSplitMetrics}
+                    headerControl={
+                      <div className="viz-header-controls">
+                        <label
+                          htmlFor="compareSplitSelect"
+                          title="Selects shared split context for comparison metrics; only splits present for both players are shown."
+                        >
+                          Compare Data Source
+                        </label>
+                        <select
+                          id="compareSplitSelect"
+                          value={selectedSplit?.key ?? ""}
+                          onChange={(event) =>
+                            setSelectedSplitKey(event.target.value)
                           }
-                        />
-                        <ComparisonMatrix
-                          playerA={comparison[0]}
-                          playerB={comparison[1]}
-                          splitLabel={splitLabel}
-                          metrics={activeSplit.metrics}
-                        />
-                      </>
-                    );
-                  })()
-                : null}
+                        >
+                          {splitOptions.map((split) => (
+                            <option key={split.key} value={split.key}>
+                              {formatCompareSplitLabelWithYear(
+                                comparison[0],
+                                comparison[1],
+                                split.label,
+                              )}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    }
+                  />
+                  {hasPartialCoverage ? (
+                    <p className="helper-note coverage-note" role="status">
+                      Partial coverage: {coverageMessage}
+                    </p>
+                  ) : null}
+                  <ComparisonMatrix
+                    playerA={comparison[0]}
+                    playerB={comparison[1]}
+                    splitLabel={selectedSplitLabel}
+                    metrics={selectedSplitMetrics}
+                  />
+                </>
+              ) : (
+                <p className="empty-note">
+                  No shared split metrics were found for this pair. Try another
+                  player combination.
+                </p>
+              )}
               <div className="comparison-grid">
                 {comparison.map((entry) => (
                   <IdentityCard key={entry.identity.id} player={entry} />

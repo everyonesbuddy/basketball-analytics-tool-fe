@@ -331,18 +331,6 @@ export const PlayerOverviewChart = ({
   headerControl?: ReactNode;
 }) => {
   const metrics = metricsOverride ?? getPlayerOverviewMetrics(player);
-
-  if (!metrics.length) {
-    return (
-      <article className="scout-card viz-card">
-        <h3>Player Overview</h3>
-        <p className="empty-note">
-          No numeric summary metrics found for this player.
-        </p>
-      </article>
-    );
-  }
-
   const data = metrics.map((metric) => ({
     metric: metric.label,
     value: Number(metric.value.toFixed(2)),
@@ -362,59 +350,66 @@ export const PlayerOverviewChart = ({
         {splitLabel ? ` | ${splitLabel}` : ""}
         <InlineInfo label="Chart data source comes from normalized summary split rows (Regular Season, Post Season, Career when available)." />
       </p>
-      <div className="viz-container" style={{ height: chartHeight }}>
-        <ResponsiveContainer width="100%" height={chartHeight - 16}>
-          <BarChart
-            data={data}
-            layout="vertical"
-            margin={{ top: 8, right: 22, left: 22, bottom: 8 }}
-            barCategoryGap={12}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e4eaf3" />
-            <XAxis
-              type="number"
-              tick={{ fill: "#506178", fontSize: 12 }}
-              label={{
-                value: "Stat Value",
-                position: "insideBottomRight",
-                fill: "#6a7891",
-                fontSize: 11,
-              }}
-            />
-            <YAxis
-              type="category"
-              dataKey="metric"
-              width={170}
-              interval={0}
-              tick={{ fill: "#506178", fontSize: 12 }}
-            />
-            <Tooltip
-              cursor={{ fill: "rgba(28, 79, 190, 0.08)" }}
-              formatter={(value) => [value, "Value"]}
-              contentStyle={{
-                borderRadius: 12,
-                borderColor: "#d7e0ec",
-                fontSize: 12,
-                boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
-              }}
-            />
-            <Bar
-              dataKey="value"
-              fill="#2f6cf6"
-              radius={[0, 8, 8, 0]}
-              animationDuration={900}
-              animationEasing="ease-out"
+      {metrics.length ? (
+        <div className="viz-container" style={{ height: chartHeight }}>
+          <ResponsiveContainer width="100%" height={chartHeight - 16}>
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 8, right: 22, left: 22, bottom: 8 }}
+              barCategoryGap={12}
             >
-              <LabelList
-                dataKey="value"
-                position="right"
-                fill="#42546e"
-                fontSize={11}
+              <CartesianGrid strokeDasharray="3 3" stroke="#e4eaf3" />
+              <XAxis
+                type="number"
+                tick={{ fill: "#506178", fontSize: 12 }}
+                label={{
+                  value: "Stat Value",
+                  position: "insideBottomRight",
+                  fill: "#6a7891",
+                  fontSize: 11,
+                }}
               />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+              <YAxis
+                type="category"
+                dataKey="metric"
+                width={170}
+                interval={0}
+                tick={{ fill: "#506178", fontSize: 12 }}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(28, 79, 190, 0.08)" }}
+                formatter={(value) => [value, "Value"]}
+                contentStyle={{
+                  borderRadius: 12,
+                  borderColor: "#d7e0ec",
+                  fontSize: 12,
+                  boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
+                }}
+              />
+              <Bar
+                dataKey="value"
+                fill="#2f6cf6"
+                radius={[0, 8, 8, 0]}
+                animationDuration={900}
+                animationEasing="ease-out"
+              >
+                <LabelList
+                  dataKey="value"
+                  position="right"
+                  fill="#42546e"
+                  fontSize={11}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <p className="empty-note">
+          No numeric summary metrics found for this split. Select another chart
+          data source.
+        </p>
+      )}
     </article>
   );
 };
@@ -440,10 +435,6 @@ export const ComparisonChart = ({
   metrics: ComparisonMetric[];
   headerControl?: ReactNode;
 }) => {
-  if (!metrics.length) {
-    return null;
-  }
-
   const playerALabel =
     playerA.identity.shortName || playerA.identity.displayName;
   const playerBLabel =
@@ -493,137 +484,144 @@ export const ComparisonChart = ({
         metric = 100, tooltip includes raw values)
         <InlineInfo label="Radar normalization is view-only: each metric is scaled so the split leader is 100 for easier shape comparison; raw values remain in tooltip/table." />
       </p>
-      <div className="compare-layout">
-        <div className="viz-container radar-container">
-          <ResponsiveContainer width="100%" height={320}>
-            <RadarChart
-              data={profileData}
-              margin={{ top: 14, right: 24, left: 24, bottom: 10 }}
-              outerRadius="78%"
-            >
-              <PolarGrid stroke="#d9e3f0" />
-              <PolarAngleAxis
-                dataKey="metric"
-                tick={{ fill: "#54657f", fontSize: 11 }}
-              />
-              <PolarRadiusAxis
-                angle={30}
-                tick={{ fill: "#7a889f", fontSize: 10 }}
-                domain={[0, 100]}
-                tickCount={5}
-              />
-              <Tooltip
-                labelFormatter={(label, payload) => {
-                  const metricName = payload?.[0]?.payload?.metricLabel;
-                  return metricName || String(label);
-                }}
-                formatter={(_, name, item) => {
-                  const raw =
-                    name === "playerA"
-                      ? item?.payload?.rawPlayerA
-                      : item?.payload?.rawPlayerB;
+      {metrics.length ? (
+        <div className="compare-layout">
+          <div className="viz-container radar-container">
+            <ResponsiveContainer width="100%" height={320}>
+              <RadarChart
+                data={profileData}
+                margin={{ top: 14, right: 24, left: 24, bottom: 10 }}
+                outerRadius="78%"
+              >
+                <PolarGrid stroke="#d9e3f0" />
+                <PolarAngleAxis
+                  dataKey="metric"
+                  tick={{ fill: "#54657f", fontSize: 11 }}
+                />
+                <PolarRadiusAxis
+                  angle={30}
+                  tick={{ fill: "#7a889f", fontSize: 10 }}
+                  domain={[0, 100]}
+                  tickCount={5}
+                />
+                <Tooltip
+                  labelFormatter={(label, payload) => {
+                    const metricName = payload?.[0]?.payload?.metricLabel;
+                    return metricName || String(label);
+                  }}
+                  formatter={(_, name, item) => {
+                    const raw =
+                      name === "playerA"
+                        ? item?.payload?.rawPlayerA
+                        : item?.payload?.rawPlayerB;
 
-                  return [
-                    formatMetricValue(raw as number | null),
+                    return [
+                      formatMetricValue(raw as number | null),
+                      name === "playerA" ? playerALabel : playerBLabel,
+                    ];
+                  }}
+                  contentStyle={{
+                    borderRadius: 12,
+                    borderColor: "#d7e0ec",
+                    fontSize: 12,
+                    boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
+                  }}
+                />
+                <Legend
+                  formatter={(value) =>
+                    value === "playerA" ? playerALabel : playerBLabel
+                  }
+                />
+                <Radar
+                  name="playerA"
+                  dataKey="playerA"
+                  stroke="#2f6cf6"
+                  fill="#2f6cf6"
+                  fillOpacity={0.24}
+                />
+                <Radar
+                  name="playerB"
+                  dataKey="playerB"
+                  stroke="#26a69a"
+                  fill="#26a69a"
+                  fillOpacity={0.22}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="viz-container compare-bars-container">
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart
+                data={metricsForBars}
+                layout="vertical"
+                margin={{ top: 8, right: 24, left: 14, bottom: 8 }}
+                barGap={4}
+                barCategoryGap={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e4eaf3" />
+                <XAxis
+                  type="number"
+                  tick={{ fill: "#506178", fontSize: 12 }}
+                  label={{
+                    value: "Raw Stat Value",
+                    position: "insideBottomRight",
+                    fill: "#6a7891",
+                    fontSize: 11,
+                  }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="metricShort"
+                  tick={{ fill: "#506178", fontSize: 11 }}
+                  width={72}
+                  interval={0}
+                />
+                <Tooltip
+                  cursor={{ fill: "rgba(28, 79, 190, 0.08)" }}
+                  labelFormatter={(_, payload) =>
+                    payload?.[0]?.payload?.metric ?? "Metric"
+                  }
+                  formatter={(value, name) => [
+                    value,
                     name === "playerA" ? playerALabel : playerBLabel,
-                  ];
-                }}
-                contentStyle={{
-                  borderRadius: 12,
-                  borderColor: "#d7e0ec",
-                  fontSize: 12,
-                  boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
-                }}
-              />
-              <Legend
-                formatter={(value) =>
-                  value === "playerA" ? playerALabel : playerBLabel
-                }
-              />
-              <Radar
-                name="playerA"
-                dataKey="playerA"
-                stroke="#2f6cf6"
-                fill="#2f6cf6"
-                fillOpacity={0.24}
-              />
-              <Radar
-                name="playerB"
-                dataKey="playerB"
-                stroke="#26a69a"
-                fill="#26a69a"
-                fillOpacity={0.22}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
+                  ]}
+                  contentStyle={{
+                    borderRadius: 12,
+                    borderColor: "#d7e0ec",
+                    fontSize: 12,
+                    boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
+                  }}
+                />
+                <Bar
+                  dataKey="playerA"
+                  name="playerA"
+                  fill="#2f6cf6"
+                  radius={[0, 8, 8, 0]}
+                  barSize={8}
+                  animationDuration={850}
+                  animationEasing="ease-out"
+                />
+                <Bar
+                  dataKey="playerB"
+                  name="playerB"
+                  fill="#26a69a"
+                  radius={[0, 8, 8, 0]}
+                  barSize={8}
+                  animationBegin={120}
+                  animationDuration={850}
+                  animationEasing="ease-out"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-
-        <div className="viz-container compare-bars-container">
-          <ResponsiveContainer width="100%" height={chartHeight}>
-            <BarChart
-              data={metricsForBars}
-              layout="vertical"
-              margin={{ top: 8, right: 24, left: 14, bottom: 8 }}
-              barGap={4}
-              barCategoryGap={20}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e4eaf3" />
-              <XAxis
-                type="number"
-                tick={{ fill: "#506178", fontSize: 12 }}
-                label={{
-                  value: "Raw Stat Value",
-                  position: "insideBottomRight",
-                  fill: "#6a7891",
-                  fontSize: 11,
-                }}
-              />
-              <YAxis
-                type="category"
-                dataKey="metricShort"
-                tick={{ fill: "#506178", fontSize: 11 }}
-                width={72}
-                interval={0}
-              />
-              <Tooltip
-                cursor={{ fill: "rgba(28, 79, 190, 0.08)" }}
-                labelFormatter={(_, payload) =>
-                  payload?.[0]?.payload?.metric ?? "Metric"
-                }
-                formatter={(value, name) => [
-                  value,
-                  name === "playerA" ? playerALabel : playerBLabel,
-                ]}
-                contentStyle={{
-                  borderRadius: 12,
-                  borderColor: "#d7e0ec",
-                  fontSize: 12,
-                  boxShadow: "0 12px 24px rgba(15, 23, 42, 0.08)",
-                }}
-              />
-              <Bar
-                dataKey="playerA"
-                name="playerA"
-                fill="#2f6cf6"
-                radius={[0, 8, 8, 0]}
-                barSize={8}
-                animationDuration={850}
-                animationEasing="ease-out"
-              />
-              <Bar
-                dataKey="playerB"
-                name="playerB"
-                fill="#26a69a"
-                radius={[0, 8, 8, 0]}
-                barSize={8}
-                animationBegin={120}
-                animationDuration={850}
-                animationEasing="ease-out"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      ) : (
+        <p className="empty-note">
+          No comparable metrics were returned for this split. Select another
+          data source.
+        </p>
+      )}
     </article>
   );
 };
@@ -639,10 +637,6 @@ export const ComparisonMatrix = ({
   splitLabel: string;
   metrics: ComparisonMetric[];
 }) => {
-  if (!metrics.length) {
-    return null;
-  }
-
   const playerALabel =
     playerA.identity.shortName || playerA.identity.displayName;
   const playerBLabel =
@@ -652,43 +646,49 @@ export const ComparisonMatrix = ({
     <article className="scout-card compare-table-card">
       <h3>{splitLabel}</h3>
       <p className="viz-subtitle">Readable side-by-side stat matrix</p>
-      <div className="compare-table-wrap">
-        <table className="compare-table">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>{playerALabel}</th>
-              <th>{playerBLabel}</th>
-              <th>Edge</th>
-            </tr>
-          </thead>
-          <tbody>
-            {metrics.map((metric) => {
-              const leader =
-                metric.playerA === null && metric.playerB === null
-                  ? "N/A"
-                  : metric.playerA === null
-                    ? playerBLabel
-                    : metric.playerB === null
-                      ? playerALabel
-                      : metric.playerA > metric.playerB
+      {metrics.length ? (
+        <div className="compare-table-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>{playerALabel}</th>
+                <th>{playerBLabel}</th>
+                <th>Edge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.map((metric) => {
+                const leader =
+                  metric.playerA === null && metric.playerB === null
+                    ? "N/A"
+                    : metric.playerA === null
+                      ? playerBLabel
+                      : metric.playerB === null
                         ? playerALabel
-                        : metric.playerB > metric.playerA
-                          ? playerBLabel
-                          : "Tie";
+                        : metric.playerA > metric.playerB
+                          ? playerALabel
+                          : metric.playerB > metric.playerA
+                            ? playerBLabel
+                            : "Tie";
 
-              return (
-                <tr key={metric.key}>
-                  <td>{metric.label}</td>
-                  <td>{formatMetricValue(metric.playerA)}</td>
-                  <td>{formatMetricValue(metric.playerB)}</td>
-                  <td className="edge-cell">{leader}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                return (
+                  <tr key={metric.key}>
+                    <td>{metric.label}</td>
+                    <td>{formatMetricValue(metric.playerA)}</td>
+                    <td>{formatMetricValue(metric.playerB)}</td>
+                    <td className="edge-cell">{leader}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="empty-note">
+          No side-by-side stat rows available for this split.
+        </p>
+      )}
     </article>
   );
 };

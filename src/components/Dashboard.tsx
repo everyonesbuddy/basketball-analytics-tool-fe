@@ -391,6 +391,14 @@ const Dashboard = () => {
               <button type="button" onClick={checkHealth}>
                 Check API Health
               </button>
+              <a
+                className="button-link button-link--demo"
+                href="https://www.loom.com/share/97bfd45b2bc942fe89676ffb9742ad9f"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Watch Demo
+              </a>
               <div className="toggle-help-group">
                 <label className="toggle-row">
                   <input

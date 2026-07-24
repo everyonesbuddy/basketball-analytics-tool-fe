@@ -15,8 +15,20 @@ import type {
   TeamEfficiencyResponse,
 } from "./dashboardTypes";
 
-const API_BASE_URL =
+const LOCAL_API_BASE_URL = "http://localhost:5000/api";
+const LIVE_API_BASE_URL =
   "https://basketball-analytics-tool-be-780d720c8c7d.herokuapp.com/api";
+
+const isLocalHost = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const host = window.location.hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+};
+
+const API_BASE_URL = isLocalHost() ? LOCAL_API_BASE_URL : LIVE_API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

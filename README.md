@@ -13,6 +13,10 @@ React + TypeScript + Vite frontend for player and team analytics powered by the 
 - Shows team need-gap analysis (league-average deltas, strengths, and gaps).
 - Uses backend-driven player/team selectors (no hardcoded option list).
 
+## Demo Video
+
+- https://www.loom.com/share/97bfd45b2bc942fe89676ffb9742ad9f
+
 ## Current Architecture
 
 The UI is now split into focused portal components:
@@ -30,9 +34,10 @@ The UI is now split into focused portal components:
 
 ## Backend Contract (Expected Endpoints)
 
-Base URL is currently hardcoded in the frontend API client:
+Base URL is automatically selected in the frontend API client:
 
-- `https://basketball-analytics-tool-be-780d720c8c7d.herokuapp.com/api`
+- Localhost (`localhost`, `127.0.0.1`, `::1`) -> `http://localhost:5000/api`
+- Any live host -> `https://basketball-analytics-tool-be-780d720c8c7d.herokuapp.com/api`
 
 - `GET /health`
 - `GET /players/:athleteId`
