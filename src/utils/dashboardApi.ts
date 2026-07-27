@@ -3,6 +3,7 @@ import type {
   ApiEnvelope,
   CompareResponse,
   HealthResponse,
+  PlayerUsageValueResponse,
   PlayerOption,
   PlayerCompsResponse,
   CompSplitMode,
@@ -131,6 +132,22 @@ export const fetchPlayerTrajectory = async (
         games,
         window,
         seasonType,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchPlayerUsageValue = async (
+  athleteId: number,
+  forceRefresh: boolean,
+) => {
+  const response = await api.get<ApiEnvelope<PlayerUsageValueResponse>>(
+    `/players/${athleteId}/usage-value`,
+    {
+      params: {
         forceRefresh,
       },
     },

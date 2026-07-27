@@ -243,6 +243,75 @@ export type PlayerTrajectoryResponse = {
   _cache?: "HIT" | "MISS";
 };
 
+export type UsageValueSignal =
+  | "better_than_expected"
+  | "within_expected_range"
+  | "worse_than_expected"
+  | "insufficient_data";
+
+export type UsageValueStatus =
+  | "above_expected_range"
+  | "in_expected_range"
+  | "below_expected_range";
+
+export type UsageValueRange = {
+  low?: number | null;
+  high?: number | null;
+};
+
+export type UsageValueMetricProfile = {
+  metric?: string | null;
+  preferLower?: boolean;
+  expectedMean?: number | null;
+  stdDev?: number | null;
+  expectedRange?: UsageValueRange | null;
+  sampleSize?: number | null;
+};
+
+export type UsageValueActionableStat = {
+  metric?: string | null;
+  actual?: number | null;
+  expectedMean?: number | null;
+  expectedRange?: UsageValueRange | null;
+  deltaFromMean?: number | null;
+  signal?: UsageValueSignal | string | null;
+};
+
+export type UsageValueDecisionInsights = {
+  summary?: string | null;
+  gm?: string[] | null;
+  coach?: string[] | null;
+};
+
+export type PlayerUsageValueResponse = {
+  athleteId?: string;
+  splitUsed?: string | null;
+  usagePct?: number | null;
+  usageBucket?: string | null;
+  expectedProduction?: number | null;
+  actualProduction?: number | null;
+  zScore?: number | null;
+  status?: UsageValueStatus | string | null;
+  bucketSampleSize?: number | null;
+  gamesPlayed?: number | null;
+  avgMinutes?: number | null;
+  sourceSplit?: string | null;
+  actionableStats?: Record<string, UsageValueActionableStat> | null;
+  expectedStatRanges?: Record<string, UsageValueMetricProfile> | null;
+  decisionInsights?: UsageValueDecisionInsights | null;
+  benchmarkContext?: {
+    sampleSizeRequested?: number | null;
+    sampleSizeEligible?: number | null;
+    minGames?: number | null;
+    minMinutes?: number | null;
+    bucketWidth?: number | null;
+    minBucketSize?: number | null;
+  } | null;
+  warning?: string | null;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};
+
 export type TeamNeedDimension = {
   metric?: string;
   description?: string;

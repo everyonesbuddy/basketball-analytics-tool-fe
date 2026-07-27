@@ -30,6 +30,7 @@ import type {
   PlayerImpactResponse,
   PlayerProfile,
   PlayerTrajectoryResponse,
+  PlayerUsageValueResponse,
   TeamNeedGapResponse,
   TeamEfficiencyResponse,
 } from "../../utils/dashboardTypes";
@@ -232,6 +233,37 @@ const getTeamGapMetricTooltip = (metric?: string) => {
     default:
       return "Metric delta from league baseline in the same games/seasonType context.";
   }
+};
+
+const formatUsagePercent = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return `${value.toFixed(1)}%`;
+};
+
+const toReadableSignal = (value?: string | null): string => {
+  if (!value) {
+    return "Unknown";
+  }
+
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
+const getSignalChipClass = (signal?: string | null): string => {
+  if (signal === "better_than_expected") {
+    return "chip hit";
+  }
+
+  if (signal === "worse_than_expected") {
+    return "chip miss";
+  }
+
+  return "chip";
 };
 
 export const IdentityCard = ({ player }: { player: PlayerProfile }) => {
@@ -1280,6 +1312,269 @@ export const PlayerTrajectoryCard = ({
       ) : (
         <p className="empty-note">No trajectory rows were returned.</p>
       )}
+    </article>
+  );
+};
+
+export const PlayerUsageValueCard = ({
+  data,
+  playerLabel,
+}: {
+  data: PlayerUsageValueResponse;
+  playerLabel: string;
+}) => {
+  const actionableStats = data.actionableStats || {};
+  const expectedRanges = data.expectedStatRanges || {};
+  const actionableRows = Object.entries(actionableStats);
+  const expectedRows = Object.entries(expectedRanges);
+  const gmInsights = Array.isArray(data.decisionInsights?.gm)
+    ? data.decisionInsights?.gm
+    : [];
+  const coachInsights = Array.isArray(data.decisionInsights?.coach)
+    ? data.decisionInsights?.coach
+    : [];
+
+  return (
+    <article className="scout-card compare-table-card">
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getHeadshotUrl(data.athleteId)}
+          alt={playerLabel}
+          loading="lazy"
+        />
+        <h3 title="Usage Value benchmarks player production against peers in the same usage-rate bucket.">
+          Usage Value Benchmark
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        Usage-adjusted production context for {playerLabel}.
+      </p>
+      <p className="derive-note">
+        What this looks at: regular-season usage and production benchmarks among
+        eligible peer samples. The backend groups players into usage buckets,
+        computes bucket expected production, then classifies player value using
+        z-score distance from bucket expectation.
+      </p>
+      <InterpretationNote parameters="usage bucket construction, eligibility thresholds, and forceRefresh" />
+      {data.warning ? <p className="empty-note">{data.warning}</p> : null}
+      <p className="selector-note">
+        Request context: Athlete #{safeToText(data.athleteId)} | Split Used{" "}
+        {safeToText(data.splitUsed)} | Source Split{" "}
+        {safeToText(data.sourceSplit)} | Cache {safeToText(data._cache)}
+      </p>
+
+      <div className="impact-summary-grid">
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Player usage percent used to assign usage bucket."
+          >
+            Usage %
+          </p>
+          <p className="overview-pill-value">
+            {formatUsagePercent(data.usagePct)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Merged usage bucket label used for benchmark comparison."
+          >
+            Usage Bucket
+          </p>
+          <p className="overview-pill-value">{safeToText(data.usageBucket)}</p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Actual minus expected production standardized by bucket std dev."
+          >
+            Z-Score
+          </p>
+          <p className="overview-pill-value">{formatFactor(data.zScore, 2)}</p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Classification using z-score thresholds: above, within, or below expected range."
+          >
+            Status
+          </p>
+          <p className="overview-pill-value">{toReadableSignal(data.status)}</p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Bucket expected mean production (efficiencyIndex)."
+          >
+            Expected Prod
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.expectedProduction)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Player actual production (efficiencyIndex)."
+          >
+            Actual Prod
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.actualProduction)}
+          </p>
+        </div>
+      </div>
+
+      <div className="impact-summary-grid context-wrap">
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Peer sample size in this usage bucket."
+          >
+            Bucket Sample
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.bucketSampleSize)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Minimum games required for baseline eligibility."
+          >
+            Min Games
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.benchmarkContext?.minGames)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Minimum average minutes required for baseline eligibility."
+          >
+            Min Minutes
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.benchmarkContext?.minMinutes)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title="Usage bucket width used by benchmark model."
+          >
+            Bucket Width
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.benchmarkContext?.bucketWidth)}
+          </p>
+        </div>
+      </div>
+
+      {actionableRows.length ? (
+        <div className="compare-table-wrap context-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th title="Tracked stat included in actionable benchmark outputs.">
+                  Metric
+                </th>
+                <th title="Player actual stat value.">Actual</th>
+                <th title="Bucket expected mean for this stat.">Expected</th>
+                <th title="Expected bucket range (mean +/- 1 std dev).">
+                  Expected Range
+                </th>
+                <th title="Actual minus expected mean.">Delta</th>
+                <th title="Action signal from range comparison.">Signal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {actionableRows.map(([key, stat]) => (
+                <tr key={key}>
+                  <td>{safeToText(stat?.metric || key)}</td>
+                  <td>{formatMetricValue(stat?.actual)}</td>
+                  <td>{formatMetricValue(stat?.expectedMean)}</td>
+                  <td>
+                    {formatMetricValue(stat?.expectedRange?.low)} to{" "}
+                    {formatMetricValue(stat?.expectedRange?.high)}
+                  </td>
+                  <td>{formatMetricValue(stat?.deltaFromMean)}</td>
+                  <td>
+                    <span className={getSignalChipClass(stat?.signal)}>
+                      {toReadableSignal(stat?.signal)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {expectedRows.length ? (
+        <div className="compare-table-wrap context-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th title="Stat name from expected bucket profile.">Metric</th>
+                <th title="Expected mean within the usage bucket.">Mean</th>
+                <th title="Expected standard deviation in the usage bucket.">
+                  Std Dev
+                </th>
+                <th title="Expected bucket range (mean +/- 1 std dev).">
+                  Range
+                </th>
+                <th title="Number of peers informing this metric profile.">
+                  Sample
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {expectedRows.map(([key, stat]) => (
+                <tr key={`expected-${key}`}>
+                  <td>{safeToText(stat?.metric || key)}</td>
+                  <td>{formatMetricValue(stat?.expectedMean)}</td>
+                  <td>{formatFactor(stat?.stdDev, 2)}</td>
+                  <td>
+                    {formatMetricValue(stat?.expectedRange?.low)} to{" "}
+                    {formatMetricValue(stat?.expectedRange?.high)}
+                  </td>
+                  <td>{formatMetricValue(stat?.sampleSize)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {/* {data.decisionInsights?.summary ? (
+        <p className="selector-note">
+          Summary: {data.decisionInsights.summary}
+        </p>
+      ) : null} */}
+      {gmInsights.length ? (
+        <section className="context-wrap">
+          <h4>GM Suggestions</h4>
+          <ul className="plain-list">
+            {gmInsights.map((item, index) => (
+              <li key={`gm-${index}`}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {coachInsights.length ? (
+        <section className="context-wrap">
+          <h4>Coach Suggestions</h4>
+          <ul className="plain-list">
+            {coachInsights.map((item, index) => (
+              <li key={`coach-${index}`}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </article>
   );
 };

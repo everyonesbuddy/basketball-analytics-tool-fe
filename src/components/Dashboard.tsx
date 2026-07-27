@@ -8,6 +8,7 @@ import {
   fetchPlayerOptions,
   fetchPlayerProfile,
   fetchPlayerTrajectory,
+  fetchPlayerUsageValue,
   fetchTeamEfficiency,
   fetchTeamNeedGap,
   fetchTeamOptions,
@@ -23,6 +24,7 @@ import type {
   PlayerImpactResponse,
   PlayerProfile,
   PlayerTrajectoryResponse,
+  PlayerUsageValueResponse,
   TeamSeasonType,
   TeamNeedGapResponse,
   TeamOption,
@@ -34,16 +36,24 @@ import ImpactPortal from "./features/ImpactPortal";
 import ProfilePortal from "./features/ProfilePortal";
 import TeamPortal from "./features/TeamPortal";
 import TrajectoryPortal from "./features/TrajectoryPortal";
+import UsageValuePortal from "./features/UsageValuePortal";
 
 const Dashboard = () => {
   const [activeFeature, setActiveFeature] = useState<
-    "profile" | "compare" | "impact" | "comps" | "trajectory" | "team"
+    | "profile"
+    | "compare"
+    | "impact"
+    | "comps"
+    | "usage-value"
+    | "trajectory"
+    | "team"
   >("profile");
   const [healthToast, setHealthToast] = useState("");
   const [playerId, setPlayerId] = useState("1966");
   const [playerBId, setPlayerBId] = useState("3945274");
   const [impactPlayerId, setImpactPlayerId] = useState("1966");
   const [compsPlayerId, setCompsPlayerId] = useState("1966");
+  const [usageValuePlayerId, setUsageValuePlayerId] = useState("1966");
   const [trajectoryPlayerId, setTrajectoryPlayerId] = useState("1966");
   const [teamId, setTeamId] = useState("10");
   const [impactGames, setImpactGames] = useState("10");
@@ -73,6 +83,8 @@ const Dashboard = () => {
   );
   const [playerTrajectory, setPlayerTrajectory] =
     useState<PlayerTrajectoryResponse | null>(null);
+  const [playerUsageValue, setPlayerUsageValue] =
+    useState<PlayerUsageValueResponse | null>(null);
   const [teamEfficiency, setTeamEfficiency] =
     useState<TeamEfficiencyResponse | null>(null);
   const [teamNeedGap, setTeamNeedGap] = useState<TeamNeedGapResponse | null>(
@@ -83,6 +95,7 @@ const Dashboard = () => {
   const [loadingCompare, setLoadingCompare] = useState(false);
   const [loadingImpact, setLoadingImpact] = useState(false);
   const [loadingComps, setLoadingComps] = useState(false);
+  const [loadingUsageValue, setLoadingUsageValue] = useState(false);
   const [loadingTrajectory, setLoadingTrajectory] = useState(false);
   const [loadingTeam, setLoadingTeam] = useState(false);
 
@@ -117,6 +130,10 @@ const Dashboard = () => {
               setCompsPlayerId(options[0].id);
             }
 
+            if (!options.some((option) => option.id === usageValuePlayerId)) {
+              setUsageValuePlayerId(options[0].id);
+            }
+
             if (!options.some((option) => option.id === trajectoryPlayerId)) {
               setTrajectoryPlayerId(options[0].id);
             }
@@ -148,6 +165,29 @@ const Dashboard = () => {
 
     void loadOptions();
   }, [forceRefresh]);
+
+  const loadPlayerUsageValue = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+
+    const id = toPositiveInt(usageValuePlayerId);
+    if (!id) {
+      setError("Usage value player ID must be a positive integer.");
+      return;
+    }
+
+    setLoadingUsageValue(true);
+    try {
+      const data = await fetchPlayerUsageValue(id, forceRefresh);
+      setPlayerUsageValue(data);
+    } catch {
+      setError(
+        `Failed to load usage value for athlete ${id}. Confirm backend /players/:athleteId/usage-value route.`,
+      );
+    } finally {
+      setLoadingUsageValue(false);
+    }
+  };
 
   useEffect(() => {
     const trimmedQuery = teamQuery.trim();
@@ -439,7 +479,7 @@ const Dashboard = () => {
               onClick={() => setActiveFeature("profile")}
               title="Single player profile with summary splits and core production chart."
             >
-              Profile
+              Single Player Profile
             </button>
             <button
               type="button"
@@ -449,7 +489,7 @@ const Dashboard = () => {
               onClick={() => setActiveFeature("compare")}
               title="Head-to-head profile comparison across matching split types."
             >
-              Compare
+              Player Head-to-Head
             </button>
             <button
               type="button"
@@ -459,7 +499,7 @@ const Dashboard = () => {
               onClick={() => setActiveFeature("impact")}
               title="Recent plus-minus trend and game-level context."
             >
-              Impact
+              Plus-Minus Impact Trend
             </button>
             <button
               type="button"
@@ -469,7 +509,17 @@ const Dashboard = () => {
               onClick={() => setActiveFeature("comps")}
               title="Player Value Comps based on normalized stat similarity."
             >
-              Value Comps
+              Statistical Value Comps
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFeature === "usage-value"}
+              className={`feature-tab ${activeFeature === "usage-value" ? "active" : ""}`}
+              onClick={() => setActiveFeature("usage-value")}
+              title="Usage-adjusted value benchmark against peers in the same usage bucket."
+            >
+              Player Usage vs. Production
             </button>
             <button
               type="button"
@@ -479,7 +529,7 @@ const Dashboard = () => {
               onClick={() => setActiveFeature("trajectory")}
               title="Development curve using rolling averages and trend direction."
             >
-              Dev Curve
+              Rolling Development Curve
             </button>
             <button
               type="button"
@@ -489,7 +539,7 @@ const Dashboard = () => {
               onClick={() => setActiveFeature("team")}
               title="Team efficiencies plus need-gap analysis against league benchmark."
             >
-              Team Eff + Needs
+              Team Efficiency & Need Gaps
             </button>
           </nav>
 
@@ -565,6 +615,16 @@ const Dashboard = () => {
           onTrajectoryWindowChange={setTrajectoryWindow}
           onTrajectorySeasonTypeChange={setTrajectorySeasonType}
           onSubmit={loadPlayerTrajectory}
+        />
+      ) : activeFeature === "usage-value" ? (
+        <UsageValuePortal
+          usageValuePlayerId={usageValuePlayerId}
+          playerOptions={playerOptions}
+          playerUsageValue={playerUsageValue}
+          loadingOptions={loadingOptions}
+          loadingUsageValue={loadingUsageValue}
+          onUsageValuePlayerIdChange={setUsageValuePlayerId}
+          onSubmit={loadPlayerUsageValue}
         />
       ) : (
         <TeamPortal

@@ -17,6 +17,13 @@
   --font-body: "Instrument Sans", "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
 
+  --bs-body-font-family: var(--font-body);
+  --bs-border-radius: 0.75rem;
+  --bs-border-radius-sm: 0.6rem;
+  --bs-border-radius-lg: 0.95rem;
+  --bs-primary: #1d5fd4;
+  --bs-primary-rgb: 29, 95, 212;
+
   font-family: var(--font-body);
   line-height: 1.5;
   color: var(--text);
@@ -143,6 +150,14 @@ p {
   border-radius: 18px;
   padding: 16px;
   box-shadow: 0 10px 32px rgba(16, 24, 40, 0.06);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.scout-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(16, 24, 40, 0.09);
 }
 
 .control-panel {
@@ -161,12 +176,12 @@ p {
 
 .feature-switch {
   display: inline-grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
   padding: 4px;
   border: 1px solid #c6d3e6;
   border-radius: 14px;
-  background: #ecf2fb;
+  background: linear-gradient(180deg, #eef4fd, #e8f0fb);
 }
 
 .dashboard-feature-switch {
@@ -180,10 +195,12 @@ p {
   color: #2a3950;
   border-radius: 10px;
   transition: all 180ms ease;
-  min-height: 38px;
-  padding: 0.45rem 0.7rem;
-  font-size: 0.78rem;
+  min-height: 34px;
+  padding: 0.38rem 0.45rem;
+  font-size: 0.7rem;
+  line-height: 1.2;
   letter-spacing: 0.01em;
+  font-weight: 600;
 }
 
 .helper-note {
@@ -284,6 +301,11 @@ p {
   box-shadow: 0 6px 15px rgba(20, 73, 153, 0.2);
 }
 
+.feature-tab:focus-visible {
+  outline: 2px solid rgba(26, 88, 190, 0.25);
+  outline-offset: 2px;
+}
+
 .toggle-row {
   display: inline-flex;
   gap: 8px;
@@ -377,6 +399,8 @@ button:hover {
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .forms-grid {
@@ -407,6 +431,9 @@ select {
   border-radius: 8px;
   padding: 0.55rem 0.64rem;
   font-family: var(--font-body);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 input {
@@ -417,6 +444,7 @@ input:focus-visible,
 select:focus-visible {
   outline: 2px solid rgba(28, 79, 190, 0.2);
   border-color: #7b98cc;
+  box-shadow: 0 0 0 0.2rem rgba(29, 95, 212, 0.12);
 }
 
 .searchable-select {
@@ -478,6 +506,16 @@ select:focus-visible {
   box-shadow: 0 14px 24px rgba(15, 23, 42, 0.12);
   z-index: 10;
   padding: 4px;
+}
+
+.searchable-menu::-webkit-scrollbar {
+  width: 10px;
+}
+
+.searchable-menu::-webkit-scrollbar-thumb {
+  background: #c8d5ea;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
 }
 
 .searchable-item {
@@ -563,6 +601,10 @@ select:focus-visible {
 
 .feature-stage--impact {
   --stage-h: 20;
+}
+
+.feature-stage--usage {
+  --stage-h: 38;
 }
 
 .feature-stage--team {
@@ -914,6 +956,9 @@ select:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   background: #f7faff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .compare-table td {
@@ -921,6 +966,14 @@ select:focus-visible {
   color: #1f2d44;
   font-size: 0.82rem;
   font-weight: 600;
+}
+
+.compare-table tbody tr:nth-child(even) {
+  background: #fbfdff;
+}
+
+.compare-table tbody tr:hover {
+  background: #f1f6ff;
 }
 
 .plain-list {
