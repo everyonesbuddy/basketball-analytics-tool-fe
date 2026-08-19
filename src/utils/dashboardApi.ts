@@ -2,6 +2,11 @@ import axios from "axios";
 import type {
   ApiEnvelope,
   CompareResponse,
+  ConsistencyResponse,
+  DraftBoardResponse,
+  FantasyPosition,
+  FantasyScoringId,
+  FantasySeasonState,
   HealthResponse,
   PlayerUsageValueResponse,
   PlayerOption,
@@ -10,10 +15,14 @@ import type {
   PlayerImpactResponse,
   PlayerProfile,
   PlayerTrajectoryResponse,
+  SleepersResponse,
+  StartSitResponse,
   TeamSeasonType,
   TeamNeedGapResponse,
   TeamOption,
   TeamEfficiencyResponse,
+  TradeAnalysisResponse,
+  WaiverWireResponse,
 } from "./dashboardTypes";
 
 const LOCAL_API_BASE_URL = "http://localhost:5000/api";
@@ -188,6 +197,162 @@ export const fetchTeamNeedGap = async (
       params: {
         games,
         seasonType,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export type FantasyLeagueSettingsParams = {
+  teamCount?: number;
+  // Raw backend format, e.g. "QB:1,RB:2,WR:2,TE:1,FLEX:1,K:1,DST:1".
+  starters?: string;
+};
+
+export const fetchFantasySeasonState = async (forceRefresh: boolean) => {
+  const response = await api.get<ApiEnvelope<FantasySeasonState>>(
+    "/fantasy/season",
+    {
+      params: { forceRefresh },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyDraftBoard = async (
+  forceRefresh: boolean,
+  scoringId: FantasyScoringId = 3,
+  position?: FantasyPosition,
+  rosterSoFar?: string[],
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<ApiEnvelope<DraftBoardResponse>>(
+    "/fantasy/draft-board",
+    {
+      params: {
+        position: position || undefined,
+        rosterSoFar:
+          rosterSoFar && rosterSoFar.length ? rosterSoFar.join(",") : undefined,
+        scoringId,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasySleepers = async (
+  forceRefresh: boolean,
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+) => {
+  const response = await api.get<ApiEnvelope<SleepersResponse>>(
+    "/fantasy/sleepers",
+    {
+      params: {
+        scoringId,
+        season,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyTradeAnalysis = async (
+  forceRefresh: boolean,
+  sideA: string[],
+  sideB: string[],
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<ApiEnvelope<TradeAnalysisResponse>>(
+    "/fantasy/trades/analyze",
+    {
+      params: {
+        sideA: sideA.join(","),
+        sideB: sideB.join(","),
+        scoringId,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyWaiverWire = async (
+  forceRefresh: boolean,
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  ownershipMax = 50,
+  window = 4,
+) => {
+  const response = await api.get<ApiEnvelope<WaiverWireResponse>>(
+    "/fantasy/waivers",
+    {
+      params: {
+        scoringId,
+        season,
+        ownershipMax,
+        window,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyConsistency = async (
+  forceRefresh: boolean,
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  window = 4,
+) => {
+  const response = await api.get<ApiEnvelope<ConsistencyResponse>>(
+    "/fantasy/consistency",
+    {
+      params: {
+        scoringId,
+        season,
+        window,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyStartSit = async (
+  forceRefresh: boolean,
+  playerIds: string[],
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  window = 4,
+) => {
+  const response = await api.get<ApiEnvelope<StartSitResponse>>(
+    "/fantasy/start-sit",
+    {
+      params: {
+        playerIds: playerIds.join(","),
+        scoringId,
+        season,
+        window,
         forceRefresh,
       },
     },

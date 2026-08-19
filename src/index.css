@@ -611,6 +611,495 @@ select:focus-visible {
   --stage-h: 140;
 }
 
+.feature-stage--draft-board {
+  --stage-h: 268;
+}
+
+.feature-stage--sleepers {
+  --stage-h: 300;
+}
+
+.feature-stage--trade {
+  --stage-h: 345;
+}
+
+.feature-stage--waivers {
+  --stage-h: 172;
+}
+
+.feature-stage--consistency {
+  --stage-h: 214;
+}
+
+.feature-stage--startsit {
+  --stage-h: 38;
+}
+
+.feature-tab--fantasy {
+  border-style: dashed;
+}
+
+.fantasy-badge {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #5b3df0, #8b5cf6);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fantasy-badge--sleepers {
+  background: linear-gradient(120deg, #9333ea, #c026d3);
+}
+
+.fantasy-badge--waivers {
+  background: linear-gradient(120deg, #0f766e, #14b8a6);
+}
+
+.fantasy-badge--consistency {
+  background: linear-gradient(120deg, #1d4ed8, #38bdf8);
+}
+
+.fantasy-badge--startsit {
+  background: linear-gradient(120deg, #b45309, #f59e0b);
+}
+
+.fantasy-badge--trade {
+  background: linear-gradient(120deg, #be123c, #fb7185);
+}
+
+.fantasy-season-banner {
+  font-weight: 600;
+  color: #4c2fa8;
+}
+
+.overview-pill--highlight {
+  border-color: #c9b6ff;
+  background: linear-gradient(170deg, #ffffff, #f3edff);
+}
+
+.overview-pill--highlight .overview-pill-value {
+  color: #4c2fa8;
+}
+
+.overview-pill--muted {
+  border-color: #dfe3ea;
+  background: linear-gradient(170deg, #ffffff, #f4f5f7);
+}
+
+.overview-pill--muted .overview-pill-value {
+  color: #6f7e94;
+  font-size: 0.86rem;
+}
+
+.overview-pill-caption {
+  margin-top: 2px;
+  font-size: 0.68rem;
+  color: #6b5a99;
+  font-weight: 600;
+}
+
+.callout-note--compact {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.fantasy-section-heading {
+  margin: 0 0 8px;
+  color: #4c2fa8;
+  font-size: 0.95rem;
+}
+
+.fantasy-preset-row {
+  display: flex;
+  gap: 6px;
+  margin: -2px 0 4px;
+}
+
+.fantasy-link-button.active {
+  background: #4c2fa8;
+  color: #ffffff;
+}
+
+.fantasy-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.fantasy-header-row h3 {
+  margin: 0;
+}
+
+.callout-note {
+  margin: 8px 0 10px;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid #d9cdfb;
+  background: #f5f1ff;
+  color: #3d2f78;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.fantasy-plain-summary {
+  margin: 6px 0 10px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px dashed #b9a6f2;
+  background: #fffdf5;
+  color: #2f2547;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.fantasy-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+.fantasy-status-legend__label {
+  font-size: 0.78rem;
+  color: #6b5a99;
+  font-weight: 600;
+}
+
+.tier-group {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed #d3c6fb;
+}
+
+.tier-group:first-of-type {
+  margin-top: 10px;
+}
+
+.tier-group-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  padding: 8px 10px;
+  margin: 0 -4px;
+  border-radius: 10px;
+  transition: background-color 120ms ease;
+}
+
+.tier-group-header::-webkit-details-marker {
+  display: none;
+}
+
+.tier-group-header::marker {
+  content: "";
+}
+
+.tier-group-header::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  color: #8a6fd6;
+  transition: transform 120ms ease;
+}
+
+.tier-group[open] > .tier-group-header::before {
+  transform: rotate(90deg);
+}
+
+.tier-group-header:hover {
+  background: #f5f0ff;
+}
+
+.tier-group-header h4 {
+  margin: 0;
+  color: #4c2fa8;
+  font-size: 0.95rem;
+  display: inline;
+}
+
+.tier-group-range {
+  margin: 0;
+  color: #6b5a99;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+}
+
+.fantasy-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fantasy-search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.fantasy-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fantasy-link-button {
+  border: 1px solid #d3c6fb;
+  background: #faf8ff;
+  color: #4c2fa8;
+  border-radius: 8px;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fantasy-link-button:hover {
+  background: #f0e9ff;
+}
+
+.chip.muted {
+  background: #eef0f4;
+  color: #6f7e94;
+}
+
+.chip-remove {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0 0 0 4px;
+}
+
+.fantasy-peer-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #4c2fa8;
+  font-size: 0.85rem;
+}
+
+.scarcity-board {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.scarcity-row {
+  border: 1px solid #e3d9fb;
+  border-radius: 12px;
+  padding: 0.6rem 0.7rem;
+  background: linear-gradient(180deg, #ffffff, #fbf9ff);
+}
+
+.scarcity-row__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.scarcity-row__baseline-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #45376e;
+  font-weight: 600;
+}
+
+.scarcity-row__breakdown {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  color: #6b5a99;
+}
+
+.scarcity-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: #f0eafc;
+  overflow: hidden;
+}
+
+.scarcity-bar__baseline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #c8bdf0;
+  border-radius: 999px 0 0 999px;
+}
+
+.scarcity-bar__gap {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #7c4dff, #ff6b9d);
+}
+
+.scarcity-row__top {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #1f2d44;
+}
+
+.fantasy-glossary {
+  margin: 8px 0 14px;
+  padding: 0.55rem 0.7rem;
+  border: 1px dashed #d3c6fb;
+  border-radius: 10px;
+  background: #faf8ff;
+}
+
+.fantasy-glossary summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #4c2fa8;
+  font-size: 0.85rem;
+}
+
+.fantasy-glossary .plain-list {
+  margin-top: 8px;
+}
+
+.fantasy-glossary .plain-list li {
+  color: #45376e;
+}
+
+.fantasy-strategy {
+  margin: 8px 0 14px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d3c6fb;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8f4ff, #ffffff);
+}
+
+.fantasy-strategy summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #4c2fa8;
+  font-size: 0.9rem;
+}
+
+.fantasy-strategy__section {
+  margin-top: 10px;
+}
+
+.fantasy-strategy__section h4 {
+  margin: 0 0 4px;
+  color: #4c2fa8;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fantasy-strategy__section .plain-list {
+  margin-top: 4px;
+}
+
+.fantasy-strategy__section .plain-list li {
+  color: #3d3160;
+  line-height: 1.5;
+}
+
+.fantasy-player-row-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.fantasy-player-row {
+  border: 1px solid #e3d9fb;
+  border-left: 4px solid #e3d9fb;
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem;
+  background: linear-gradient(180deg, #ffffff, #fbf9ff);
+  transition: box-shadow 120ms ease;
+}
+
+.fantasy-player-row:hover {
+  box-shadow: 0 6px 16px rgba(76, 47, 168, 0.1);
+}
+
+.fantasy-player-row--value {
+  border-left-color: #2f9e6e;
+}
+
+.fantasy-player-row--risk {
+  border-left-color: #c93a3a;
+}
+
+.fantasy-player-row--muted {
+  border-left-color: #a9adba;
+  opacity: 0.85;
+}
+
+.fantasy-player-row__primary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fantasy-player-row__name {
+  margin: 0;
+  font-weight: 700;
+  color: #1f2d44;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fantasy-player-row__stats {
+  margin-top: 10px;
+}
+
+.fantasy-key-stats {
+  margin-top: 10px;
+  border-top: 1px dashed #e8e1fa;
+  padding-top: 8px;
+}
+
+.fantasy-key-stats summary {
+  cursor: pointer;
+  color: #6b5a99;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.fantasy-key-stats .chip-grid {
+  margin-top: 8px;
+}
+
+.fantasy-stat-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.fantasy-stat-breakdown__label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b5a99;
+}
+
 .viz-header-row {
   display: flex;
   align-items: flex-start;

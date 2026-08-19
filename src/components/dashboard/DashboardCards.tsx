@@ -17,6 +17,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
   formatPlayerSplitLabelWithYear,
   formatStatLongLabel,
@@ -26,13 +27,22 @@ import {
   safeToText,
 } from "../../utils/dashboardFormatters";
 import type {
+  ConsistencyResponse,
+  DraftBoardResponse,
+  FantasyPlayerCandidate,
+  FantasyRecentForm,
+  FantasySeasonState,
   PlayerCompsResponse,
   PlayerImpactResponse,
   PlayerProfile,
   PlayerTrajectoryResponse,
   PlayerUsageValueResponse,
+  SleepersResponse,
+  StartSitResponse,
   TeamNeedGapResponse,
   TeamEfficiencyResponse,
+  TradeAnalysisResponse,
+  WaiverWireResponse,
 } from "../../utils/dashboardTypes";
 
 export const formatMetricValue = (value: number | null | undefined): string => {
@@ -1904,3 +1914,1972 @@ export const TeamNeedGapCard = ({
     </article>
   );
 };
+
+const formatAdp = (
+  adp: number | null | undefined,
+  isPlaceholder?: boolean,
+): string => {
+  if (isPlaceholder) {
+    return "No live ADP yet";
+  }
+
+  if (adp === null || adp === undefined || !Number.isFinite(adp)) {
+    return "—";
+  }
+
+  return adp.toFixed(1);
+};
+
+const getFantasyStatusLabel = (status?: string | null): string => {
+  switch (status) {
+    case "undervalued":
+      return "Undervalued";
+    case "overvalued":
+      return "Overvalued";
+    case "valued_as_expected":
+      return "Valued As Expected";
+    case "no_adp_signal":
+      return "No ADP Signal";
+    case "insufficient_data":
+      return "Insufficient Data";
+    case "insufficient_peers":
+      return "Insufficient Peers";
+    default:
+      return toReadableSignal(status);
+  }
+};
+
+const getFantasyStatusChipClass = (status?: string | null): string => {
+  if (status === "undervalued") {
+    return "chip hit";
+  }
+
+  if (status === "overvalued") {
+    return "chip miss";
+  }
+
+  if (
+    status === "no_adp_signal" ||
+    status === "insufficient_data" ||
+    status === "insufficient_peers"
+  ) {
+    return "chip muted";
+  }
+
+  return "chip";
+};
+
+const getFantasyRowAccentClass = (status?: string | null): string => {
+  if (status === "undervalued") {
+    return "fantasy-player-row--value";
+  }
+
+  if (status === "overvalued") {
+    return "fantasy-player-row--risk";
+  }
+
+  if (
+    status === "no_adp_signal" ||
+    status === "insufficient_data" ||
+    status === "insufficient_peers"
+  ) {
+    return "fantasy-player-row--muted";
+  }
+
+  return "";
+};
+
+// Generic extractor: backend fields sometimes arrive as plain primitives and
+// sometimes as ESPN-style objects (e.g. { displayValue, value, abbreviation }).
+// This avoids ever rendering a bare object as "[object Object]".
+const formatFantasyValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? formatMetricValue(value) : "-";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  if (typeof value === "string") {
+    return value.trim() || "-";
+  }
+
+  if (Array.isArray(value)) {
+    return value.length
+      ? value.map((item) => formatFantasyValue(item)).join(", ")
+      : "-";
+  }
+
+  if (typeof value === "object") {
+    const bag = value as Record<string, unknown>;
+    const preferredKeys = [
+      "displayValue",
+      "value",
+      "label",
+      "displayName",
+      "name",
+      "description",
+      "abbreviation",
+      "type",
+      "status",
+    ];
+
+    for (const key of preferredKeys) {
+      const candidate = bag[key];
+      if (
+        (typeof candidate === "string" && candidate.trim()) ||
+        typeof candidate === "number"
+      ) {
+        return formatFantasyValue(candidate);
+      }
+    }
+
+    const entries = Object.entries(bag).filter(
+      ([, entryValue]) => entryValue !== null && entryValue !== undefined,
+    );
+    if (!entries.length) {
+      return "-";
+    }
+
+    return entries
+      .slice(0, 3)
+      .map(([key, entryValue]) =>
+        typeof entryValue === "object" && entryValue !== null
+          ? `${key}: …`
+          : `${key}: ${formatFantasyValue(entryValue)}`,
+      )
+      .join(", ");
+  }
+
+  return "-";
+};
+
+const formatFantasyTeam = (team: unknown): string => formatFantasyValue(team);
+
+const formatFantasyInjury = (injury: unknown): string => {
+  if (injury === null || injury === undefined) {
+    return "Healthy";
+  }
+
+  if (typeof injury === "string" && !injury.trim()) {
+    return "Healthy";
+  }
+
+  return formatFantasyValue(injury);
+};
+
+const getInjuryChipClass = (injury: unknown): string => {
+  const label = formatFantasyInjury(injury).toLowerCase();
+  if (label.includes("out") || label.includes("ir") || label.includes("pup")) {
+    return "chip miss";
+  }
+
+  if (label.includes("doubtful") || label.includes("questionable")) {
+    return "chip muted";
+  }
+
+  return "chip";
+};
+
+const getFantasyStatEntries = (
+  source: Record<string, unknown> | null | undefined,
+): Array<{ label: string; value: string }> => {
+  if (!source || typeof source !== "object") {
+    return [];
+  }
+
+  return Object.entries(source).map(([key, value]) => ({
+    label: formatStatLongLabel(key),
+    value: formatFantasyValue(value),
+  }));
+};
+
+const getFantasyKeyStatsBreakdown = (
+  candidate: Pick<FantasyPlayerCandidate, "keyStats" | "rawStats">,
+): {
+  projected: Array<{ label: string; value: string }>;
+  actual: Array<{ label: string; value: string }>;
+} => {
+  const source = candidate.keyStats ?? candidate.rawStats;
+  return {
+    projected: getFantasyStatEntries(source?.projected),
+    actual: getFantasyStatEntries(source?.actual),
+  };
+};
+
+const formatActualStat = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "Not played yet";
+  }
+
+  return formatMetricValue(value);
+};
+
+const formatDraftVsProjectedRank = (entry: {
+  position: string;
+  adpPositionRank: number | null;
+  projectedPositionRank: number | null;
+}): string => {
+  const { position, adpPositionRank, projectedPositionRank } = entry;
+  if (adpPositionRank === null || projectedPositionRank === null) {
+    return "—";
+  }
+
+  return `Drafted as ${position}${adpPositionRank}, projects as ${position}${projectedPositionRank}`;
+};
+
+const formatAdpDeltaHeadline = (entry: {
+  position: string;
+  adpDelta: number | null;
+}): string | null => {
+  if (entry.adpDelta === null || entry.adpDelta === undefined) {
+    return null;
+  }
+
+  if (entry.adpDelta === 0) {
+    return `Drafted right at their ${entry.position} projection.`;
+  }
+
+  const direction = entry.adpDelta > 0 ? "above" : "below";
+  return `Projected ${Math.abs(entry.adpDelta)} ${entry.position} spot${
+    Math.abs(entry.adpDelta) === 1 ? "" : "s"
+  } ${direction} ADP.`;
+};
+
+const getSleeperScoreIntensityLabel = (
+  score: number | null | undefined,
+): string | null => {
+  if (score === null || score === undefined || !Number.isFinite(score)) {
+    return null;
+  }
+
+  if (score > 1) {
+    return "Meaningful value signal";
+  }
+
+  if (score < -1) {
+    return "Expensive relative to projection";
+  }
+
+  return "Expected market value";
+};
+
+const formatStartersSummary = (
+  starters: Record<string, number | undefined> | undefined,
+): string => {
+  if (!starters) {
+    return "-";
+  }
+
+  const entries = Object.entries(starters).filter(
+    ([, count]) => typeof count === "number" && count > 0,
+  );
+
+  if (!entries.length) {
+    return "-";
+  }
+
+  return entries.map(([position, count]) => `${position} ${count}`).join(" · ");
+};
+
+const DRAFT_BOARD_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "VORP (the main number to look at)",
+    definition:
+      "Higher VORP = more valuable for your league. It measures the projected scoring gap between a player and the replacement-level option at their position — not raw points. It changes with Team Count, required Starters, and FLEX slots, so a QB can score more raw points than an RB and still have a lower VORP, because it's easier to find a decent backup QB than a decent backup RB.",
+  },
+  {
+    term: "Replacement Baseline / Replacement Player (last starter needed league-wide for that position, based on your league)",
+    definition:
+      "Not the \"last player drafted\" — it's the player sitting at the replacement rank: roughly the last player the whole league would need in order to fill every starting lineup slot, including FLEX. Example: in a 12-team league starting 2 RBs, that's around the 24th-to-28th best RB. Every RB's VORP is measured against that one player's projected points — expand \"Why this rank?\" below to see exactly who it is for each position.",
+  },
+  {
+    term: "League Settings (Team Count / Starters)",
+    definition:
+      "Tell the board how big your league is and how many players start each week. Change these to match your real league — a bigger league or more starters at a position pushes the Replacement Baseline (and every VORP number) further down the list.",
+  },
+  {
+    term: "Tier",
+    definition:
+      "A group of players who are worth about the same right now, based on VORP — not a group of players with similar raw stats. It's fine to end up with anyone from the same tier; the real cost is crossing into a lower tier. Tier 1 is the best group on the board.",
+  },
+  {
+    term: "ADP",
+    definition:
+      "Average draft pick across tracked leagues — lower means earlier. \"No live ADP yet\" means adpIsPlaceholder is true and ESPN doesn't have meaningful ADP data yet (common early in a season); ADP and ADP-derived signals are hidden in that case rather than shown as real numbers.",
+  },
+  {
+    term: "Ownership %",
+    definition: "Percentage of tracked leagues currently rostering this player.",
+  },
+  {
+    term: "Proj Total / Avg",
+    definition:
+      "ESPN's modelled expectation for the full season and per game, in the selected scoring format — not historical production. Fractional values (e.g. 14.5 TDs) are the tell that a number is projected. Kept visible for context, but VORP is the primary number to compare players on.",
+  },
+  {
+    term: "Actual Total / Games",
+    definition:
+      "Real box-score production once games are played. Reads \"Not played yet\" (not zero) until this player has an actual game logged this season.",
+  },
+  {
+    term: "Proj Rank (Pos) vs ADP Rank (Pos)",
+    definition:
+      "Where the model projects this player to finish among same-position peers, versus where leagues are actually drafting them.",
+  },
+  {
+    term: "ADP Delta",
+    definition:
+      "ADP Position Rank minus Projected Position Rank. Positive means the player is going later than their projection suggests (a value signal); negative means a likely reach.",
+  },
+  {
+    term: "Sleeper Score / Status",
+    definition:
+      "A composite value signal. A null score with a status like \"Insufficient Data\" or \"No ADP Signal\" is a distinct, legitimate state — not the same as a computed score near zero.",
+  },
+];
+
+const SLEEPERS_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "\"Draft Values,\" not guaranteed sleepers",
+    definition:
+      "This is a draft-only tool comparing a player's ADP position rank against their projected position rank — a value signal, not a promise. It goes quiet once the season starts and ESPN resets ADP.",
+  },
+  {
+    term: "ADP Delta / Draft vs Projected",
+    definition:
+      "Drafted as, e.g., RB46 but projected as RB40 is a 6-spot ADP Delta — the player is going later than their projection suggests. This is the headline number to lead with, not the raw sleeper score.",
+  },
+  {
+    term: "Sleeper Score",
+    definition:
+      "A positional z-score for draft value versus ADP — treat it as an intensity/confidence indicator, not the primary number. Above 1 is a meaningful value signal, -1 to 1 is expected market value, below -1 means expensive relative to projection. Null scores use Status instead (e.g. insufficient data/peers, no ADP signal).",
+  },
+  {
+    term: "Peer Sample",
+    definition:
+      "Number of same-position peers used to compute this player's ADP delta comparison.",
+  },
+  {
+    term: "Peer Distribution",
+    definition:
+      "The mean and standard deviation of ADP delta for each position — the statistical baseline used to judge whether a given sleeper score is meaningful versus typical position noise.",
+  },
+];
+
+const FantasyGlossary = ({
+  items,
+}: {
+  items: Array<{ term: string; definition: string }>;
+}) => (
+  <details className="context-wrap fantasy-glossary">
+    <summary>What do these terms mean?</summary>
+    <ul className="plain-list">
+      {items.map((item) => (
+        <li key={item.term}>
+          <strong>{item.term}:</strong> {item.definition}
+        </li>
+      ))}
+    </ul>
+  </details>
+);
+
+const FantasyPlainSummary = ({ children }: { children: ReactNode }) => (
+  <p className="fantasy-plain-summary">{children}</p>
+);
+
+const FANTASY_STATUS_LEGEND_ITEMS = [
+  { chipClass: "chip hit", label: "Green = good value" },
+  { chipClass: "chip miss", label: "Red = riskier / pricier" },
+  { chipClass: "chip muted", label: "Gray = not enough data yet" },
+];
+
+const FantasyStatusLegend = () => (
+  <div className="fantasy-status-legend" aria-label="Color legend">
+    <span className="fantasy-status-legend__label">Color guide:</span>
+    {FANTASY_STATUS_LEGEND_ITEMS.map((item) => (
+      <span className={item.chipClass} key={item.label}>
+        {item.label}
+      </span>
+    ))}
+  </div>
+);
+
+type FantasyStrategySection = {
+  phase: string;
+  tips: string[];
+};
+
+const DRAFT_BOARD_STRATEGY: FantasyStrategySection[] = [
+  {
+    phase: "Before your draft",
+    tips: [
+      "Set Team Count and Starters (including FLEX) to match your real league before anything else — the Replacement Baseline, and therefore every VORP and Tier on the board, is computed directly from these settings.",
+      "Set Scoring Format to match your league too — rankings shift meaningfully at RB/WR/TE between Standard, Half-PPR, and PPR, so a board built on the wrong format will mislead you.",
+      "Filter by Position (or FLEX) to pre-build a cheat sheet round-by-round: scan Tier boundaries (now VORP-based, not raw points) and note where each position's talent drop-off happens so you know when to pivot rather than reach.",
+      "Use the tier's Std Dev as a tightness check: a low Std Dev means the players in that tier are genuinely close in value over replacement (safe to grab any of them); a high Std Dev means treat the tier loosely and lean on ADP/status to break ties.",
+    ],
+  },
+  {
+    phase: "During your draft",
+    tips: [
+      "Every time any team picks a player (not just yours), search them in \"Mark Player As Drafted\" and add them, then reload — Available Count and Pool Size will drop to confirm the board is now accurate for who's actually left.",
+      "When it's your turn, work tier-first: if you're going to leave a tier anyway, take the last-ranked player left in it before reaching into the next tier for a marginal VORP upgrade.",
+      "Compare VORP across positions, not Proj Total — Proj Total makes QBs look best every time, but VORP already accounts for how replaceable each position is, so it's the number that should decide close calls between positions.",
+      "Use Status + ADP Delta together as a tiebreaker within a tier: \"Undervalued\" with a larger positive ADP Delta means the field is passing on them relative to projection — safer to wait one more round; \"Overvalued\"/negative ADP Delta means take them now if you want them, they won't last.",
+      "Check the injury badge before locking in a pick that's close to your turn — Questionable/Doubtful/Out next to a name is a real risk signal the projection alone won't show you.",
+    ],
+  },
+  {
+    phase: "What to look at once games start",
+    tips: [
+      "Proj Total and VORP are always ESPN's modelled expectation, never history — don't read them as \"what they did.\" Once Actual Total stops reading \"Not played yet,\" compare it against Proj Total to spot early breakouts or busts for keeper/dynasty re-evaluation.",
+      "Expand \"Season Stat Breakdown\" per player to see the Projected vs Actual split side by side — this is the fastest way to tell whether a player's box score is tracking ahead of or behind what was expected of them.",
+      "Ownership % is a quick gut-check on how widely-known a player already is: a low Own % paired with \"Undervalued\" status is the clearest late-round or waiver-priority signal the board can give you.",
+      "Once games are underway, the Waivers and Consistency tabs pick up where this board's projections leave off — use them for actual-production signal instead of re-reading pre-season VORP.",
+    ],
+  },
+];
+
+const SLEEPERS_STRATEGY: FantasyStrategySection[] = [
+  {
+    phase: "Draft-day prep",
+    tips: [
+      "Run this 1-2 rounds before you're on the clock at a given position — filter by Position and scan for names with a high Sleeper Score to build a short list of late-round targets before you need them.",
+      "Read the \"Draft vs Projected\" line literally as your pick rationale (e.g. \"drafted as RB46, projects as RB40\") — it's the same phrasing you'd use to justify the pick out loud in your draft room.",
+      "Before trusting a single Sleeper Score, expand Peer Distribution for that position: a high Std Dev ADP Delta means the whole position is noisy this year, so an average score isn't special; a low Std Dev means even a moderate score is a real signal.",
+    ],
+  },
+  {
+    phase: "Treat these statuses differently",
+    tips: [
+      "\"Undervalued\" with a real Sleeper Score is an actionable target. \"Insufficient Data\" or \"Insufficient Peers\" means the model doesn't have enough signal yet — put these on a watchlist, don't draft on the score alone.",
+      "Cross-check a promising name on the Draft Board too: same player, same scoring format, so you can see their Tier and full ADP context alongside the sleeper signal before committing a pick.",
+    ],
+  },
+  {
+    phase: "In-season use",
+    tips: [
+      "This endpoint is a draft-time signal — ADP effectively resets to a placeholder once the season starts, so expect it to return few or no results in-season. That's expected behavior, not a bug.",
+      "Once ADP dries up, use Actual Total vs Proj Total on the Draft Board instead — that's the in-season equivalent for finding players outperforming or underperforming their offseason expectation (waiver-wire and start/sit calls).",
+    ],
+  },
+];
+
+const FantasyStrategyGuide = ({
+  title,
+  sections,
+}: {
+  title: string;
+  sections: FantasyStrategySection[];
+}) => (
+  <details className="context-wrap fantasy-strategy" open>
+    <summary>{title}</summary>
+    {sections.map((section) => (
+      <div className="fantasy-strategy__section" key={section.phase}>
+        <h4>{section.phase}</h4>
+        <ul className="plain-list">
+          {section.tips.map((tip) => (
+            <li key={tip}>{tip}</li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </details>
+);
+
+const FantasyKeyStatsDetails = ({
+  candidate,
+}: {
+  candidate: Pick<FantasyPlayerCandidate, "keyStats" | "rawStats" | "position">;
+}) => {
+  const { projected, actual } = getFantasyKeyStatsBreakdown(candidate);
+  const isSkillPosition =
+    candidate.position !== "K" && candidate.position !== "DST";
+
+  return (
+    <details className="fantasy-key-stats">
+      <summary>Season Stat Breakdown (Projected vs Actual)</summary>
+      <div className="fantasy-stat-breakdown">
+        <div>
+          <p
+            className="fantasy-stat-breakdown__label"
+            title="ESPN's modelled expectation for this player this season — not historical production."
+          >
+            Projected
+          </p>
+          {projected.length ? (
+            <div className="chip-grid">
+              {projected.map((entry) => (
+                <span className="chip" key={`proj-${entry.label}`}>
+                  {entry.label}: {entry.value}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-note">
+              No projected stat breakdown available for this player
+              {isSkillPosition
+                ? "."
+                : " — the backend does not compute keyStats for K/DST by design."}
+            </p>
+          )}
+        </div>
+        <div>
+          <p
+            className="fantasy-stat-breakdown__label"
+            title="Real box-score production. Stays null until this player has an actual game logged this season."
+          >
+            Actual
+          </p>
+          {actual.length ? (
+            <div className="chip-grid">
+              {actual.map((entry) => (
+                <span className="chip" key={`act-${entry.label}`}>
+                  {entry.label}: {entry.value}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-note">
+              Not played yet this season
+              {isSkillPosition
+                ? "."
+                : " — the backend does not compute keyStats for K/DST by design."}
+            </p>
+          )}
+        </div>
+      </div>
+    </details>
+  );
+};
+
+const FantasyPlayerRow = ({
+  candidate,
+}: {
+  candidate: FantasyPlayerCandidate;
+}) => (
+  <article
+    className={`fantasy-player-row ${getFantasyRowAccentClass(candidate.status)}`}
+  >
+    <div className="fantasy-player-row__primary">
+      <div>
+        <p className="fantasy-player-row__name">
+          {safeToText(candidate.name)}{" "}
+          <span className="chip">{safeToText(candidate.position)}</span>
+        </p>
+        <p className="meta-line">
+          {formatFantasyTeam(candidate.team)}{" "}
+          <span className={getInjuryChipClass(candidate.injuryStatus)}>
+            {formatFantasyInjury(candidate.injuryStatus)}
+          </span>
+        </p>
+      </div>
+      <span className={getFantasyStatusChipClass(candidate.status)}>
+        {getFantasyStatusLabel(candidate.status)}
+      </span>
+    </div>
+
+    <div className="impact-summary-grid fantasy-player-row__stats">
+      <div className="overview-pill overview-pill--highlight">
+        <p
+          className="overview-pill-label"
+          title="Projected points minus the Replacement Baseline for this position — what the board is ranked and tiered on."
+        >
+          VORP
+        </p>
+        <p className="overview-pill-value">
+          {formatMetricValue(candidate.vorp)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">VORP Rank (Overall)</p>
+        <p className="overview-pill-value">{safeToText(candidate.vorpRank)}</p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">ADP</p>
+        <p className="overview-pill-value">
+          {formatAdp(candidate.adp, candidate.adpIsPlaceholder)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">Own %</p>
+        <p className="overview-pill-value">
+          {formatUsagePercent(candidate.ownershipPct)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p
+          className="overview-pill-label"
+          title="ESPN's modelled expectation for the season — not historical production."
+        >
+          Proj Total
+        </p>
+        <p className="overview-pill-value">
+          {formatMetricValue(candidate.projectedTotal)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p
+          className="overview-pill-label"
+          title="Real box-score production so far this season. Reads 'Not played yet' until a game is logged."
+        >
+          Actual Total
+        </p>
+        <p className="overview-pill-value">
+          {formatActualStat(candidate.actualTotal)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">Proj Rank (Pos)</p>
+        <p className="overview-pill-value">
+          {safeToText(candidate.projectedPositionRank)}
+        </p>
+      </div>
+      {candidate.adpIsPlaceholder ? (
+        <div className="overview-pill overview-pill--muted">
+          <p
+            className="overview-pill-label"
+            title="ADP-derived draft signals (position rank, delta) are hidden until ESPN has meaningful ADP data — showing them from placeholder data would be misleading."
+          >
+            Draft Signal
+          </p>
+          <p className="overview-pill-value">No live ADP yet</p>
+        </div>
+      ) : (
+        <>
+          <div className="overview-pill">
+            <p className="overview-pill-label">ADP Rank (Pos)</p>
+            <p className="overview-pill-value">
+              {safeToText(candidate.adpPositionRank)}
+            </p>
+          </div>
+          <div className="overview-pill">
+            <p
+              className="overview-pill-label"
+              title="Positive means going later in position rank than projection suggests — a value signal."
+            >
+              ADP Delta
+            </p>
+            <p className="overview-pill-value">
+              {formatMetricValue(candidate.adpDelta)}
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+
+    <FantasyKeyStatsDetails candidate={candidate} />
+  </article>
+);
+
+const FLEX_ELIGIBLE_POSITIONS = new Set(["RB", "WR", "TE"]);
+
+type PositionScarcityRow = {
+  position: string;
+  replacementRank: number | null;
+  replacementPlayerName: string | null;
+  baselineProjected: number | null;
+  mandatoryStarters: number | null;
+  flexShare: number | null;
+  topCandidateName: string | null;
+  topCandidateProjected: number | null;
+  topCandidateVorp: number | null;
+};
+
+const buildPositionScarcityRows = (
+  data: DraftBoardResponse,
+): PositionScarcityRow[] => {
+  const baselines = data.replacementBaselines || {};
+  const teamCount = data.leagueSettings?.teamCount ?? null;
+  const starters = (data.leagueSettings?.starters ?? {}) as Record<
+    string,
+    number | undefined
+  >;
+  const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+
+  return Object.entries(baselines)
+    .map(([position, baseline]) => {
+      const starterCount = starters[position];
+      const mandatoryStarters =
+        typeof teamCount === "number" && typeof starterCount === "number"
+          ? teamCount * starterCount
+          : null;
+      const flexShare =
+        FLEX_ELIGIBLE_POSITIONS.has(position) &&
+        typeof mandatoryStarters === "number" &&
+        typeof baseline.replacementRank === "number"
+          ? Math.max(0, baseline.replacementRank - mandatoryStarters)
+          : null;
+
+      const positionCandidates = candidates
+        .filter((candidate) => candidate.position === position)
+        .sort(
+          (a, b) =>
+            (typeof b.vorp === "number" ? b.vorp : -Infinity) -
+            (typeof a.vorp === "number" ? a.vorp : -Infinity),
+        );
+      const top = positionCandidates[0] ?? null;
+
+      return {
+        position,
+        replacementRank: baseline.replacementRank,
+        replacementPlayerName: baseline.replacementPlayerName,
+        baselineProjected: baseline.projectedTotal,
+        mandatoryStarters,
+        flexShare,
+        topCandidateName: top?.name ?? null,
+        topCandidateProjected: top?.projectedTotal ?? null,
+        topCandidateVorp: top?.vorp ?? null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        (typeof b.topCandidateVorp === "number" ? b.topCandidateVorp : -Infinity) -
+        (typeof a.topCandidateVorp === "number" ? a.topCandidateVorp : -Infinity),
+    );
+};
+
+const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
+  const rows = buildPositionScarcityRows(data);
+
+  if (!rows.length) {
+    return null;
+  }
+
+  const maxProjected = Math.max(
+    1,
+    ...rows.map((row) =>
+      Math.max(row.baselineProjected ?? 0, row.topCandidateProjected ?? 0),
+    ),
+  );
+
+  return (
+    <details className="context-wrap fantasy-peer-details" open>
+      <summary>Why this rank? (Replacement Baselines)</summary>
+      <p className="derive-note">
+        For each position, the "replacement player" isn't the last player
+        drafted — it's the player at the replacement rank: roughly the last
+        player the whole league would need to fill every starting lineup
+        slot, including FLEX. VORP measures the gap above that one player's
+        projected points, not raw points. A bigger gap between the best
+        available player and this baseline means the position is scarce
+        right now and worth reaching for; a small gap means plenty of similar
+        options remain, so it's safer to wait. Rows below are sorted by that
+        gap, biggest first.
+      </p>
+      <div className="scarcity-board">
+        {rows.map((row) => {
+          const baselinePct =
+            row.baselineProjected !== null
+              ? Math.min(100, (row.baselineProjected / maxProjected) * 100)
+              : 0;
+          const topPct =
+            row.topCandidateProjected !== null
+              ? Math.min(100, (row.topCandidateProjected / maxProjected) * 100)
+              : 0;
+          const gapWidth = Math.max(0, topPct - baselinePct);
+
+          return (
+            <div className="scarcity-row" key={row.position}>
+              <div className="scarcity-row__header">
+                <span className="chip">{row.position}</span>
+                <p className="scarcity-row__baseline-text">
+                  Replacement Player #{safeToText(row.replacementRank)}{" "}
+                  (last starter needed league-wide for {row.position} based on
+                  your league):{" "}
+                  {safeToText(row.replacementPlayerName)} (
+                  {formatMetricValue(row.baselineProjected)} pts)
+                </p>
+              </div>
+              <p className="scarcity-row__breakdown">
+                {row.mandatoryStarters !== null
+                  ? `${row.mandatoryStarters} mandatory starter${row.mandatoryStarters === 1 ? "" : "s"}`
+                  : "Mandatory starters unknown"}
+                {row.flexShare ? ` + ~${row.flexShare} FLEX slot${row.flexShare === 1 ? "" : "s"}` : ""}
+                {" "}
+                → rank #{safeToText(row.replacementRank)} sets the baseline.
+              </p>
+              <div
+                className="scarcity-bar"
+                title={`Replacement baseline ${formatMetricValue(row.baselineProjected)} pts vs. best available ${formatMetricValue(row.topCandidateProjected)} pts.`}
+              >
+                <div
+                  className="scarcity-bar__baseline"
+                  style={{ width: `${baselinePct}%` }}
+                />
+                {gapWidth > 0 ? (
+                  <div
+                    className="scarcity-bar__gap"
+                    style={{ left: `${baselinePct}%`, width: `${gapWidth}%` }}
+                  />
+                ) : null}
+              </div>
+              {row.topCandidateName ? (
+                <p className="scarcity-row__top">
+                  Best available: <strong>{row.topCandidateName}</strong>{" "}
+                  projects {formatMetricValue(row.topCandidateProjected)} pts —{" "}
+                  <strong>{formatMetricValue(row.topCandidateVorp)} VORP</strong>{" "}
+                  above this baseline.
+                </p>
+              ) : (
+                <p className="empty-note">
+                  No available candidate at this position right now.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="derive-note">
+        This ranking can change as players are drafted — a position with a
+        small gap now can open up once its top few players are gone, so
+        re-check this panel after marking players as drafted.
+      </p>
+    </details>
+  );
+};
+
+export const DraftBoardCard = ({
+  data,
+  rosterLabel,
+}: {
+  data: DraftBoardResponse;
+  rosterLabel?: string;
+}) => {
+  const [nameFilter, setNameFilter] = useState("");
+  const [collapsedTiers, setCollapsedTiers] = useState<Set<number>>(
+    () => new Set(),
+  );
+
+  const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+  const tiers = Array.isArray(data.tiers)
+    ? [...data.tiers].sort((a, b) => a.tier - b.tier)
+    : [];
+
+  const candidatesByTier = new Map<number, FantasyPlayerCandidate[]>();
+  candidates.forEach((candidate) => {
+    const tierKey =
+      typeof candidate.tier === "number" ? candidate.tier : -1;
+    const bucket = candidatesByTier.get(tierKey) ?? [];
+    bucket.push(candidate);
+    candidatesByTier.set(tierKey, bucket);
+  });
+
+  const tierKeys = tiers.length
+    ? tiers.map((tier) => tier.tier)
+    : Array.from(candidatesByTier.keys()).sort((a, b) => a - b);
+
+  const needle = nameFilter.trim().toLowerCase();
+
+  const toggleTier = (tierNumber: number, isOpen: boolean) => {
+    setCollapsedTiers((current) => {
+      const next = new Set(current);
+      if (isOpen) {
+        next.delete(tierNumber);
+      } else {
+        next.add(tierNumber);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge">NFL Fantasy</span>
+        <h3 title="GET /api/fantasy/draft-board ranks available candidates into value tiers using projections and ADP.">
+          Draft Board
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |{" "}
+        Position {safeToText(data.position)} | Ranked by{" "}
+        {safeToText(data.tierMetric || "vorp").toUpperCase()}
+      </p>
+      <p className="selector-note">
+        League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
+        Starters: {formatStartersSummary(data.leagueSettings?.starters)}
+      </p>
+      <FantasyPlainSummary>
+        This board ranks every available player by how much better they are
+        than a replacement-level pick at their position. Bigger number
+        (VORP) = better pick right now.
+      </FantasyPlainSummary>
+      {data.decisionInsights ? (
+        <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+
+      <div className="impact-summary-grid">
+        <div className="overview-pill">
+          <p className="overview-pill-label">Pool Size</p>
+          <p className="overview-pill-value">{safeToText(data.poolSize)}</p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Available</p>
+          <p className="overview-pill-value">
+            {safeToText(data.availableCount)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Roster Size</p>
+          <p className="overview-pill-value">{safeToText(data.rosterSize)}</p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Excluded</p>
+          <p className="overview-pill-value">
+            {safeToText(data.excludedFromRoster)}
+          </p>
+        </div>
+      </div>
+
+      {data.replacementBaselines &&
+      Object.keys(data.replacementBaselines).length ? (
+        <PositionScarcityPanel data={data} />
+      ) : null}
+      {rosterLabel ? (
+        <p className="selector-note">Drafted so far: {rosterLabel}</p>
+      ) : null}
+
+      <FantasyStrategyGuide
+        title="How to use this for your draft"
+        sections={DRAFT_BOARD_STRATEGY}
+      />
+      <FantasyGlossary items={DRAFT_BOARD_GLOSSARY} />
+      <FantasyStatusLegend />
+
+      {tierKeys.length ? (
+        <>
+          <div className="fantasy-toolbar context-wrap">
+            <input
+              type="search"
+              className="fantasy-search-input"
+              placeholder="Search by player name..."
+              value={nameFilter}
+              onChange={(event) => setNameFilter(event.target.value)}
+              aria-label="Search candidates by name"
+            />
+            <div className="fantasy-toolbar-actions">
+              <button
+                type="button"
+                className="fantasy-link-button"
+                onClick={() => setCollapsedTiers(new Set())}
+              >
+                Expand All
+              </button>
+              <button
+                type="button"
+                className="fantasy-link-button"
+                onClick={() => setCollapsedTiers(new Set(tierKeys))}
+              >
+                Collapse All
+              </button>
+            </div>
+          </div>
+
+          {tierKeys.map((tierNumber) => {
+            const tierMeta = tiers.find((tier) => tier.tier === tierNumber);
+            const tierCandidates = (
+              candidatesByTier.get(tierNumber) ?? []
+            ).filter((candidate) =>
+              needle ? candidate.name.toLowerCase().includes(needle) : true,
+            );
+
+            if (needle && !tierCandidates.length) {
+              return null;
+            }
+
+            return (
+              <details
+                key={`tier-${tierNumber}`}
+                className="tier-group"
+                open={needle ? true : !collapsedTiers.has(tierNumber)}
+                onToggle={(event) =>
+                  toggleTier(
+                    tierNumber,
+                    (event.target as HTMLDetailsElement).open,
+                  )
+                }
+              >
+                <summary className="tier-group-header">
+                  <h4>
+                    {tierNumber >= 0 ? `Tier ${tierNumber}` : "Unranked"}
+                    {tierMeta ? ` (${tierMeta.count} players)` : ""}
+                  </h4>
+                  {tierMeta ? (
+                    <p className="tier-group-range">
+                      High {formatMetricValue(tierMeta.high)} · Mean{" "}
+                      {formatMetricValue(tierMeta.mean)} · Low{" "}
+                      {formatMetricValue(tierMeta.low)} · Std Dev{" "}
+                      {formatFactor(tierMeta.stdDev, 2)}
+                    </p>
+                  ) : null}
+                </summary>
+                <div className="fantasy-player-row-list">
+                  {tierCandidates.map((candidate) => (
+                    <FantasyPlayerRow
+                      key={String(candidate.id)}
+                      candidate={candidate}
+                    />
+                  ))}
+                </div>
+              </details>
+            );
+          })}
+        </>
+      ) : (
+        <p className="empty-note">No candidates returned for this filter.</p>
+      )}
+    </article>
+  );
+};
+
+export const SleepersCard = ({
+  data,
+  positionFilter,
+}: {
+  data: SleepersResponse;
+  positionFilter?: string;
+}) => {
+  const [nameFilter, setNameFilter] = useState("");
+
+  const allSleepers = Array.isArray(data.sleepers) ? data.sleepers : [];
+  const filtered =
+    positionFilter && positionFilter !== "ALL"
+      ? allSleepers.filter((sleeper) => sleeper.position === positionFilter)
+      : allSleepers;
+
+  const needle = nameFilter.trim().toLowerCase();
+  const searched = needle
+    ? filtered.filter((sleeper) => sleeper.name.toLowerCase().includes(needle))
+    : filtered;
+
+  const sorted = [...searched].sort((a, b) => {
+    const scoreA =
+      typeof a.sleeperScore === "number" ? a.sleeperScore : -Infinity;
+    const scoreB =
+      typeof b.sleeperScore === "number" ? b.sleeperScore : -Infinity;
+    return scoreB - scoreA;
+  });
+
+  const peerDistributions = Array.isArray(data.peerDistributions)
+    ? data.peerDistributions
+    : [];
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge fantasy-badge--sleepers">
+          NFL Fantasy
+        </span>
+        <h3 title="GET /api/fantasy/sleepers ranks undervalued players by ADP delta against position peers. Labeled Draft Values, not guaranteed sleepers.">
+          Draft Values
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
+      </p>
+      <FantasyPlainSummary>
+        This list finds players being drafted later than their skill level
+        says they should be — a hint at good value picks, not a guarantee.
+      </FantasyPlainSummary>
+      {data.decisionInsights ? (
+        <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+
+      <div className="impact-summary-grid">
+        <div className="overview-pill">
+          <p className="overview-pill-label">Pool Size</p>
+          <p className="overview-pill-value">{safeToText(data.poolSize)}</p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Evaluated</p>
+          <p className="overview-pill-value">
+            {safeToText(data.evaluatedCount)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Excluded</p>
+          <p className="overview-pill-value">
+            {safeToText(data.excludedCount)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Placeholder ADP Excluded</p>
+          <p className="overview-pill-value">
+            {safeToText(data.excludedForPlaceholderAdp)}
+          </p>
+        </div>
+      </div>
+
+      <FantasyStrategyGuide
+        title="How to use sleepers for your fantasy team"
+        sections={SLEEPERS_STRATEGY}
+      />
+      <FantasyGlossary items={SLEEPERS_GLOSSARY} />
+      <FantasyStatusLegend />
+
+      {peerDistributions.length ? (
+        <details className="context-wrap fantasy-peer-details">
+          <summary>Peer Distribution Sample Sizes</summary>
+          <div className="compare-table-wrap">
+            <table className="compare-table">
+              <thead>
+                <tr>
+                  <th>Position</th>
+                  <th>Mean ADP Delta</th>
+                  <th>Std Dev ADP Delta</th>
+                  <th>Sample Size</th>
+                </tr>
+              </thead>
+              <tbody>
+                {peerDistributions.map((row) => (
+                  <tr key={row.position}>
+                    <td>{safeToText(row.position)}</td>
+                    <td>{formatMetricValue(row.meanAdpDelta)}</td>
+                    <td>{formatFactor(row.stdDevAdpDelta, 2)}</td>
+                    <td>{safeToText(row.sampleSize)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      ) : null}
+
+      {data.evaluatedCount === 0 ? (
+        <p className="empty-note">
+          Draft Values are unavailable right now — ESPN replaces ADP with a
+          placeholder once the draft window closes, so there's no usable
+          draft signal until the next draft season begins.
+        </p>
+      ) : (
+        <>
+          <div className="fantasy-toolbar context-wrap">
+            <input
+              type="search"
+              className="fantasy-search-input"
+              placeholder="Search by player name..."
+              value={nameFilter}
+              onChange={(event) => setNameFilter(event.target.value)}
+              aria-label="Search sleepers by name"
+            />
+          </div>
+
+          {sorted.length ? (
+            <div className="fantasy-player-row-list context-wrap">
+              {sorted.map((sleeper) => {
+                const headline = formatAdpDeltaHeadline(sleeper);
+                const intensity = getSleeperScoreIntensityLabel(
+                  sleeper.sleeperScore,
+                );
+
+                return (
+                  <article
+                    className={`fantasy-player-row ${getFantasyRowAccentClass(sleeper.status)}`}
+                    key={String(sleeper.id)}
+                  >
+                    <div className="fantasy-player-row__primary">
+                      <div>
+                        <p className="fantasy-player-row__name">
+                          {safeToText(sleeper.name)}{" "}
+                          <span className="chip">
+                            {safeToText(sleeper.position)}
+                          </span>
+                        </p>
+                        <p className="meta-line">
+                          {formatFantasyTeam(sleeper.team)}
+                        </p>
+                      </div>
+                      <span className={getFantasyStatusChipClass(sleeper.status)}>
+                        {getFantasyStatusLabel(sleeper.status)}
+                      </span>
+                    </div>
+
+                    {headline ? (
+                      <p className="callout-note callout-note--compact">
+                        {headline}
+                      </p>
+                    ) : null}
+                    <p className="selector-note">
+                      {formatDraftVsProjectedRank(sleeper)}
+                    </p>
+
+                    <div className="impact-summary-grid fantasy-player-row__stats">
+                      <div className="overview-pill">
+                        <p className="overview-pill-label">ADP</p>
+                        <p className="overview-pill-value">
+                          {formatAdp(sleeper.adp, false)}
+                        </p>
+                      </div>
+                      <div className="overview-pill">
+                        <p className="overview-pill-label">Own %</p>
+                        <p className="overview-pill-value">
+                          {formatUsagePercent(sleeper.ownershipPct)}
+                        </p>
+                      </div>
+                      <div className="overview-pill">
+                        <p
+                          className="overview-pill-label"
+                          title="ESPN's modelled expectation for the season — not historical production."
+                        >
+                          Proj Total
+                        </p>
+                        <p className="overview-pill-value">
+                          {formatMetricValue(sleeper.projectedTotal)}
+                        </p>
+                      </div>
+                      <div className="overview-pill">
+                        <p
+                          className="overview-pill-label"
+                          title="Real box-score production so far this season. Reads 'Not played yet' until a game is logged."
+                        >
+                          Actual Total
+                        </p>
+                        <p className="overview-pill-value">
+                          {formatActualStat(sleeper.actualTotal)}
+                        </p>
+                      </div>
+                      <div className="overview-pill">
+                        <p
+                          className="overview-pill-label"
+                          title="Confidence/intensity indicator: >1 meaningful value signal, -1 to 1 expected market value, <-1 expensive relative to projection."
+                        >
+                          Sleeper Score
+                        </p>
+                        <p className="overview-pill-value">
+                          {formatFactor(sleeper.sleeperScore, 2)}
+                        </p>
+                        {intensity ? (
+                          <p className="overview-pill-caption">{intensity}</p>
+                        ) : null}
+                      </div>
+                      <div className="overview-pill">
+                        <p className="overview-pill-label">Peer Sample</p>
+                        <p className="overview-pill-value">
+                          {safeToText(sleeper.peerSampleSize)}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="empty-note">No sleepers returned for this filter.</p>
+          )}
+        </>
+      )}
+    </article>
+  );
+};
+
+export const FantasySeasonBanner = ({
+  season,
+}: {
+  season: FantasySeasonState | null;
+}) => {
+  if (!season) {
+    return null;
+  }
+
+  return (
+    <p
+      className="selector-note fantasy-season-banner"
+      title="Authoritative season/week state from GET /api/fantasy/season."
+    >
+      NFL Fantasy Season {safeToText(season.season)} | Week{" "}
+      {safeToText(season.currentScoringPeriod)} |{" "}
+      {season.active ? "Active" : "Inactive"}
+    </p>
+  );
+};
+
+const getInSeasonStatusLabel = (status?: string | null): string => {
+  switch (status) {
+    case "ready":
+      return "Ready";
+    case "insufficient_sample":
+      return "Insufficient Sample";
+    case "no_upcoming_projection":
+      return "No Upcoming Projection";
+    default:
+      return toReadableSignal(status);
+  }
+};
+
+const getRecommendationLabel = (value?: string | null): string => {
+  switch (value) {
+    case "start":
+      return "Start";
+    case "consider_sit":
+      return "Consider Sit";
+    case "insufficient_sample":
+      return "Insufficient Sample";
+    case "no_upcoming_projection":
+      return "No Upcoming Projection";
+    default:
+      return toReadableSignal(value);
+  }
+};
+
+const getRecommendationChipClass = (value?: string | null): string => {
+  if (value === "start") {
+    return "chip hit";
+  }
+
+  if (value === "consider_sit") {
+    return "chip miss";
+  }
+
+  if (value === "insufficient_sample" || value === "no_upcoming_projection") {
+    return "chip muted";
+  }
+
+  return "chip";
+};
+
+const getVerdictLabel = (value?: string | null): string => {
+  switch (value) {
+    case "balanced":
+      return "Balanced";
+    case "slight_edge":
+      return "Slight Edge";
+    case "clear_edge":
+      return "Clear Edge";
+    default:
+      return toReadableSignal(value);
+  }
+};
+
+const FantasyRecentFormSummary = ({
+  form,
+}: {
+  form: FantasyRecentForm | null | undefined;
+}) => {
+  if (!form || form.gamesSample < 1) {
+    return (
+      <p className="empty-note">No completed games sampled yet this window.</p>
+    );
+  }
+
+  return (
+    <div className="impact-summary-grid fantasy-player-row__stats">
+      <div className="overview-pill">
+        <p className="overview-pill-label">Games Sampled</p>
+        <p className="overview-pill-value">{form.gamesSample}</p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">Actual Avg</p>
+        <p className="overview-pill-value">
+          {formatMetricValue(form.actualAverage)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">Projected Avg</p>
+        <p className="overview-pill-value">
+          {formatMetricValue(form.projectedAverage)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p
+          className="overview-pill-label"
+          title="Actual average minus projected average over the sampled window. Positive means recently outperforming projection."
+        >
+          Δ vs Proj
+        </p>
+        <p className="overview-pill-value">
+          {formatMetricValue(form.deltaFromProjection)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">Std Dev</p>
+        <p className="overview-pill-value">
+          {formatFactor(form.standardDeviation, 2)}
+        </p>
+      </div>
+      <div className="overview-pill">
+        <p className="overview-pill-label">Last Game</p>
+        <p className="overview-pill-value">
+          {formatMetricValue(form.lastActual)}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const WAIVER_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "Ownership Max",
+    definition:
+      "Caps results to players rostered below this percentage. Lower values (e.g. under 25%) surface true wire pickups; raising it toward 75% also includes bench-rostered players outperforming their roster spot.",
+  },
+  {
+    term: "Window",
+    definition:
+      "Number of most recent completed games averaged for the Actual vs Projected comparison.",
+  },
+  {
+    term: "Δ vs Proj (deltaFromProjection)",
+    definition:
+      "Recent actual average minus recent projected average over the window — the core waiver signal. Positive means a player is producing above what ESPN expected of them lately.",
+  },
+  {
+    term: "Breakouts vs Safer Pickups",
+    definition:
+      "Breakouts are ranked purely by the highest Δ vs Proj — the biggest recent outperformance, even if it's a bit volatile. Safer Pickups are still outperforming (Δ vs Proj ≥ 0) but ranked by the lowest Std Dev — a steadier, lower-volatility bet.",
+  },
+  {
+    term: "Insufficient Sample",
+    definition:
+      "Fewer than 2 completed games exist yet this season, so no waiver signal can be computed — this is expected pre-season, not an error. Check back after more weeks are played.",
+  },
+];
+
+const WAIVER_STRATEGY: FantasyStrategySection[] = [
+  {
+    phase: "When to check this",
+    tips: [
+      "Run this weekly after games finish once Status reads \"Ready\" — it's driven entirely by completed actual production, so it's a post-game, not pre-game, tool.",
+      "Lower Ownership Max first (e.g. under 25%) to see true widely-available pickups; raise it toward 75% if you want to also catch players outperforming their roster spot on someone else's bench.",
+    ],
+  },
+  {
+    phase: "How to read a candidate",
+    tips: [
+      "Breakouts leads with the biggest recent outperformance regardless of volatility — good for spotting a player about to take over a role.",
+      "Safer Pickups favors a low Std Dev over a huge single game — that's sustained outperformance, a better bet for a start-now roster spot.",
+      "Cross-check Own % and Started % together: low ownership with rising started % elsewhere is often a sign the wider market is starting to notice too, so don't wait too long.",
+    ],
+  },
+];
+
+export const WaiverWireCard = ({ data }: { data: WaiverWireResponse }) => {
+  const [nameFilter, setNameFilter] = useState("");
+  const needle = nameFilter.trim().toLowerCase();
+  const candidates = (data.candidates || []).filter((candidate) =>
+    needle ? candidate.name.toLowerCase().includes(needle) : true,
+  );
+
+  const breakouts = [...candidates]
+    .sort(
+      (a, b) =>
+        (b.recentForm.deltaFromProjection ?? -Infinity) -
+        (a.recentForm.deltaFromProjection ?? -Infinity),
+    )
+    .slice(0, 10);
+  const breakoutIds = new Set(breakouts.map((candidate) => candidate.id));
+  const saferPickups = candidates
+    .filter(
+      (candidate) =>
+        !breakoutIds.has(candidate.id) &&
+        (candidate.recentForm.deltaFromProjection ?? -Infinity) >= 0,
+    )
+    .sort(
+      (a, b) =>
+        (a.recentForm.standardDeviation ?? Infinity) -
+        (b.recentForm.standardDeviation ?? Infinity),
+    )
+    .slice(0, 10);
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge fantasy-badge--waivers">
+          NFL Fantasy
+        </span>
+        <h3 title="GET /api/fantasy/waivers surfaces low-ownership players outperforming their recent projection.">
+          Waiver Wire
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |
+        {" "}Week {safeToText(data.currentScoringPeriod)}
+      </p>
+      <FantasyPlainSummary>
+        Shows players almost nobody has rostered who are playing better than
+        expected recently — good pickup ideas for this week.
+      </FantasyPlainSummary>
+      {data.decisionInsights ? (
+        <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+      <p className="selector-note">
+        Ownership Max {safeToText(data.ownershipMax)}% | Window{" "}
+        {safeToText(data.window)} games | Status{" "}
+        {getInSeasonStatusLabel(data.status)}
+      </p>
+
+      <FantasyStrategyGuide
+        title="How to use waivers for your team"
+        sections={WAIVER_STRATEGY}
+      />
+      <FantasyGlossary items={WAIVER_GLOSSARY} />
+      <FantasyStatusLegend />
+
+      {data.status !== "ready" ? (
+        <p className="empty-note">
+          {data.decisionInsights ||
+            "Not enough completed games yet to identify waiver-wire trends."}
+        </p>
+      ) : (
+        <>
+          <div className="fantasy-toolbar context-wrap">
+            <input
+              type="search"
+              className="fantasy-search-input"
+              placeholder="Search by player name..."
+              value={nameFilter}
+              onChange={(event) => setNameFilter(event.target.value)}
+              aria-label="Search waiver candidates by name"
+            />
+          </div>
+          {candidates.length ? (
+            <>
+              <section className="context-wrap">
+                <h4
+                  className="fantasy-section-heading"
+                  title="Highest recent actual-vs-projection outperformance, regardless of week-to-week volatility."
+                >
+                  Breakouts
+                </h4>
+                <div className="fantasy-player-row-list">
+                  {breakouts.map((candidate) => (
+                    <article
+                      className="fantasy-player-row fantasy-player-row--value"
+                      key={String(candidate.id)}
+                    >
+                      <div className="fantasy-player-row__primary">
+                        <div>
+                          <p className="fantasy-player-row__name">
+                            {safeToText(candidate.name)}{" "}
+                            <span className="chip">
+                              {safeToText(candidate.position)}
+                            </span>
+                          </p>
+                          <p className="meta-line">
+                            {formatFantasyTeam(candidate.team)} · Own{" "}
+                            {formatUsagePercent(candidate.ownershipPct)} ·
+                            Started {formatUsagePercent(candidate.startedPct)}
+                          </p>
+                        </div>
+                      </div>
+                      <FantasyRecentFormSummary form={candidate.recentForm} />
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              {saferPickups.length ? (
+                <section className="context-wrap">
+                  <h4
+                    className="fantasy-section-heading"
+                    title="Positive recent outperformance with the lowest week-to-week volatility — steadier bets than a single huge game."
+                  >
+                    Safer Pickups
+                  </h4>
+                  <div className="fantasy-player-row-list">
+                    {saferPickups.map((candidate) => (
+                      <article
+                        className="fantasy-player-row"
+                        key={String(candidate.id)}
+                      >
+                        <div className="fantasy-player-row__primary">
+                          <div>
+                            <p className="fantasy-player-row__name">
+                              {safeToText(candidate.name)}{" "}
+                              <span className="chip">
+                                {safeToText(candidate.position)}
+                              </span>
+                            </p>
+                            <p className="meta-line">
+                              {formatFantasyTeam(candidate.team)} · Own{" "}
+                              {formatUsagePercent(candidate.ownershipPct)} ·
+                              Started {formatUsagePercent(candidate.startedPct)}
+                            </p>
+                          </div>
+                        </div>
+                        <FantasyRecentFormSummary form={candidate.recentForm} />
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </>
+          ) : (
+            <p className="empty-note">No candidates match this filter.</p>
+          )}
+        </>
+      )}
+    </article>
+  );
+};
+
+const CONSISTENCY_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "Consistency Score",
+    definition:
+      "Actual Avg minus Std Dev over the window. Rewards a steady floor rather than one huge ceiling week — a high score means dependable production, not necessarily the highest upside.",
+  },
+  {
+    term: "Std Dev",
+    definition:
+      "Game-to-game variance over the sampled window. Lower means more predictable output week to week.",
+  },
+];
+
+const CONSISTENCY_STRATEGY: FantasyStrategySection[] = [
+  {
+    phase: "When to use this",
+    tips: [
+      "Use it to pick the safer of two similarly-projected players for your lineup — Consistency Score favors the steadier floor over a spikier ceiling.",
+      "Watch for players with a high Consistency Score but a recently underwhelming projection — that combination can be a buy-low trade target since the underlying floor is proven.",
+    ],
+  },
+];
+
+export const ConsistencyCard = ({ data }: { data: ConsistencyResponse }) => {
+  const [nameFilter, setNameFilter] = useState("");
+  const needle = nameFilter.trim().toLowerCase();
+  const players = (data.players || []).filter((player) =>
+    needle ? player.name.toLowerCase().includes(needle) : true,
+  );
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge fantasy-badge--consistency">
+          NFL Fantasy
+        </span>
+        <h3 title="GET /api/fantasy/consistency ranks recent floor and volatility across completed games.">
+          Reliable Recent Performers (Floor Leaders)
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |
+        {" "}Week {safeToText(data.currentScoringPeriod)}
+      </p>
+      <FantasyPlainSummary>
+        Ranks players by how steady they've been recently — good for
+        picking a safer start over a boom-or-bust option.
+      </FantasyPlainSummary>
+      {data.decisionInsights ? (
+        <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+      <p className="selector-note">
+        Window {safeToText(data.window)} games | Status{" "}
+        {getInSeasonStatusLabel(data.status)}
+      </p>
+
+      <FantasyStrategyGuide
+        title="How to use consistency for your lineup"
+        sections={CONSISTENCY_STRATEGY}
+      />
+      <FantasyGlossary items={CONSISTENCY_GLOSSARY} />
+      <FantasyStatusLegend />
+
+      {data.status !== "ready" ? (
+        <p className="empty-note">
+          {data.decisionInsights ||
+            "At least three completed games are required for consistency rankings."}
+        </p>
+      ) : (
+        <>
+          <div className="fantasy-toolbar context-wrap">
+            <input
+              type="search"
+              className="fantasy-search-input"
+              placeholder="Search by player name..."
+              value={nameFilter}
+              onChange={(event) => setNameFilter(event.target.value)}
+              aria-label="Search consistency leaders by name"
+            />
+          </div>
+          {players.length ? (
+            <div className="fantasy-player-row-list context-wrap">
+              {players.map((player) => (
+                <article className="fantasy-player-row" key={String(player.id)}>
+                  <div className="fantasy-player-row__primary">
+                    <div>
+                      <p className="fantasy-player-row__name">
+                        {safeToText(player.name)}{" "}
+                        <span className="chip">
+                          {safeToText(player.position)}
+                        </span>
+                      </p>
+                      <p className="meta-line">
+                        {formatFantasyTeam(player.team)} · Own{" "}
+                        {formatUsagePercent(player.ownershipPct)}
+                      </p>
+                    </div>
+                    <span className="chip hit">
+                      Consistency {formatFactor(player.consistencyScore, 2)}
+                    </span>
+                  </div>
+                  <FantasyRecentFormSummary form={player.recentForm} />
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-note">No players match this filter.</p>
+          )}
+        </>
+      )}
+    </article>
+  );
+};
+
+const START_SIT_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "Recommendation",
+    definition:
+      "Start (recent form supports or exceeds next week's projection), Consider Sit (recent form trails it), Insufficient Sample (fewer than 2 completed games), or No Upcoming Projection (no projection exists for the next period, e.g. a completed season or bye).",
+  },
+  {
+    term: "Next Projection",
+    definition:
+      "ESPN's projection for the next scoring period only — a single-week number, not a season total.",
+  },
+];
+
+const START_SIT_STRATEGY: FantasyStrategySection[] = [
+  {
+    phase: "How to use this",
+    tips: [
+      "Add the players you're deciding between for this week, then compare Next Projection alongside Δ vs Proj from their recent form — a Start recommendation with a rising Δ is the strongest combination.",
+      "This tool does not include opponent-matchup analysis — combine it with your own read on the upcoming defense before finalizing your lineup.",
+      "\"No Upcoming Projection\" is expected for a completed season or off week, not an error — it just means there's nothing to recommend yet for that player.",
+    ],
+  },
+];
+
+export const StartSitCard = ({ data }: { data: StartSitResponse }) => (
+  <article className="scout-card fantasy-card">
+    <div className="fantasy-header-row">
+      <span className="fantasy-badge fantasy-badge--startsit">
+        NFL Fantasy
+      </span>
+      <h3 title="GET /api/fantasy/start-sit combines next-week projection with recent actual performance.">
+        Start / Sit
+      </h3>
+    </div>
+    <p className="viz-subtitle">
+      {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |{" "}
+      Week {safeToText(data.currentScoringPeriod)}
+    </p>
+    <FantasyPlainSummary>
+      Add the players you're unsure about starting this week and see who's
+      projected higher and who's actually been playing better lately.
+    </FantasyPlainSummary>
+    {data.decisionInsights ? (
+      <p className="callout-note">{data.decisionInsights}</p>
+    ) : null}
+    <p className="selector-note">
+      Window {safeToText(data.window)} games | Status{" "}
+      {getInSeasonStatusLabel(data.status)}
+    </p>
+    <p className="empty-note">
+      Not included yet: matchup, weather, defensive opponent, and late injury
+      news. Treat Start/Consider Sit as a data-driven nudge from projection and
+      recent form only, not a guarantee.
+    </p>
+
+    <FantasyStrategyGuide
+      title="How to use start/sit for your lineup"
+      sections={START_SIT_STRATEGY}
+    />
+    <FantasyGlossary items={START_SIT_GLOSSARY} />
+    <FantasyStatusLegend />
+
+    {data.players?.length ? (
+      <div className="fantasy-player-row-list context-wrap">
+        {data.players.map((player) => (
+          <article className="fantasy-player-row" key={String(player.id)}>
+            <div className="fantasy-player-row__primary">
+              <div>
+                <p className="fantasy-player-row__name">
+                  {safeToText(player.name)}{" "}
+                  <span className="chip">{safeToText(player.position)}</span>
+                </p>
+                <p className="meta-line">{formatFantasyTeam(player.team)}</p>
+              </div>
+              <span className={getRecommendationChipClass(player.recommendation)}>
+                {getRecommendationLabel(player.recommendation)}
+              </span>
+            </div>
+            <div className="impact-summary-grid fantasy-player-row__stats">
+              <div className="overview-pill">
+                <p className="overview-pill-label">Next Week</p>
+                <p className="overview-pill-value">
+                  {safeToText(player.nextScoringPeriod)}
+                </p>
+              </div>
+              <div className="overview-pill">
+                <p className="overview-pill-label">Next Projection</p>
+                <p className="overview-pill-value">
+                  {formatMetricValue(player.nextProjection)}
+                </p>
+              </div>
+            </div>
+            <FantasyRecentFormSummary form={player.recentForm} />
+          </article>
+        ))}
+      </div>
+    ) : (
+      <p className="empty-note">No players match this request.</p>
+    )}
+  </article>
+);
+
+const TRADE_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "Side A / Side B Convention",
+    definition:
+      "This UI's convention: Side A is \"You Give,\" Side B is \"You Receive.\" The backend itself is direction-agnostic — it just compares whatever player IDs are placed on each side.",
+  },
+  {
+    term: "Total VORP",
+    definition:
+      "Sum of each side's VORP (projected points over the position's Replacement Baseline) across every player included in the trade — the same VORP used on the Draft Board.",
+  },
+  {
+    term: "Net VORP To You (netVorpToA)",
+    definition:
+      "Side B's Total VORP minus Side A's Total VORP. Positive means you (Side A / \"You Give\") gain value from this trade; negative means the other side gains value.",
+  },
+  {
+    term: "Verdict",
+    definition:
+      "Balanced (within 3 VORP), Slight Edge (within 12 VORP), or Clear Edge (more than 12 VORP) — a quick read on how lopsided the deal is by total value alone. Don't call a trade \"fair\" from Verdict alone — check the position breakdown too, since a team can accept an edge to fill a real roster need.",
+  },
+  {
+    term: "Missing Player IDs",
+    definition:
+      "Player IDs that were requested but not found in the current player pool — double-check those IDs before trusting the verdict.",
+  },
+];
+
+const TRADE_STRATEGY: FantasyStrategySection[] = [
+  {
+    phase: "How to use this",
+    tips: [
+      "Set League Settings (team count/starters) to match your real league first — Replacement Baselines (and therefore VORP) shift with league size and starter counts, which can change the verdict.",
+      "Add every player on each side of the deal, not just the headline names — throw-ins with real VORP change Net VORP To You more than people expect.",
+      "Treat \"Balanced\"/\"Slight Edge\" as fine to accept on team need alone; reserve pushback for \"Clear Edge\" trades unless you're deliberately selling low-VORP depth for a positional need.",
+      "Never call a trade \"fair\" from Verdict alone — always check the position (byPosition) breakdown so you can judge roster construction, not just total value.",
+    ],
+  },
+];
+
+export const TradeAnalyzerCard = ({ data }: { data: TradeAnalysisResponse }) => (
+  <article className="scout-card fantasy-card">
+    <div className="fantasy-header-row">
+      <span className="fantasy-badge fantasy-badge--trade">NFL Fantasy</span>
+      <h3 title="GET /api/fantasy/trades/analyze compares VORP totals on each side of a proposed trade.">
+        Trade Analyzer
+      </h3>
+    </div>
+    <p className="viz-subtitle">
+      {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
+    </p>
+    <p className="selector-note">
+      League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
+      Starters: {formatStartersSummary(data.leagueSettings?.starters)}
+    </p>
+    <FantasyPlainSummary>
+      Add the players from both sides of a trade to see who actually gains
+      more value — that's it.
+    </FantasyPlainSummary>
+    <p className="callout-note callout-note--compact">
+      Convention: Side A = "You Give," Side B = "You Receive." Net VORP To A
+      is positive when you gain value, negative when you give up value.
+    </p>
+    {data.decisionInsights ? (
+      <p className="callout-note">{data.decisionInsights}</p>
+    ) : null}
+    {data.missingPlayerIds?.length ? (
+      <p className="empty-note">
+        Missing player IDs (not found in pool): {data.missingPlayerIds.join(", ")}
+      </p>
+    ) : null}
+
+    <div className="impact-summary-grid">
+      <div className="overview-pill overview-pill--highlight">
+        <p className="overview-pill-label">Verdict</p>
+        <p className="overview-pill-value">{getVerdictLabel(data.verdict)}</p>
+      </div>
+      <div className="overview-pill">
+        <p
+          className="overview-pill-label"
+          title="Positive means you (Side A) gain value; negative means the other side (Side B) gains value. Verdict alone doesn't capture roster construction — check the position breakdown below too."
+        >
+          Net VORP To You
+        </p>
+        <p className="overview-pill-value">
+          {formatMetricValue(data.netVorpToA)}
+        </p>
+      </div>
+    </div>
+
+    <FantasyStrategyGuide title="How to use this for a trade" sections={TRADE_STRATEGY} />
+    <FantasyGlossary items={TRADE_GLOSSARY} />
+
+    <div className="comparison-grid context-wrap">
+      {[
+        { label: "You Give (Side A)", side: data.sideA },
+        { label: "You Receive (Side B)", side: data.sideB },
+      ].map(({ label, side }) => (
+        <section className="scout-card" key={label}>
+          <h4>
+            {label} — {side?.playerCount ?? 0} player
+            {side?.playerCount === 1 ? "" : "s"}, Total VORP{" "}
+            {formatMetricValue(side?.totalVorp)}
+          </h4>
+          {side?.byPosition && Object.keys(side.byPosition).length ? (
+            <div className="chip-grid">
+              {Object.entries(side.byPosition).map(([position, vorp]) => (
+                <span className="chip" key={position}>
+                  {position} VORP: {formatMetricValue(vorp)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {side?.players?.length ? (
+            <div className="compare-table-wrap">
+              <table className="compare-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>Team</th>
+                    <th>Proj Total</th>
+                    <th>VORP</th>
+                    <th>Tier</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {side.players.map((player) => (
+                    <tr key={String(player.id)}>
+                      <td>{safeToText(player.name)}</td>
+                      <td>{safeToText(player.position)}</td>
+                      <td>{formatFantasyTeam(player.team)}</td>
+                      <td>{formatMetricValue(player.projectedTotal)}</td>
+                      <td>{formatMetricValue(player.vorp)}</td>
+                      <td>{safeToText(player.tier)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="empty-note">No players added to this side yet.</p>
+          )}
+        </section>
+      ))}
+    </div>
+  </article>
+);
