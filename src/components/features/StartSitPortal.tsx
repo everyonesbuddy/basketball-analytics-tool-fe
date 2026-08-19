@@ -54,9 +54,9 @@ const StartSitPortal = ({
           Start / Sit
         </h3>
         <p className="helper-note">
-          Not sure who to start this week? Add the players you're torn
-          between and see next week's projection next to how they've
-          actually been playing lately.
+          Not sure who to start this week? Add the players you're torn between
+          and see next week's projection next to how they've actually been
+          playing lately.
         </p>
 
         <label htmlFor="startSitScoring">Scoring Format</label>
@@ -71,7 +71,10 @@ const StartSitPortal = ({
           <option value={3}>PPR</option>
           <option value={4}>Half-PPR</option>
         </select>
-        <label htmlFor="startSitSeason" title="Leave blank to use the current live season.">
+        <label
+          htmlFor="startSitSeason"
+          title="Leave blank to use the current live season."
+        >
           Season (optional)
         </label>
         <input

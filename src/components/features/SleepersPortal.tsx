@@ -49,9 +49,9 @@ const SleepersPortal = ({
           Draft Values
         </h3>
         <p className="helper-note">
-          Finds players other leagues are drafting later than their
-          projection says they should go — a heads-up on value, not a
-          promise. Best used right before or during your draft.
+          Finds players other leagues are drafting later than their projection
+          says they should go — a heads-up on value, not a promise. Best used
+          right before or during your draft.
         </p>
         <label
           htmlFor="sleepersScoring"

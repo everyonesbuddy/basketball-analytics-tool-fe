@@ -75,8 +75,8 @@ const DraftBoardPortal = ({
         </h3>
         <p className="helper-note">
           Pick your league's settings below, then load the board. Players are
-          grouped into tiers so you can see who's worth about the same right
-          now — and how much value drops off if you wait one more round.
+          grouped into tiers so you can see who's worth about the same right now
+          — and how much value drops off if you wait one more round.
         </p>
         <label
           htmlFor="draftBoardPosition"
@@ -157,8 +157,8 @@ const DraftBoardPortal = ({
 
         <p className="helper-note">
           Already drafted a player? Search and add them below, then reload the
-          board to exclude them from future picks and update the pool/
-          available counts.
+          board to exclude them from future picks and update the pool/ available
+          counts.
         </p>
         <SearchableEntitySelect
           id="draftBoardRosterPick"
@@ -208,8 +208,8 @@ const DraftBoardPortal = ({
             <DraftBoardCard data={draftBoard} rosterLabel={rosterLabel} />
           ) : (
             <p className="empty-note">
-              Load the draft board to view tiered candidates, ADP, and
-              decision insights.
+              Load the draft board to view tiered candidates, ADP, and decision
+              insights.
             </p>
           )}
         </div>

@@ -66,9 +66,8 @@ const TradeAnalyzerPortal = ({
           Trade Analyzer
         </h3>
         <p className="helper-note">
-          Add the players on each side of a trade you're considering, then
-          hit Analyze — you'll get a simple verdict on who actually wins the
-          deal.
+          Add the players on each side of a trade you're considering, then hit
+          Analyze — you'll get a simple verdict on who actually wins the deal.
         </p>
 
         <label htmlFor="tradeScoring">Scoring Format</label>
@@ -83,7 +82,10 @@ const TradeAnalyzerPortal = ({
           <option value={3}>PPR</option>
           <option value={4}>Half-PPR</option>
         </select>
-        <label htmlFor="tradeSeason" title="Leave blank to use the current live season.">
+        <label
+          htmlFor="tradeSeason"
+          title="Leave blank to use the current live season."
+        >
           Season (optional)
         </label>
         <input

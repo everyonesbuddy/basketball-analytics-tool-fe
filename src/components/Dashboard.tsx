@@ -165,9 +165,7 @@ const Dashboard = () => {
   const [teamNeedGap, setTeamNeedGap] = useState<TeamNeedGapResponse | null>(
     null,
   );
-  const [draftBoard, setDraftBoard] = useState<DraftBoardResponse | null>(
-    null,
-  );
+  const [draftBoard, setDraftBoard] = useState<DraftBoardResponse | null>(null);
   const [sleepers, setSleepers] = useState<SleepersResponse | null>(null);
   const [tradeAnalysis, setTradeAnalysis] =
     useState<TradeAnalysisResponse | null>(null);
@@ -571,7 +569,9 @@ const Dashboard = () => {
   };
 
   const removeFromDraftBoardRoster = (id: string) => {
-    setDraftBoardRoster((current) => current.filter((entry) => entry.id !== id));
+    setDraftBoardRoster((current) =>
+      current.filter((entry) => entry.id !== id),
+    );
   };
 
   const loadDraftBoard = async (event: FormEvent) => {
@@ -646,10 +646,7 @@ const Dashboard = () => {
     setPick("");
   };
 
-  const removeFromTradeSide = (
-    id: string,
-    setSide: typeof setTradeSideA,
-  ) => {
+  const removeFromTradeSide = (id: string, setSide: typeof setTradeSideA) => {
     setSide((current) => current.filter((entry) => entry.id !== id));
   };
 

@@ -2211,11 +2211,12 @@ const DRAFT_BOARD_GLOSSARY: Array<{ term: string; definition: string }> = [
   {
     term: "ADP",
     definition:
-      "Average draft pick across tracked leagues — lower means earlier. \"No live ADP yet\" means adpIsPlaceholder is true and ESPN doesn't have meaningful ADP data yet (common early in a season); ADP and ADP-derived signals are hidden in that case rather than shown as real numbers.",
+      'Average draft pick across tracked leagues — lower means earlier. "No live ADP yet" means adpIsPlaceholder is true and ESPN doesn\'t have meaningful ADP data yet (common early in a season); ADP and ADP-derived signals are hidden in that case rather than shown as real numbers.',
   },
   {
     term: "Ownership %",
-    definition: "Percentage of tracked leagues currently rostering this player.",
+    definition:
+      "Percentage of tracked leagues currently rostering this player.",
   },
   {
     term: "Proj Total / Avg",
@@ -2225,7 +2226,7 @@ const DRAFT_BOARD_GLOSSARY: Array<{ term: string; definition: string }> = [
   {
     term: "Actual Total / Games",
     definition:
-      "Real box-score production once games are played. Reads \"Not played yet\" (not zero) until this player has an actual game logged this season.",
+      'Real box-score production once games are played. Reads "Not played yet" (not zero) until this player has an actual game logged this season.',
   },
   {
     term: "Proj Rank (Pos) vs ADP Rank (Pos)",
@@ -2240,13 +2241,13 @@ const DRAFT_BOARD_GLOSSARY: Array<{ term: string; definition: string }> = [
   {
     term: "Sleeper Score / Status",
     definition:
-      "A composite value signal. A null score with a status like \"Insufficient Data\" or \"No ADP Signal\" is a distinct, legitimate state — not the same as a computed score near zero.",
+      'A composite value signal. A null score with a status like "Insufficient Data" or "No ADP Signal" is a distinct, legitimate state — not the same as a computed score near zero.',
   },
 ];
 
 const SLEEPERS_GLOSSARY: Array<{ term: string; definition: string }> = [
   {
-    term: "\"Draft Values,\" not guaranteed sleepers",
+    term: '"Draft Values," not guaranteed sleepers',
     definition:
       "This is a draft-only tool comparing a player's ADP position rank against their projected position rank — a value signal, not a promise. It goes quiet once the season starts and ESPN resets ADP.",
   },
@@ -2328,19 +2329,19 @@ const DRAFT_BOARD_STRATEGY: FantasyStrategySection[] = [
   {
     phase: "During your draft",
     tips: [
-      "Every time any team picks a player (not just yours), search them in \"Mark Player As Drafted\" and add them, then reload — Available Count and Pool Size will drop to confirm the board is now accurate for who's actually left.",
+      'Every time any team picks a player (not just yours), search them in "Mark Player As Drafted" and add them, then reload — Available Count and Pool Size will drop to confirm the board is now accurate for who\'s actually left.',
       "When it's your turn, work tier-first: if you're going to leave a tier anyway, take the last-ranked player left in it before reaching into the next tier for a marginal VORP upgrade.",
       "Compare VORP across positions, not Proj Total — Proj Total makes QBs look best every time, but VORP already accounts for how replaceable each position is, so it's the number that should decide close calls between positions.",
-      "Use Status + ADP Delta together as a tiebreaker within a tier: \"Undervalued\" with a larger positive ADP Delta means the field is passing on them relative to projection — safer to wait one more round; \"Overvalued\"/negative ADP Delta means take them now if you want them, they won't last.",
+      'Use Status + ADP Delta together as a tiebreaker within a tier: "Undervalued" with a larger positive ADP Delta means the field is passing on them relative to projection — safer to wait one more round; "Overvalued"/negative ADP Delta means take them now if you want them, they won\'t last.',
       "Check the injury badge before locking in a pick that's close to your turn — Questionable/Doubtful/Out next to a name is a real risk signal the projection alone won't show you.",
     ],
   },
   {
     phase: "What to look at once games start",
     tips: [
-      "Proj Total and VORP are always ESPN's modelled expectation, never history — don't read them as \"what they did.\" Once Actual Total stops reading \"Not played yet,\" compare it against Proj Total to spot early breakouts or busts for keeper/dynasty re-evaluation.",
-      "Expand \"Season Stat Breakdown\" per player to see the Projected vs Actual split side by side — this is the fastest way to tell whether a player's box score is tracking ahead of or behind what was expected of them.",
-      "Ownership % is a quick gut-check on how widely-known a player already is: a low Own % paired with \"Undervalued\" status is the clearest late-round or waiver-priority signal the board can give you.",
+      'Proj Total and VORP are always ESPN\'s modelled expectation, never history — don\'t read them as "what they did." Once Actual Total stops reading "Not played yet," compare it against Proj Total to spot early breakouts or busts for keeper/dynasty re-evaluation.',
+      'Expand "Season Stat Breakdown" per player to see the Projected vs Actual split side by side — this is the fastest way to tell whether a player\'s box score is tracking ahead of or behind what was expected of them.',
+      'Ownership % is a quick gut-check on how widely-known a player already is: a low Own % paired with "Undervalued" status is the clearest late-round or waiver-priority signal the board can give you.',
       "Once games are underway, the Waivers and Consistency tabs pick up where this board's projections leave off — use them for actual-production signal instead of re-reading pre-season VORP.",
     ],
   },
@@ -2351,14 +2352,14 @@ const SLEEPERS_STRATEGY: FantasyStrategySection[] = [
     phase: "Draft-day prep",
     tips: [
       "Run this 1-2 rounds before you're on the clock at a given position — filter by Position and scan for names with a high Sleeper Score to build a short list of late-round targets before you need them.",
-      "Read the \"Draft vs Projected\" line literally as your pick rationale (e.g. \"drafted as RB46, projects as RB40\") — it's the same phrasing you'd use to justify the pick out loud in your draft room.",
+      'Read the "Draft vs Projected" line literally as your pick rationale (e.g. "drafted as RB46, projects as RB40") — it\'s the same phrasing you\'d use to justify the pick out loud in your draft room.',
       "Before trusting a single Sleeper Score, expand Peer Distribution for that position: a high Std Dev ADP Delta means the whole position is noisy this year, so an average score isn't special; a low Std Dev means even a moderate score is a real signal.",
     ],
   },
   {
     phase: "Treat these statuses differently",
     tips: [
-      "\"Undervalued\" with a real Sleeper Score is an actionable target. \"Insufficient Data\" or \"Insufficient Peers\" means the model doesn't have enough signal yet — put these on a watchlist, don't draft on the score alone.",
+      '"Undervalued" with a real Sleeper Score is an actionable target. "Insufficient Data" or "Insufficient Peers" means the model doesn\'t have enough signal yet — put these on a watchlist, don\'t draft on the score alone.',
       "Cross-check a promising name on the Draft Board too: same player, same scoring format, so you can see their Tier and full ADP context alongside the sleeper signal before committing a pick.",
     ],
   },
@@ -2640,8 +2641,12 @@ const buildPositionScarcityRows = (
     })
     .sort(
       (a, b) =>
-        (typeof b.topCandidateVorp === "number" ? b.topCandidateVorp : -Infinity) -
-        (typeof a.topCandidateVorp === "number" ? a.topCandidateVorp : -Infinity),
+        (typeof b.topCandidateVorp === "number"
+          ? b.topCandidateVorp
+          : -Infinity) -
+        (typeof a.topCandidateVorp === "number"
+          ? a.topCandidateVorp
+          : -Infinity),
     );
 };
 
@@ -2665,13 +2670,12 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
       <p className="derive-note">
         For each position, the "replacement player" isn't the last player
         drafted — it's the player at the replacement rank: roughly the last
-        player the whole league would need to fill every starting lineup
-        slot, including FLEX. VORP measures the gap above that one player's
-        projected points, not raw points. A bigger gap between the best
-        available player and this baseline means the position is scarce
-        right now and worth reaching for; a small gap means plenty of similar
-        options remain, so it's safer to wait. Rows below are sorted by that
-        gap, biggest first.
+        player the whole league would need to fill every starting lineup slot,
+        including FLEX. VORP measures the gap above that one player's projected
+        points, not raw points. A bigger gap between the best available player
+        and this baseline means the position is scarce right now and worth
+        reaching for; a small gap means plenty of similar options remain, so
+        it's safer to wait. Rows below are sorted by that gap, biggest first.
       </p>
       <div className="scarcity-board">
         {rows.map((row) => {
@@ -2690,10 +2694,9 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
               <div className="scarcity-row__header">
                 <span className="chip">{row.position}</span>
                 <p className="scarcity-row__baseline-text">
-                  Replacement Player #{safeToText(row.replacementRank)}{" "}
-                  (last starter needed league-wide for {row.position} based on
-                  your league):{" "}
-                  {safeToText(row.replacementPlayerName)} (
+                  Replacement Player #{safeToText(row.replacementRank)} (last
+                  starter needed league-wide for {row.position} based on your
+                  league): {safeToText(row.replacementPlayerName)} (
                   {formatMetricValue(row.baselineProjected)} pts)
                 </p>
               </div>
@@ -2701,8 +2704,9 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
                 {row.mandatoryStarters !== null
                   ? `${row.mandatoryStarters} mandatory starter${row.mandatoryStarters === 1 ? "" : "s"}`
                   : "Mandatory starters unknown"}
-                {row.flexShare ? ` + ~${row.flexShare} FLEX slot${row.flexShare === 1 ? "" : "s"}` : ""}
-                {" "}
+                {row.flexShare
+                  ? ` + ~${row.flexShare} FLEX slot${row.flexShare === 1 ? "" : "s"}`
+                  : ""}{" "}
                 → rank #{safeToText(row.replacementRank)} sets the baseline.
               </p>
               <div
@@ -2724,7 +2728,9 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
                 <p className="scarcity-row__top">
                   Best available: <strong>{row.topCandidateName}</strong>{" "}
                   projects {formatMetricValue(row.topCandidateProjected)} pts —{" "}
-                  <strong>{formatMetricValue(row.topCandidateVorp)} VORP</strong>{" "}
+                  <strong>
+                    {formatMetricValue(row.topCandidateVorp)} VORP
+                  </strong>{" "}
                   above this baseline.
                 </p>
               ) : (
@@ -2737,9 +2743,9 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
         })}
       </div>
       <p className="derive-note">
-        This ranking can change as players are drafted — a position with a
-        small gap now can open up once its top few players are gone, so
-        re-check this panel after marking players as drafted.
+        This ranking can change as players are drafted — a position with a small
+        gap now can open up once its top few players are gone, so re-check this
+        panel after marking players as drafted.
       </p>
     </details>
   );
@@ -2764,8 +2770,7 @@ export const DraftBoardCard = ({
 
   const candidatesByTier = new Map<number, FantasyPlayerCandidate[]>();
   candidates.forEach((candidate) => {
-    const tierKey =
-      typeof candidate.tier === "number" ? candidate.tier : -1;
+    const tierKey = typeof candidate.tier === "number" ? candidate.tier : -1;
     const bucket = candidatesByTier.get(tierKey) ?? [];
     bucket.push(candidate);
     candidatesByTier.set(tierKey, bucket);
@@ -2807,9 +2812,9 @@ export const DraftBoardCard = ({
         Starters: {formatStartersSummary(data.leagueSettings?.starters)}
       </p>
       <FantasyPlainSummary>
-        This board ranks every available player by how much better they are
-        than a replacement-level pick at their position. Bigger number
-        (VORP) = better pick right now.
+        This board ranks every available player by how much better they are than
+        a replacement-level pick at their position. Bigger number (VORP) =
+        better pick right now.
       </FantasyPlainSummary>
       {data.decisionInsights ? (
         <p className="callout-note">{data.decisionInsights}</p>
@@ -2985,8 +2990,8 @@ export const SleepersCard = ({
         {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
       </p>
       <FantasyPlainSummary>
-        This list finds players being drafted later than their skill level
-        says they should be — a hint at good value picks, not a guarantee.
+        This list finds players being drafted later than their skill level says
+        they should be — a hint at good value picks, not a guarantee.
       </FantasyPlainSummary>
       {data.decisionInsights ? (
         <p className="callout-note">{data.decisionInsights}</p>
@@ -3055,8 +3060,8 @@ export const SleepersCard = ({
       {data.evaluatedCount === 0 ? (
         <p className="empty-note">
           Draft Values are unavailable right now — ESPN replaces ADP with a
-          placeholder once the draft window closes, so there's no usable
-          draft signal until the next draft season begins.
+          placeholder once the draft window closes, so there's no usable draft
+          signal until the next draft season begins.
         </p>
       ) : (
         <>
@@ -3096,7 +3101,9 @@ export const SleepersCard = ({
                           {formatFantasyTeam(sleeper.team)}
                         </p>
                       </div>
-                      <span className={getFantasyStatusChipClass(sleeper.status)}>
+                      <span
+                        className={getFantasyStatusChipClass(sleeper.status)}
+                      >
                         {getFantasyStatusLabel(sleeper.status)}
                       </span>
                     </div>
@@ -3398,8 +3405,8 @@ export const WaiverWireCard = ({ data }: { data: WaiverWireResponse }) => {
         </h3>
       </div>
       <p className="viz-subtitle">
-        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |
-        {" "}Week {safeToText(data.currentScoringPeriod)}
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |{" "}
+        Week {safeToText(data.currentScoringPeriod)}
       </p>
       <FantasyPlainSummary>
         Shows players almost nobody has rostered who are playing better than
@@ -3560,12 +3567,12 @@ export const ConsistencyCard = ({ data }: { data: ConsistencyResponse }) => {
         </h3>
       </div>
       <p className="viz-subtitle">
-        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |
-        {" "}Week {safeToText(data.currentScoringPeriod)}
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |{" "}
+        Week {safeToText(data.currentScoringPeriod)}
       </p>
       <FantasyPlainSummary>
-        Ranks players by how steady they've been recently — good for
-        picking a safer start over a boom-or-bust option.
+        Ranks players by how steady they've been recently — good for picking a
+        safer start over a boom-or-bust option.
       </FantasyPlainSummary>
       {data.decisionInsights ? (
         <p className="callout-note">{data.decisionInsights}</p>
@@ -3652,7 +3659,7 @@ const START_SIT_STRATEGY: FantasyStrategySection[] = [
     tips: [
       "Add the players you're deciding between for this week, then compare Next Projection alongside Δ vs Proj from their recent form — a Start recommendation with a rising Δ is the strongest combination.",
       "This tool does not include opponent-matchup analysis — combine it with your own read on the upcoming defense before finalizing your lineup.",
-      "\"No Upcoming Projection\" is expected for a completed season or off week, not an error — it just means there's nothing to recommend yet for that player.",
+      '"No Upcoming Projection" is expected for a completed season or off week, not an error — it just means there\'s nothing to recommend yet for that player.',
     ],
   },
 ];
@@ -3660,9 +3667,7 @@ const START_SIT_STRATEGY: FantasyStrategySection[] = [
 export const StartSitCard = ({ data }: { data: StartSitResponse }) => (
   <article className="scout-card fantasy-card">
     <div className="fantasy-header-row">
-      <span className="fantasy-badge fantasy-badge--startsit">
-        NFL Fantasy
-      </span>
+      <span className="fantasy-badge fantasy-badge--startsit">NFL Fantasy</span>
       <h3 title="GET /api/fantasy/start-sit combines next-week projection with recent actual performance.">
         Start / Sit
       </h3>
@@ -3707,7 +3712,9 @@ export const StartSitCard = ({ data }: { data: StartSitResponse }) => (
                 </p>
                 <p className="meta-line">{formatFantasyTeam(player.team)}</p>
               </div>
-              <span className={getRecommendationChipClass(player.recommendation)}>
+              <span
+                className={getRecommendationChipClass(player.recommendation)}
+              >
                 {getRecommendationLabel(player.recommendation)}
               </span>
             </div>
@@ -3739,7 +3746,7 @@ const TRADE_GLOSSARY: Array<{ term: string; definition: string }> = [
   {
     term: "Side A / Side B Convention",
     definition:
-      "This UI's convention: Side A is \"You Give,\" Side B is \"You Receive.\" The backend itself is direction-agnostic — it just compares whatever player IDs are placed on each side.",
+      'This UI\'s convention: Side A is "You Give," Side B is "You Receive." The backend itself is direction-agnostic — it just compares whatever player IDs are placed on each side.',
   },
   {
     term: "Total VORP",
@@ -3754,7 +3761,7 @@ const TRADE_GLOSSARY: Array<{ term: string; definition: string }> = [
   {
     term: "Verdict",
     definition:
-      "Balanced (within 3 VORP), Slight Edge (within 12 VORP), or Clear Edge (more than 12 VORP) — a quick read on how lopsided the deal is by total value alone. Don't call a trade \"fair\" from Verdict alone — check the position breakdown too, since a team can accept an edge to fill a real roster need.",
+      'Balanced (within 3 VORP), Slight Edge (within 12 VORP), or Clear Edge (more than 12 VORP) — a quick read on how lopsided the deal is by total value alone. Don\'t call a trade "fair" from Verdict alone — check the position breakdown too, since a team can accept an edge to fill a real roster need.',
   },
   {
     term: "Missing Player IDs",
@@ -3769,13 +3776,17 @@ const TRADE_STRATEGY: FantasyStrategySection[] = [
     tips: [
       "Set League Settings (team count/starters) to match your real league first — Replacement Baselines (and therefore VORP) shift with league size and starter counts, which can change the verdict.",
       "Add every player on each side of the deal, not just the headline names — throw-ins with real VORP change Net VORP To You more than people expect.",
-      "Treat \"Balanced\"/\"Slight Edge\" as fine to accept on team need alone; reserve pushback for \"Clear Edge\" trades unless you're deliberately selling low-VORP depth for a positional need.",
-      "Never call a trade \"fair\" from Verdict alone — always check the position (byPosition) breakdown so you can judge roster construction, not just total value.",
+      'Treat "Balanced"/"Slight Edge" as fine to accept on team need alone; reserve pushback for "Clear Edge" trades unless you\'re deliberately selling low-VORP depth for a positional need.',
+      'Never call a trade "fair" from Verdict alone — always check the position (byPosition) breakdown so you can judge roster construction, not just total value.',
     ],
   },
 ];
 
-export const TradeAnalyzerCard = ({ data }: { data: TradeAnalysisResponse }) => (
+export const TradeAnalyzerCard = ({
+  data,
+}: {
+  data: TradeAnalysisResponse;
+}) => (
   <article className="scout-card fantasy-card">
     <div className="fantasy-header-row">
       <span className="fantasy-badge fantasy-badge--trade">NFL Fantasy</span>
@@ -3791,19 +3802,20 @@ export const TradeAnalyzerCard = ({ data }: { data: TradeAnalysisResponse }) => 
       Starters: {formatStartersSummary(data.leagueSettings?.starters)}
     </p>
     <FantasyPlainSummary>
-      Add the players from both sides of a trade to see who actually gains
-      more value — that's it.
+      Add the players from both sides of a trade to see who actually gains more
+      value — that's it.
     </FantasyPlainSummary>
     <p className="callout-note callout-note--compact">
-      Convention: Side A = "You Give," Side B = "You Receive." Net VORP To A
-      is positive when you gain value, negative when you give up value.
+      Convention: Side A = "You Give," Side B = "You Receive." Net VORP To A is
+      positive when you gain value, negative when you give up value.
     </p>
     {data.decisionInsights ? (
       <p className="callout-note">{data.decisionInsights}</p>
     ) : null}
     {data.missingPlayerIds?.length ? (
       <p className="empty-note">
-        Missing player IDs (not found in pool): {data.missingPlayerIds.join(", ")}
+        Missing player IDs (not found in pool):{" "}
+        {data.missingPlayerIds.join(", ")}
       </p>
     ) : null}
 
@@ -3825,7 +3837,10 @@ export const TradeAnalyzerCard = ({ data }: { data: TradeAnalysisResponse }) => 
       </div>
     </div>
 
-    <FantasyStrategyGuide title="How to use this for a trade" sections={TRADE_STRATEGY} />
+    <FantasyStrategyGuide
+      title="How to use this for a trade"
+      sections={TRADE_STRATEGY}
+    />
     <FantasyGlossary items={TRADE_GLOSSARY} />
 
     <div className="comparison-grid context-wrap">

@@ -1,6 +1,9 @@
 import type { FormEvent } from "react";
 import { WaiverWireCard } from "../dashboard/DashboardCards";
-import type { FantasyScoringId, WaiverWireResponse } from "../../utils/dashboardTypes";
+import type {
+  FantasyScoringId,
+  WaiverWireResponse,
+} from "../../utils/dashboardTypes";
 
 type WaiverWirePortalProps = {
   scoringId: FantasyScoringId;
@@ -40,8 +43,8 @@ const WaiverWirePortal = ({
         </h3>
         <p className="helper-note">
           Finds players almost nobody has on their roster who are quietly
-          outplaying their projection lately. Only works once games have
-          started this season.
+          outplaying their projection lately. Only works once games have started
+          this season.
         </p>
 
         <label htmlFor="waiverScoring">Scoring Format</label>
@@ -56,7 +59,10 @@ const WaiverWirePortal = ({
           <option value={3}>PPR</option>
           <option value={4}>Half-PPR</option>
         </select>
-        <label htmlFor="waiverSeason" title="Leave blank to use the current live season.">
+        <label
+          htmlFor="waiverSeason"
+          title="Leave blank to use the current live season."
+        >
           Season (optional)
         </label>
         <input
@@ -113,8 +119,8 @@ const WaiverWirePortal = ({
             <WaiverWireCard data={waivers} />
           ) : (
             <p className="empty-note">
-              Load the waiver wire to find low-ownership players
-              outperforming their projection recently.
+              Load the waiver wire to find low-ownership players outperforming
+              their projection recently.
             </p>
           )}
         </div>

@@ -38,9 +38,9 @@ const ConsistencyPortal = ({
           Reliable Recent Performers
         </h3>
         <p className="helper-note">
-          Ranks players by how dependable they've been lately, not just how
-          high they can score. Great for picking the safer option between
-          two similar players.
+          Ranks players by how dependable they've been lately, not just how high
+          they can score. Great for picking the safer option between two similar
+          players.
         </p>
 
         <label htmlFor="consistencyScoring">Scoring Format</label>
@@ -55,7 +55,10 @@ const ConsistencyPortal = ({
           <option value={3}>PPR</option>
           <option value={4}>Half-PPR</option>
         </select>
-        <label htmlFor="consistencySeason" title="Leave blank to use the current live season.">
+        <label
+          htmlFor="consistencySeason"
+          title="Leave blank to use the current live season."
+        >
           Season (optional)
         </label>
         <input
