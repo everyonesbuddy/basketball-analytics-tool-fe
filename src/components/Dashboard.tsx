@@ -3,9 +3,11 @@ import type { FormEvent } from "react";
 import {
   fetchFantasyConsistency,
   fetchFantasyDraftBoard,
+  fetchFantasyRosterCompare,
   fetchFantasySeasonState,
   fetchFantasySleepers,
   fetchFantasyStartSit,
+  fetchFantasyTeamGrade,
   fetchFantasyTradeAnalysis,
   fetchFantasyWaiverWire,
   fetchHeadToHead,
@@ -16,7 +18,9 @@ import {
   fetchPlayerProfile,
   fetchPlayerTrajectory,
   fetchPlayerUsageValue,
+  fetchTeamCompare,
   fetchTeamEfficiency,
+  fetchTeamGrade,
   fetchTeamNeedGap,
   fetchTeamOptions,
 } from "../utils/dashboardApi";
@@ -30,8 +34,11 @@ import type {
   ConsistencyResponse,
   DraftBoardResponse,
   FantasyPosition,
+  FantasyPlayerCandidate,
+  FantasyRosterCompareResponse,
   FantasyScoringId,
   FantasySeasonState,
+  FantasyTeamGradeResponse,
   PlayerCompsResponse,
   PlayerImpactResponse,
   PlayerProfile,
@@ -39,6 +46,8 @@ import type {
   PlayerUsageValueResponse,
   SleepersResponse,
   StartSitResponse,
+  TeamCompareResponse,
+  TeamGradeResponse,
   TeamSeasonType,
   TeamNeedGapResponse,
   TeamOption,
@@ -47,36 +56,206 @@ import type {
   WaiverWireResponse,
 } from "../utils/dashboardTypes";
 import { FantasySeasonBanner } from "./dashboard/DashboardCards";
+import { assignCandidateToOpenSlot } from "./dashboard/DashboardCards";
+import type {
+  DraftTeamRosters,
+  RosterSlotAssignments,
+} from "./dashboard/DashboardCards";
 import ComparePortal from "./features/ComparePortal";
 import CompsPortal from "./features/CompsPortal";
 import ConsistencyPortal from "./features/ConsistencyPortal";
 import DraftBoardPortal from "./features/DraftBoardPortal";
+import FantasyRosterComparePortal from "./features/FantasyRosterComparePortal";
+import FantasyTeamGradePortal from "./features/FantasyTeamGradePortal";
 import ImpactPortal from "./features/ImpactPortal";
 import ProfilePortal from "./features/ProfilePortal";
 import SleepersPortal from "./features/SleepersPortal";
 import StartSitPortal from "./features/StartSitPortal";
+import TeamComparePortal from "./features/TeamComparePortal";
 import TeamPortal from "./features/TeamPortal";
 import TradeAnalyzerPortal from "./features/TradeAnalyzerPortal";
 import TrajectoryPortal from "./features/TrajectoryPortal";
 import UsageValuePortal from "./features/UsageValuePortal";
 import WaiverWirePortal from "./features/WaiverWirePortal";
 
+type FeatureKey =
+  | "profile"
+  | "compare"
+  | "impact"
+  | "comps"
+  | "usage-value"
+  | "trajectory"
+  | "team"
+  | "team-compare"
+  | "draft-board"
+  | "sleepers"
+  | "trade"
+  | "waivers"
+  | "consistency"
+  | "start-sit"
+  | "fantasy-compare"
+  | "fantasy-team-grade";
+
+type NavItem = {
+  key: FeatureKey;
+  label: string;
+  title: string;
+};
+
+type NavGroup = {
+  title: string;
+  items: NavItem[];
+};
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: "NBA Players",
+    items: [
+      {
+        key: "profile",
+        label: "Single Player Profile",
+        title: "Single player profile with summary splits and core production chart.",
+      },
+      {
+        key: "compare",
+        label: "Player Head-to-Head",
+        title: "Head-to-head profile comparison across matching split types.",
+      },
+      {
+        key: "impact",
+        label: "Plus-Minus Impact Trend",
+        title: "Recent plus-minus trend and game-level context.",
+      },
+      {
+        key: "comps",
+        label: "Statistical Value Comps",
+        title: "Player Value Comps based on normalized stat similarity.",
+      },
+      {
+        key: "usage-value",
+        label: "Usage vs. Production",
+        title: "Usage-adjusted value benchmark against peers in the same usage bucket.",
+      },
+      {
+        key: "trajectory",
+        label: "Rolling Development Curve",
+        title: "Development curve using rolling averages and trend direction.",
+      },
+    ],
+  },
+  {
+    title: "NBA Teams",
+    items: [
+      {
+        key: "team",
+        label: "Team Efficiency & Needs",
+        title: "Team efficiencies plus need-gap analysis against league benchmark.",
+      },
+      {
+        key: "team-compare",
+        label: "Team Head-to-Head",
+        title: "Compares two teams' recent efficiency metrics and grades head-to-head.",
+      },
+    ],
+  },
+  {
+    title: "NFL Fantasy",
+    items: [
+      {
+        key: "draft-board",
+        label: "Draft Board",
+        title: "Tiered draft board with ADP, ownership, and roster-aware availability.",
+      },
+      {
+        key: "sleepers",
+        label: "Draft Values",
+        title: "Draft-day value gaps ranked by ADP delta against position peers.",
+      },
+      {
+        key: "trade",
+        label: "Trade Analyzer",
+        title: "Compares total VORP on each side of a proposed trade.",
+      },
+      {
+        key: "waivers",
+        label: "Waiver Wire",
+        title: "Low-ownership players outperforming their recent projection.",
+      },
+      {
+        key: "consistency",
+        label: "Consistency",
+        title: "Recent floor and volatility leaders across completed games.",
+      },
+      {
+        key: "start-sit",
+        label: "Start / Sit",
+        title: "Next-week projection plus recent actual performance per player.",
+      },
+      {
+        key: "fantasy-compare",
+        label: "Roster Head-to-Head",
+        title: "Compares two full rosters' best starting lineups on projected VORP.",
+      },
+      {
+        key: "fantasy-team-grade",
+        label: "Team Grade",
+        title: "Grades your roster's starter value, market value, and lineup coverage.",
+      },
+    ],
+  },
+];
+
+const FANTASY_FEATURE_KEYS = new Set<FeatureKey>([
+  "draft-board",
+  "sleepers",
+  "trade",
+  "waivers",
+  "consistency",
+  "start-sit",
+  "fantasy-compare",
+  "fantasy-team-grade",
+]);
+
+const DRAFT_STATE_STORAGE_KEY = "fantasy.draftState.v1";
+
+type PersistedDraftState = {
+  roster: PlayerOption[];
+  teamRosters: DraftTeamRosters;
+  selectedTeamIndex: number;
+};
+
+const EMPTY_DRAFT_STATE: PersistedDraftState = {
+  roster: [],
+  teamRosters: {},
+  selectedTeamIndex: 0,
+};
+
+const readPersistedDraftState = (): PersistedDraftState => {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STATE_STORAGE_KEY);
+    if (!raw) {
+      return EMPTY_DRAFT_STATE;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<PersistedDraftState>;
+    return {
+      roster: Array.isArray(parsed.roster) ? parsed.roster : [],
+      teamRosters:
+        parsed.teamRosters && typeof parsed.teamRosters === "object"
+          ? parsed.teamRosters
+          : {},
+      selectedTeamIndex:
+        typeof parsed.selectedTeamIndex === "number"
+          ? parsed.selectedTeamIndex
+          : 0,
+    };
+  } catch {
+    return EMPTY_DRAFT_STATE;
+  }
+};
+
 const Dashboard = () => {
-  const [activeFeature, setActiveFeature] = useState<
-    | "profile"
-    | "compare"
-    | "impact"
-    | "comps"
-    | "usage-value"
-    | "trajectory"
-    | "team"
-    | "draft-board"
-    | "sleepers"
-    | "trade"
-    | "waivers"
-    | "consistency"
-    | "start-sit"
-  >("profile");
+  const [activeFeature, setActiveFeature] = useState<FeatureKey>("profile");
   const [healthToast, setHealthToast] = useState("");
   const [playerId, setPlayerId] = useState("1966");
   const [playerBId, setPlayerBId] = useState("3945274");
@@ -107,7 +286,16 @@ const Dashboard = () => {
   const [draftBoardSeason, setDraftBoardSeason] = useState("");
   const [draftBoardTeamCount, setDraftBoardTeamCount] = useState("12");
   const [draftBoardStarters, setDraftBoardStarters] = useState("");
-  const [draftBoardRoster, setDraftBoardRoster] = useState<PlayerOption[]>([]);
+  const [persistedDraft] = useState(readPersistedDraftState);
+  const [draftBoardRoster, setDraftBoardRoster] = useState<PlayerOption[]>(
+    persistedDraft.roster,
+  );
+  const [draftTeamRosters, setDraftTeamRosters] = useState<DraftTeamRosters>(
+    persistedDraft.teamRosters,
+  );
+  const [draftSelectedTeam, setDraftSelectedTeam] = useState(
+    persistedDraft.selectedTeamIndex,
+  );
   const [draftBoardRosterPick, setDraftBoardRosterPick] = useState("");
   const [sleepersScoringId, setSleepersScoringId] =
     useState<FantasyScoringId>(3);
@@ -145,6 +333,26 @@ const Dashboard = () => {
     useState<FantasyScoringId>(3);
   const [startSitSeason, setStartSitSeason] = useState("");
   const [startSitWindow, setStartSitWindow] = useState("4");
+  const [teamBId, setTeamBId] = useState("20");
+  const [fantasyCandidatePool, setFantasyCandidatePool] = useState<
+    FantasyPlayerCandidate[]
+  >([]);
+  const [fantasyCompareRosterA, setFantasyCompareRosterA] =
+    useState<RosterSlotAssignments>({});
+  const [fantasyCompareRosterB, setFantasyCompareRosterB] =
+    useState<RosterSlotAssignments>({});
+  const [fantasyCompareScoringId, setFantasyCompareScoringId] =
+    useState<FantasyScoringId>(3);
+  const [fantasyCompareSeason, setFantasyCompareSeason] = useState("");
+  const [fantasyCompareTeamCount, setFantasyCompareTeamCount] = useState("12");
+  const [fantasyCompareStarters, setFantasyCompareStarters] = useState("");
+  const [fantasyGradeRoster, setFantasyGradeRoster] =
+    useState<RosterSlotAssignments>({});
+  const [fantasyGradeScoringId, setFantasyGradeScoringId] =
+    useState<FantasyScoringId>(3);
+  const [fantasyGradeSeason, setFantasyGradeSeason] = useState("");
+  const [fantasyGradeTeamCount, setFantasyGradeTeamCount] = useState("12");
+  const [fantasyGradeStarters, setFantasyGradeStarters] = useState("");
   const [playerOptions, setPlayerOptions] = useState<PlayerOption[]>([]);
   const [teamOptions, setTeamOptions] = useState<TeamOption[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
@@ -174,6 +382,14 @@ const Dashboard = () => {
     null,
   );
   const [startSit, setStartSit] = useState<StartSitResponse | null>(null);
+  const [teamGrade, setTeamGrade] = useState<TeamGradeResponse | null>(null);
+  const [teamCompare, setTeamCompare] = useState<TeamCompareResponse | null>(
+    null,
+  );
+  const [fantasyRosterCompare, setFantasyRosterCompare] =
+    useState<FantasyRosterCompareResponse | null>(null);
+  const [fantasyTeamGrade, setFantasyTeamGrade] =
+    useState<FantasyTeamGradeResponse | null>(null);
   const [error, setError] = useState<string>("");
   const [loadingSingle, setLoadingSingle] = useState(false);
   const [loadingCompare, setLoadingCompare] = useState(false);
@@ -188,6 +404,10 @@ const Dashboard = () => {
   const [loadingWaivers, setLoadingWaivers] = useState(false);
   const [loadingConsistency, setLoadingConsistency] = useState(false);
   const [loadingStartSit, setLoadingStartSit] = useState(false);
+  const [loadingTeamCompare, setLoadingTeamCompare] = useState(false);
+  const [loadingFantasyCompare, setLoadingFantasyCompare] = useState(false);
+  const [loadingFantasyTeamGrade, setLoadingFantasyTeamGrade] =
+    useState(false);
 
   const draftBoardCandidateOptions = useMemo<PlayerOption[]>(
     () =>
@@ -290,14 +510,41 @@ const Dashboard = () => {
             }),
           );
           setFantasyPlayerOptions(options);
+          // Unfiltered pool (no rosterSoFar), so the roster builders can still
+          // pick players an in-progress draft has already removed.
+          setFantasyCandidatePool(boardResult.value.candidates ?? []);
+          // Reuse this same default-filter fetch as the Draft Board's initial
+          // data so the tab opens pre-loaded instead of needing a manual load.
+          setDraftBoard(boardResult.value);
         }
       } finally {
         setLoadingFantasyPlayerOptions(false);
+      }
+
+      // A saved draft means the default board still lists already-drafted
+      // players, so refetch it with the restored picks excluded.
+      if (persistedDraft.roster.length) {
+        void runDraftBoardLoad(persistedDraft.roster.map((entry) => entry.id));
       }
     };
 
     void loadFantasyContext();
   }, [forceRefresh]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        DRAFT_STATE_STORAGE_KEY,
+        JSON.stringify({
+          roster: draftBoardRoster,
+          teamRosters: draftTeamRosters,
+          selectedTeamIndex: draftSelectedTeam,
+        }),
+      );
+    } catch {
+      // Storage can be unavailable or full — the draft just won't persist.
+    }
+  }, [draftBoardRoster, draftTeamRosters, draftSelectedTeam]);
 
   const loadPlayerUsageValue = async (event: FormEvent) => {
     event.preventDefault();
@@ -520,10 +767,12 @@ const Dashboard = () => {
 
     setLoadingTeam(true);
     try {
-      const [efficiencyResult, needGapResult] = await Promise.allSettled([
-        fetchTeamEfficiency(id, forceRefresh, games, teamSeasonType),
-        fetchTeamNeedGap(id, forceRefresh, games, teamSeasonType),
-      ]);
+      const [efficiencyResult, needGapResult, gradeResult] =
+        await Promise.allSettled([
+          fetchTeamEfficiency(id, forceRefresh, games, teamSeasonType),
+          fetchTeamNeedGap(id, forceRefresh, games, teamSeasonType),
+          fetchTeamGrade(id, forceRefresh, games, teamSeasonType),
+        ]);
 
       if (efficiencyResult.status === "fulfilled") {
         setTeamEfficiency(efficiencyResult.value);
@@ -536,6 +785,12 @@ const Dashboard = () => {
       } else {
         setTeamNeedGap(null);
       }
+
+      if (gradeResult.status === "fulfilled") {
+        setTeamGrade(gradeResult.value);
+      } else {
+        setTeamGrade(null);
+      }
     } catch {
       setError(
         `Failed to load team efficiency for team ${id}. Confirm backend /teams/:teamId/efficiency route.`,
@@ -545,46 +800,141 @@ const Dashboard = () => {
     }
   };
 
+  const loadTeamCompare = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+
+    const idA = toPositiveInt(teamId);
+    const idB = toPositiveInt(teamBId);
+    const games = Math.max(1, Math.min(toPositiveInt(teamGames) ?? 5, 15));
+
+    if (!idA || !idB) {
+      setError("Both team IDs must be positive integers.");
+      return;
+    }
+
+    if (idA === idB) {
+      setError("Pick two different teams to compare.");
+      return;
+    }
+
+    setLoadingTeamCompare(true);
+    try {
+      const data = await fetchTeamCompare(
+        idA,
+        idB,
+        forceRefresh,
+        games,
+        teamSeasonType,
+      );
+      setTeamCompare(data);
+    } catch {
+      setError(
+        "Failed to compare teams. Confirm backend /api/teams/compare/head-to-head route.",
+      );
+    } finally {
+      setLoadingTeamCompare(false);
+    }
+  };
+
+  const loadFantasyRosterCompare = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+
+    const rosterAIds = Object.values(fantasyCompareRosterA).map((player) =>
+      String(player.id),
+    );
+    const rosterBIds = Object.values(fantasyCompareRosterB).map((player) =>
+      String(player.id),
+    );
+
+    if (!rosterAIds.length || !rosterBIds.length) {
+      setError("Add at least one player to each roster before comparing.");
+      return;
+    }
+
+    setLoadingFantasyCompare(true);
+    try {
+      const data = await fetchFantasyRosterCompare(
+        forceRefresh,
+        rosterAIds,
+        rosterBIds,
+        fantasyCompareScoringId,
+        fantasyCompareSeason.trim() || undefined,
+        {
+          teamCount: toPositiveInt(fantasyCompareTeamCount) ?? undefined,
+          starters: fantasyCompareStarters.trim() || undefined,
+        },
+      );
+      setFantasyRosterCompare(data);
+    } catch {
+      setError(
+        "Failed to compare fantasy rosters. Confirm backend /api/fantasy/compare/head-to-head route.",
+      );
+    } finally {
+      setLoadingFantasyCompare(false);
+    }
+  };
+
+  const loadFantasyTeamGrade = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+
+    const rosterIds = Object.values(fantasyGradeRoster).map((player) =>
+      String(player.id),
+    );
+
+    if (!rosterIds.length) {
+      setError("Add at least one player to your roster.");
+      return;
+    }
+
+    setLoadingFantasyTeamGrade(true);
+    try {
+      const data = await fetchFantasyTeamGrade(
+        forceRefresh,
+        rosterIds,
+        fantasyGradeScoringId,
+        fantasyGradeSeason.trim() || undefined,
+        {
+          teamCount: toPositiveInt(fantasyGradeTeamCount) ?? undefined,
+          starters: fantasyGradeStarters.trim() || undefined,
+        },
+      );
+      setFantasyTeamGrade(data);
+    } catch {
+      setError(
+        "Failed to grade fantasy roster. Confirm backend /api/fantasy/team-grade route.",
+      );
+    } finally {
+      setLoadingFantasyTeamGrade(false);
+    }
+  };
+
   const addToDraftBoardRoster = () => {
     if (!draftBoardRosterPick) {
       return;
     }
 
-    setDraftBoardRoster((current) => {
-      if (current.some((entry) => entry.id === draftBoardRosterPick)) {
-        return current;
-      }
-
-      const option = draftBoardCandidateOptions.find(
-        (candidate) => candidate.id === draftBoardRosterPick,
-      );
-
-      if (!option) {
-        return current;
-      }
-
-      return [...current, option];
-    });
     setDraftBoardRosterPick("");
+    draftPlayerIdToSelectedTeam(draftBoardRosterPick);
   };
 
   const removeFromDraftBoardRoster = (id: string) => {
-    setDraftBoardRoster((current) =>
-      current.filter((entry) => entry.id !== id),
-    );
+    const nextRoster = draftBoardRoster.filter((entry) => entry.id !== id);
+    setDraftBoardRoster(nextRoster);
+    void runDraftBoardLoad(nextRoster.map((entry) => entry.id));
   };
 
-  const loadDraftBoard = async (event: FormEvent) => {
-    event.preventDefault();
+  const runDraftBoardLoad = async (rosterIds: string[]) => {
     setError("");
-
     setLoadingDraftBoard(true);
     try {
       const data = await fetchFantasyDraftBoard(
         forceRefresh,
         draftBoardScoringId,
         draftBoardPosition === "ALL" ? undefined : draftBoardPosition,
-        draftBoardRoster.map((entry) => entry.id),
+        rosterIds,
         draftBoardSeason.trim() || undefined,
         {
           teamCount: toPositiveInt(draftBoardTeamCount) ?? undefined,
@@ -599,6 +949,67 @@ const Dashboard = () => {
     } finally {
       setLoadingDraftBoard(false);
     }
+  };
+
+  const loadDraftBoard = async (event: FormEvent) => {
+    event.preventDefault();
+    await runDraftBoardLoad(draftBoardRoster.map((entry) => entry.id));
+  };
+
+  const markDraftBoardPlayerDrafted = (id: string) => {
+    const alreadyRostered = draftBoardRoster.some((entry) => entry.id === id);
+    const option = draftBoardCandidateOptions.find(
+      (candidate) => candidate.id === id,
+    );
+    const nextRoster = alreadyRostered
+      ? draftBoardRoster
+      : [...draftBoardRoster, option ?? { id, label: `Player #${id}` }];
+
+    setDraftBoardRoster(nextRoster);
+    void runDraftBoardLoad(nextRoster.map((entry) => entry.id));
+  };
+
+  const resetDraftBoardDraft = () => {
+    setDraftTeamRosters({});
+    setDraftSelectedTeam(0);
+    setDraftBoardRoster([]);
+    void runDraftBoardLoad([]);
+  };
+
+  // Every draft action attributes the player to a team, so nobody leaves the
+  // pool without a roster attached.
+  const draftCandidateToSelectedTeam = (candidate: FantasyPlayerCandidate) => {
+    setDraftTeamRosters((current) =>
+      assignCandidateToOpenSlot(
+        current,
+        draftSelectedTeam,
+        draftBoard?.leagueSettings?.starters,
+        candidate,
+      ),
+    );
+    markDraftBoardPlayerDrafted(String(candidate.id));
+  };
+
+  const draftPlayerIdToSelectedTeam = (id: string) => {
+    const candidate = (draftBoard?.candidates ?? []).find(
+      (entry) => String(entry.id) === id,
+    );
+
+    if (candidate) {
+      draftCandidateToSelectedTeam(candidate);
+      return;
+    }
+
+    markDraftBoardPlayerDrafted(id);
+  };
+
+  const draftState = {
+    teamRosters: draftTeamRosters,
+    selectedTeamIndex: draftSelectedTeam,
+    onTeamRostersChange: setDraftTeamRosters,
+    onSelectTeam: setDraftSelectedTeam,
+    onUndraftPlayer: removeFromDraftBoardRoster,
+    onReset: resetDraftBoardDraft,
   };
 
   const loadSleepers = async (event: FormEvent) => {
@@ -787,45 +1198,66 @@ const Dashboard = () => {
       : [];
 
   return (
-    <main className="dashboard-shell">
-      <header className="hero-strip dashboard-hero">
-        <div className="dashboard-hero__content">
-          <div className="dashboard-hero__title-row">
-            <div>
-              {/* <p className="kicker">Live scouting workspace</p> */}
-              <h1>NBA Analytics Tool</h1>
-            </div>
-
-            <div className="dashboard-utility-row">
-              <button type="button" onClick={checkHealth}>
-                Check API Health
-              </button>
-              <a
-                className="button-link button-link--demo"
-                href="https://www.loom.com/share/97bfd45b2bc942fe89676ffb9742ad9f"
-                target="_blank"
-                rel="noreferrer"
+    <main className="dashboard-shell app-shell">
+      <nav className="app-sidebar" aria-label="Feature navigation">
+        <div className="app-sidebar__brand">
+          <h1>Analytics Tool</h1>
+        </div>
+        {NAV_GROUPS.map((group) => (
+          <div className="app-sidebar__group" key={group.title}>
+            <p className="app-sidebar__group-title">{group.title}</p>
+            {group.items.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                role="tab"
+                aria-selected={activeFeature === item.key}
+                className={`app-sidebar__link ${
+                  FANTASY_FEATURE_KEYS.has(item.key)
+                    ? "app-sidebar__link--fantasy"
+                    : ""
+                } ${activeFeature === item.key ? "active" : ""}`}
+                onClick={() => setActiveFeature(item.key)}
+                title={item.title}
               >
-                Watch Demo
-              </a>
-              <div className="toggle-help-group">
-                <label className="toggle-row">
-                  <input
-                    type="checkbox"
-                    checked={forceRefresh}
-                    onChange={(event) => setForceRefresh(event.target.checked)}
-                  />
-                  Bypass Cache
-                </label>
-                <button
-                  type="button"
-                  className="help-icon"
-                  aria-label="Bypass Cache help"
-                  title="Bypass Cache forces the dashboard to fetch fresh data from the backend instead of using cached results."
-                >
-                  i
-                </button>
-              </div>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      <div className="app-content">
+        <header className="app-topbar">
+          <div className="app-topbar__row">
+            <button type="button" onClick={checkHealth}>
+              Check API Health
+            </button>
+            <a
+              className="button-link button-link--demo"
+              href="https://www.loom.com/share/97bfd45b2bc942fe89676ffb9742ad9f"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Watch Demo
+            </a>
+            <div className="toggle-help-group">
+              <label className="toggle-row">
+                <input
+                  type="checkbox"
+                  checked={forceRefresh}
+                  onChange={(event) => setForceRefresh(event.target.checked)}
+                />
+                Bypass Cache
+              </label>
+              <button
+                type="button"
+                className="help-icon"
+                aria-label="Bypass Cache help"
+                title="Bypass Cache forces the dashboard to fetch fresh data from the backend instead of using cached results."
+              >
+                i
+              </button>
             </div>
           </div>
 
@@ -835,158 +1267,14 @@ const Dashboard = () => {
             </div>
           ) : null}
 
-          <nav
-            className="feature-switch dashboard-feature-switch"
-            role="tablist"
-            aria-label="Feature navigation"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "profile"}
-              className={`feature-tab ${activeFeature === "profile" ? "active" : ""}`}
-              onClick={() => setActiveFeature("profile")}
-              title="Single player profile with summary splits and core production chart."
-            >
-              Single Player Profile
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "compare"}
-              className={`feature-tab ${activeFeature === "compare" ? "active" : ""}`}
-              onClick={() => setActiveFeature("compare")}
-              title="Head-to-head profile comparison across matching split types."
-            >
-              Player Head-to-Head
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "impact"}
-              className={`feature-tab ${activeFeature === "impact" ? "active" : ""}`}
-              onClick={() => setActiveFeature("impact")}
-              title="Recent plus-minus trend and game-level context."
-            >
-              Plus-Minus Impact Trend
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "comps"}
-              className={`feature-tab ${activeFeature === "comps" ? "active" : ""}`}
-              onClick={() => setActiveFeature("comps")}
-              title="Player Value Comps based on normalized stat similarity."
-            >
-              Statistical Value Comps
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "usage-value"}
-              className={`feature-tab ${activeFeature === "usage-value" ? "active" : ""}`}
-              onClick={() => setActiveFeature("usage-value")}
-              title="Usage-adjusted value benchmark against peers in the same usage bucket."
-            >
-              Player Usage vs. Production
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "trajectory"}
-              className={`feature-tab ${activeFeature === "trajectory" ? "active" : ""}`}
-              onClick={() => setActiveFeature("trajectory")}
-              title="Development curve using rolling averages and trend direction."
-            >
-              Rolling Development Curve
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "team"}
-              className={`feature-tab ${activeFeature === "team" ? "active" : ""}`}
-              onClick={() => setActiveFeature("team")}
-              title="Team efficiencies plus need-gap analysis against league benchmark."
-            >
-              Team Efficiency & Need Gaps
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "draft-board"}
-              className={`feature-tab feature-tab--fantasy ${activeFeature === "draft-board" ? "active" : ""}`}
-              onClick={() => setActiveFeature("draft-board")}
-              title="NFL Fantasy: tiered draft board with ADP, ownership, and roster-aware availability."
-            >
-              NFL Draft Board
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "sleepers"}
-              className={`feature-tab feature-tab--fantasy ${activeFeature === "sleepers" ? "active" : ""}`}
-              onClick={() => setActiveFeature("sleepers")}
-              title="NFL Fantasy: draft-day value gaps ranked by ADP delta against position peers, not guaranteed sleepers."
-            >
-              NFL Draft Values
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "trade"}
-              className={`feature-tab feature-tab--fantasy ${activeFeature === "trade" ? "active" : ""}`}
-              onClick={() => setActiveFeature("trade")}
-              title="NFL Fantasy: compares total VORP on each side of a proposed trade."
-            >
-              NFL Trade Analyzer
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "waivers"}
-              className={`feature-tab feature-tab--fantasy ${activeFeature === "waivers" ? "active" : ""}`}
-              onClick={() => setActiveFeature("waivers")}
-              title="NFL Fantasy: low-ownership players outperforming their recent projection."
-            >
-              NFL Waiver Wire
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "consistency"}
-              className={`feature-tab feature-tab--fantasy ${activeFeature === "consistency" ? "active" : ""}`}
-              onClick={() => setActiveFeature("consistency")}
-              title="NFL Fantasy: recent floor and volatility leaders across completed games."
-            >
-              NFL Consistency
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeFeature === "start-sit"}
-              className={`feature-tab feature-tab--fantasy ${activeFeature === "start-sit" ? "active" : ""}`}
-              onClick={() => setActiveFeature("start-sit")}
-              title="NFL Fantasy: next-week projection plus recent actual performance per player."
-            >
-              NFL Start / Sit
-            </button>
-          </nav>
-
           {error ? <p className="error-note">{error}</p> : null}
-          {[
-            "draft-board",
-            "sleepers",
-            "trade",
-            "waivers",
-            "consistency",
-            "start-sit",
-          ].includes(activeFeature) ? (
+          {FANTASY_FEATURE_KEYS.has(activeFeature) ? (
             <FantasySeasonBanner season={fantasySeason} />
           ) : null}
-        </div>
-      </header>
+        </header>
 
-      {activeFeature === "profile" ? (
+        <div className="feature-transition" key={activeFeature}>
+        {activeFeature === "profile" ? (
         <ProfilePortal
           playerId={playerId}
           playerOptions={playerOptions}
@@ -1073,6 +1361,7 @@ const Dashboard = () => {
           teamOptions={teamOptions}
           teamEfficiency={teamEfficiency}
           teamNeedGap={teamNeedGap}
+          teamGrade={teamGrade}
           loadingTeam={loadingTeam}
           loadingTeamOptions={loadingTeamOptions}
           onTeamIdChange={(nextId) => {
@@ -1083,6 +1372,22 @@ const Dashboard = () => {
           onTeamSeasonTypeChange={setTeamSeasonType}
           onTeamQueryChange={setTeamQuery}
           onSubmit={loadTeamEfficiency}
+        />
+      ) : activeFeature === "team-compare" ? (
+        <TeamComparePortal
+          teamAId={teamId}
+          teamBId={teamBId}
+          teamGames={teamGames}
+          teamSeasonType={teamSeasonType}
+          teamOptions={teamOptions}
+          teamCompare={teamCompare}
+          loadingTeamCompare={loadingTeamCompare}
+          loadingTeamOptions={loadingTeamOptions}
+          onTeamAIdChange={setTeamId}
+          onTeamBIdChange={setTeamBId}
+          onTeamGamesChange={setTeamGames}
+          onTeamSeasonTypeChange={setTeamSeasonType}
+          onSubmit={loadTeamCompare}
         />
       ) : activeFeature === "draft-board" ? (
         <DraftBoardPortal
@@ -1095,6 +1400,7 @@ const Dashboard = () => {
           draftBoardRosterPick={draftBoardRosterPick}
           draftBoardCandidateOptions={draftBoardCandidateOptions}
           draftBoard={draftBoard}
+          draftState={draftState}
           loadingDraftBoard={loadingDraftBoard}
           onDraftBoardPositionChange={setDraftBoardPosition}
           onDraftBoardScoringIdChange={setDraftBoardScoringId}
@@ -1104,6 +1410,8 @@ const Dashboard = () => {
           onDraftBoardRosterPickChange={setDraftBoardRosterPick}
           onAddToRoster={addToDraftBoardRoster}
           onRemoveFromRoster={removeFromDraftBoardRoster}
+          onMarkDrafted={markDraftBoardPlayerDrafted}
+          onDraftCandidate={draftCandidateToSelectedTeam}
           onSubmit={loadDraftBoard}
         />
       ) : activeFeature === "sleepers" ? (
@@ -1174,7 +1482,7 @@ const Dashboard = () => {
           onWindowChange={setConsistencyWindow}
           onSubmit={loadConsistencyLeaders}
         />
-      ) : (
+      ) : activeFeature === "start-sit" ? (
         <StartSitPortal
           fantasyPlayerOptions={fantasyPlayerOptions}
           roster={startSitRoster}
@@ -1193,7 +1501,45 @@ const Dashboard = () => {
           onWindowChange={setStartSitWindow}
           onSubmit={loadStartSit}
         />
+      ) : activeFeature === "fantasy-compare" ? (
+        <FantasyRosterComparePortal
+          candidatePool={fantasyCandidatePool}
+          rosterA={fantasyCompareRosterA}
+          rosterB={fantasyCompareRosterB}
+          scoringId={fantasyCompareScoringId}
+          season={fantasyCompareSeason}
+          teamCount={fantasyCompareTeamCount}
+          starters={fantasyCompareStarters}
+          rosterCompare={fantasyRosterCompare}
+          loadingCompare={loadingFantasyCompare}
+          onRosterAChange={setFantasyCompareRosterA}
+          onRosterBChange={setFantasyCompareRosterB}
+          onScoringIdChange={setFantasyCompareScoringId}
+          onSeasonChange={setFantasyCompareSeason}
+          onTeamCountChange={setFantasyCompareTeamCount}
+          onStartersChange={setFantasyCompareStarters}
+          onSubmit={loadFantasyRosterCompare}
+        />
+      ) : (
+        <FantasyTeamGradePortal
+          candidatePool={fantasyCandidatePool}
+          roster={fantasyGradeRoster}
+          scoringId={fantasyGradeScoringId}
+          season={fantasyGradeSeason}
+          teamCount={fantasyGradeTeamCount}
+          starters={fantasyGradeStarters}
+          teamGrade={fantasyTeamGrade}
+          loadingTeamGrade={loadingFantasyTeamGrade}
+          onRosterChange={setFantasyGradeRoster}
+          onScoringIdChange={setFantasyGradeScoringId}
+          onSeasonChange={setFantasyGradeSeason}
+          onTeamCountChange={setFantasyGradeTeamCount}
+          onStartersChange={setFantasyGradeStarters}
+          onSubmit={loadFantasyTeamGrade}
+        />
       )}
+        </div>
+      </div>
     </main>
   );
 };

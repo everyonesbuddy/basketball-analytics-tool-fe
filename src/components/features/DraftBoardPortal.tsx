@@ -1,8 +1,10 @@
 import type { FormEvent } from "react";
 import SearchableEntitySelect from "../common/SearchableEntitySelect";
 import { DraftBoardCard } from "../dashboard/DashboardCards";
+import type { DraftRosterState } from "../dashboard/DashboardCards";
 import type {
   DraftBoardResponse,
+  FantasyPlayerCandidate,
   FantasyPosition,
   FantasyScoringId,
   PlayerOption,
@@ -18,6 +20,7 @@ type DraftBoardPortalProps = {
   draftBoardRosterPick: string;
   draftBoardCandidateOptions: PlayerOption[];
   draftBoard: DraftBoardResponse | null;
+  draftState: DraftRosterState;
   loadingDraftBoard: boolean;
   onDraftBoardPositionChange: (position: FantasyPosition | "ALL") => void;
   onDraftBoardScoringIdChange: (scoringId: FantasyScoringId) => void;
@@ -27,6 +30,8 @@ type DraftBoardPortalProps = {
   onDraftBoardRosterPickChange: (id: string) => void;
   onAddToRoster: () => void;
   onRemoveFromRoster: (id: string) => void;
+  onMarkDrafted: (id: string) => void;
+  onDraftCandidate: (candidate: FantasyPlayerCandidate) => void;
   onSubmit: (event: FormEvent) => void;
 };
 
@@ -51,6 +56,7 @@ const DraftBoardPortal = ({
   draftBoardRosterPick,
   draftBoardCandidateOptions,
   draftBoard,
+  draftState,
   loadingDraftBoard,
   onDraftBoardPositionChange,
   onDraftBoardScoringIdChange,
@@ -60,6 +66,8 @@ const DraftBoardPortal = ({
   onDraftBoardRosterPickChange,
   onAddToRoster,
   onRemoveFromRoster,
+  onMarkDrafted,
+  onDraftCandidate,
   onSubmit,
 }: DraftBoardPortalProps) => {
   const rosterLabel = draftBoardRoster.length
@@ -74,9 +82,9 @@ const DraftBoardPortal = ({
           Draft Board
         </h3>
         <p className="helper-note">
-          Pick your league's settings below, then load the board. Players are
-          grouped into tiers so you can see who's worth about the same right now
-          — and how much value drops off if you wait one more round.
+          Loaded automatically with everyone available. Adjust your league
+          settings below and click Apply Filters if your league differs from
+          the defaults.
         </p>
         <label
           htmlFor="draftBoardPosition"
@@ -156,9 +164,8 @@ const DraftBoardPortal = ({
         />
 
         <p className="helper-note">
-          Already drafted a player? Search and add them below, then reload the
-          board to exclude them from future picks and update the pool/ available
-          counts.
+          Drafted by someone else? Search and add them below — the board
+          updates immediately, no reload needed.
         </p>
         <SearchableEntitySelect
           id="draftBoardRosterPick"
@@ -197,19 +204,24 @@ const DraftBoardPortal = ({
         ) : null}
 
         <button type="submit" disabled={loadingDraftBoard}>
-          {loadingDraftBoard ? "Loading..." : "Load Draft Board"}
+          {loadingDraftBoard ? "Applying..." : "Apply Filters"}
         </button>
       </form>
 
       <section className="results-zone">
         <div>
-          <h2>Draft Board Readout</h2>
+          <h2>Draft Board</h2>
           {draftBoard ? (
-            <DraftBoardCard data={draftBoard} rosterLabel={rosterLabel} />
+            <DraftBoardCard
+              data={draftBoard}
+              rosterLabel={rosterLabel}
+              draftState={draftState}
+              onMarkDrafted={onMarkDrafted}
+              onDraftCandidate={onDraftCandidate}
+            />
           ) : (
             <p className="empty-note">
-              Load the draft board to view tiered candidates, ADP, and decision
-              insights.
+              Loading the draft board...
             </p>
           )}
         </div>

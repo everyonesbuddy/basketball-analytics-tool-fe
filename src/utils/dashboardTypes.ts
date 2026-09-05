@@ -358,6 +358,87 @@ export type TeamNeedGapResponse = {
   _cache?: "HIT" | "MISS";
 };
 
+export type TeamAggregateShape = {
+  pointsScored?: number | null;
+  pointsAllowed?: number | null;
+  possessions?: number | null;
+  offRtg?: number | null;
+  defRtg?: number | null;
+  netRtg?: number | null;
+};
+
+export type TeamGradeMetricDirection = "higher_is_better" | "lower_is_better";
+
+export type TeamGradeMetric = {
+  key: string;
+  label: string;
+  value: number | null;
+  leagueAverage: number | null;
+  zScore: number | null;
+  score: number | null;
+  direction: TeamGradeMetricDirection;
+  sampleSize: number;
+};
+
+export type TeamGrade = {
+  score: number | null;
+  grade: string;
+  metrics: TeamGradeMetric[];
+  strengths: string[];
+  weaknesses: string[];
+  leagueSampleSize: number;
+  gamesPlayed: number;
+};
+
+export type TeamGradeResponse = {
+  teamId: string;
+  team: TeamSummary | null;
+  gamesRequested: number;
+  gamesPlayed: number;
+  seasonTypeRequested: TeamSeasonType;
+  seasonsCovered: number[];
+  seasonTypesCovered: Array<"regular" | "postseason">;
+  grade: TeamGrade;
+  aggregate: TeamAggregateShape;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};
+
+export type TeamCompareMetric = {
+  key: string;
+  label: string;
+  teamA: number | null;
+  teamB: number | null;
+  difference: number | null;
+  advantage: "teamA" | "teamB" | "tie" | null;
+  direction: TeamGradeMetricDirection;
+};
+
+export type TeamCompareResult = {
+  metrics: TeamCompareMetric[];
+  advantage: "teamA" | "teamB" | "tie";
+  teamAScore: number | null;
+  teamBScore: number | null;
+  decisionInsights: string;
+};
+
+export type TeamCompareSide = {
+  teamId: string;
+  team: TeamSummary | null;
+  aggregate: TeamAggregateShape;
+  grade: TeamGrade;
+};
+
+export type TeamCompareResponse = {
+  teamA: TeamCompareSide;
+  teamB: TeamCompareSide;
+  gamesRequested: number;
+  seasonTypeRequested: TeamSeasonType;
+  comparison: TeamCompareResult;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};
+
 export type SummaryRow = {
   name: string;
   values: Array<{ key: string; value: string }>;
@@ -662,6 +743,115 @@ export type StartSitResponse = {
   status: FantasyInSeasonStatus | string;
   players: FantasyStartSitPlayer[];
   decisionInsights: string | null;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};
+
+// Shape returned by the backend's compactPlayer() for player compare / team grade.
+export type FantasyCompactPlayer = {
+  id: string | number;
+  name: string;
+  position: string;
+  team: FantasyTeamValue;
+  projectedTotal: number | null;
+  projectedAverage: number | null;
+  actualTotal: number | null;
+  vorp: number | null;
+  vorpRank: number | null;
+  projectedRank: number | null;
+  projectedPositionRank: number | null;
+  adp: number | null;
+  tier: number | null;
+  injuryStatus: FantasyInjuryValue;
+  keyStats: FantasyStatBreakdown | null;
+};
+
+export type FantasyCompareMetric = {
+  label: string;
+  playerA: number | null;
+  playerB: number | null;
+  difference: number | null;
+  advantage: "playerA" | "playerB" | "tie" | null;
+};
+
+export type FantasyPlayerCompareResponse = {
+  season: number | string;
+  scoringId: number;
+  scoring: string;
+  leagueSettings: FantasyLeagueSettings;
+  playerA: FantasyCompactPlayer;
+  playerB: FantasyCompactPlayer;
+  metrics: FantasyCompareMetric[];
+  advantage: "playerA" | "playerB" | "tie";
+  decisionInsights: string | null;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};
+
+export type FantasyRosterPlayer = FantasyCompactPlayer & {
+  isStarter: boolean;
+};
+
+export type FantasyTeamGradeScoreWeights = {
+  starterValue: number;
+  marketValue: number;
+  coverage: number;
+};
+
+export type FantasyTeamGradeResponse = {
+  season: number | string;
+  scoringId: number;
+  scoring: string;
+  leagueSettings: FantasyLeagueSettings;
+  rosterSize: number;
+  missingPlayerIds: Array<string | number>;
+  grade: string;
+  score: number | null;
+  valueScore: number | null;
+  valueScoreMethod: string | null;
+  marketScore: number | null;
+  coverageScore: number | null;
+  scoreWeights: FantasyTeamGradeScoreWeights | null;
+  starterVorp: number | null;
+  idealStarterVorp: number | null;
+  replacementBaselines: FantasyReplacementBaselines;
+  roster: FantasyRosterPlayer[];
+  suggestedStarters: FantasyCompactPlayer[];
+  positionCounts: Record<string, number>;
+  missingStarterSlots: Record<string, number>;
+  decisionInsights: string | null;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};
+
+// One side of a full-roster head-to-head (GET /api/fantasy/compare/head-to-head).
+export type FantasyRosterCompareSide = {
+  rosterSize: number;
+  missingPlayerIds: Array<string | number>;
+  starterVorp: number | null;
+  starterCount: number | null;
+  coverageScore: number | null;
+  byPosition: Record<string, number>;
+  missingStarterSlots: Record<string, number>;
+  roster: FantasyRosterPlayer[];
+  suggestedStarters: FantasyCompactPlayer[];
+};
+
+export type FantasyRosterCompareResult = {
+  advantage: "rosterA" | "rosterB" | "tie";
+  netStarterVorp?: number | null;
+  decisionInsights: string | null;
+};
+
+export type FantasyRosterCompareResponse = {
+  season: number | string;
+  scoringId: number;
+  scoring: string;
+  leagueSettings: FantasyLeagueSettings;
+  replacementBaselines?: FantasyReplacementBaselines;
+  rosterA: FantasyRosterCompareSide;
+  rosterB: FantasyRosterCompareSide;
+  comparison: FantasyRosterCompareResult;
   lastUpdatedAt?: string;
   _cache?: "HIT" | "MISS";
 };

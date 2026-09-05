@@ -29,9 +29,14 @@ import {
 import type {
   ConsistencyResponse,
   DraftBoardResponse,
+  FantasyCompactPlayer,
   FantasyPlayerCandidate,
+  FantasyPlayerCompareResponse,
   FantasyRecentForm,
+  FantasyRosterCompareResponse,
+  FantasyRosterCompareSide,
   FantasySeasonState,
+  FantasyTeamGradeResponse,
   PlayerCompsResponse,
   PlayerImpactResponse,
   PlayerProfile,
@@ -39,6 +44,8 @@ import type {
   PlayerUsageValueResponse,
   SleepersResponse,
   StartSitResponse,
+  TeamCompareResponse,
+  TeamGradeResponse,
   TeamNeedGapResponse,
   TeamEfficiencyResponse,
   TradeAnalysisResponse,
@@ -1915,6 +1922,235 @@ export const TeamNeedGapCard = ({
   );
 };
 
+const getTeamGradeChipClass = (grade?: string | null): string => {
+  if (!grade) {
+    return "chip";
+  }
+
+  if (grade.startsWith("A") || grade.startsWith("B")) {
+    return "chip hit";
+  }
+
+  if (grade.startsWith("D") || grade === "F") {
+    return "chip miss";
+  }
+
+  return "chip";
+};
+
+const getTeamGradeMetricTooltip = (key?: string): string => {
+  switch (String(key || "")) {
+    case "netRtg":
+      return "Net Rating — worth 40% of the grade. Higher is better.";
+    case "offRtg":
+      return "Offensive Rating — worth 25% of the grade. Higher is better.";
+    case "defRtg":
+      return "Defensive Rating — worth 25% of the grade. Lower is better.";
+    case "winRate":
+      return "Recent win rate over the requested game window — worth 10% of the grade.";
+    default:
+      return "Contributes to the overall grade for the requested game window.";
+  }
+};
+
+export const TeamGradeCard = ({
+  data,
+  teamLabel,
+}: {
+  data: TeamGradeResponse;
+  teamLabel: string;
+}) => {
+  const grade = data.grade;
+  const metrics = Array.isArray(grade?.metrics) ? grade.metrics : [];
+
+  return (
+    <article className="scout-card compare-table-card">
+      <div className="card-title-with-headshot">
+        <img
+          className="headshot headshot--tiny"
+          src={getTeamLogoUrl(data.team, data.teamId)}
+          alt={teamLabel}
+          loading="lazy"
+        />
+        <h3 title="Team Grade scores recent form against the rest of the league for the requested game window and season type.">
+          Team Grade
+        </h3>
+      </div>
+      <p className="fantasy-plain-summary">
+        This is a recent-form snapshot, not a permanent label — it's based on
+        the last {safeToText(data.gamesRequested)} games only. Change the
+        games or season type and the grade will change too.
+      </p>
+      <div className="impact-summary-grid">
+        <div className="overview-pill overview-pill--highlight">
+          <p className="overview-pill-label">Grade</p>
+          <p className="overview-pill-value">
+            <span className={getTeamGradeChipClass(grade?.grade)}>
+              {safeToText(grade?.grade)}
+            </span>
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Score (0-100)</p>
+          <p className="overview-pill-value">
+            {formatMetricValue(grade?.score)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Games Used</p>
+          <p className="overview-pill-value">
+            {safeToText(grade?.gamesPlayed)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">League Sample</p>
+          <p className="overview-pill-value">
+            {safeToText(grade?.leagueSampleSize)} teams
+          </p>
+        </div>
+      </div>
+
+      {metrics.length ? (
+        <div className="compare-table-wrap context-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>League Avg</th>
+                <th title="How many standard deviations from the league average, adjusted for direction.">
+                  Z-Score
+                </th>
+                <th title="0-100 score for this metric alone.">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.map((metric) => (
+                <tr key={metric.key}>
+                  <td>
+                    <span className="label-with-info">
+                      {metric.label}
+                      <InlineInfo label={getTeamGradeMetricTooltip(metric.key)} />
+                    </span>
+                  </td>
+                  <td>{formatMetricValue(metric.value)}</td>
+                  <td>{formatMetricValue(metric.leagueAverage)}</td>
+                  <td>{formatFactor(metric.zScore, 2)}</td>
+                  <td>{formatMetricValue(metric.score)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      <div className="comparison-grid context-wrap">
+        <section className="scout-card">
+          <h4>Strengths</h4>
+          {grade?.strengths?.length ? (
+            <ul className="plain-list">
+              {grade.strengths.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="empty-note">No standout strengths right now.</p>
+          )}
+        </section>
+        <section className="scout-card">
+          <h4>Weaknesses</h4>
+          {grade?.weaknesses?.length ? (
+            <ul className="plain-list">
+              {grade.weaknesses.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="empty-note">No standout weaknesses right now.</p>
+          )}
+        </section>
+      </div>
+    </article>
+  );
+};
+
+export const TeamCompareCard = ({ data }: { data: TeamCompareResponse }) => {
+  const { comparison } = data;
+  const advantageLabel =
+    comparison.advantage === "tie"
+      ? "Even matchup"
+      : comparison.advantage === "teamA"
+        ? `${data.teamA.team?.displayName || "Team A"} has the edge`
+        : `${data.teamB.team?.displayName || "Team B"} has the edge`;
+
+  return (
+    <article className="scout-card compare-table-card">
+      <h3 title="Compares two teams' recent efficiency metrics and grades head-to-head.">
+        Team Head-to-Head
+      </h3>
+      <p className="fantasy-plain-summary">
+        Compares both teams' last {safeToText(data.gamesRequested)} games
+        side by side — a recent-form snapshot, not a permanent power ranking.
+      </p>
+      <p className="callout-note">{advantageLabel}</p>
+
+      <div className="comparison-grid">
+        {[
+          { label: "Team A", side: data.teamA },
+          { label: "Team B", side: data.teamB },
+        ].map(({ label, side }) => (
+          <section className="scout-card" key={label}>
+            <div className="card-title-with-headshot">
+              <img
+                className="headshot headshot--tiny"
+                src={getTeamLogoUrl(side.team, side.teamId)}
+                alt={side.team?.displayName || label}
+                loading="lazy"
+              />
+              <h4>{side.team?.displayName || label}</h4>
+            </div>
+            <span className={getTeamGradeChipClass(side.grade?.grade)}>
+              Grade {safeToText(side.grade?.grade)} (
+              {formatMetricValue(side.grade?.score)})
+            </span>
+          </section>
+        ))}
+      </div>
+
+      {comparison.metrics.length ? (
+        <div className="compare-table-wrap context-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>{data.teamA.team?.displayName || "Team A"}</th>
+                <th>{data.teamB.team?.displayName || "Team B"}</th>
+                <th>Edge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.metrics.map((metric) => (
+                <tr key={metric.key}>
+                  <td>{metric.label}</td>
+                  <td>{formatMetricValue(metric.teamA)}</td>
+                  <td>{formatMetricValue(metric.teamB)}</td>
+                  <td>
+                    {metric.advantage === "tie" || !metric.advantage
+                      ? "Tie"
+                      : metric.advantage === "teamA"
+                        ? data.teamA.team?.displayName || "Team A"
+                        : data.teamB.team?.displayName || "Team B"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </article>
+  );
+};
+
 const formatAdp = (
   adp: number | null | undefined,
   isPlaceholder?: boolean,
@@ -2086,32 +2322,6 @@ const getInjuryChipClass = (injury: unknown): string => {
   return "chip";
 };
 
-const getFantasyStatEntries = (
-  source: Record<string, unknown> | null | undefined,
-): Array<{ label: string; value: string }> => {
-  if (!source || typeof source !== "object") {
-    return [];
-  }
-
-  return Object.entries(source).map(([key, value]) => ({
-    label: formatStatLongLabel(key),
-    value: formatFantasyValue(value),
-  }));
-};
-
-const getFantasyKeyStatsBreakdown = (
-  candidate: Pick<FantasyPlayerCandidate, "keyStats" | "rawStats">,
-): {
-  projected: Array<{ label: string; value: string }>;
-  actual: Array<{ label: string; value: string }>;
-} => {
-  const source = candidate.keyStats ?? candidate.rawStats;
-  return {
-    projected: getFantasyStatEntries(source?.projected),
-    actual: getFantasyStatEntries(source?.actual),
-  };
-};
-
 const formatActualStat = (value: number | null | undefined): string => {
   if (value === null || value === undefined) {
     return "Not played yet";
@@ -2187,91 +2397,518 @@ const formatStartersSummary = (
   return entries.map(([position, count]) => `${position} ${count}`).join(" · ");
 };
 
-const DRAFT_BOARD_GLOSSARY: Array<{ term: string; definition: string }> = [
-  {
-    term: "VORP (the main number to look at)",
-    definition:
-      "Higher VORP = more valuable for your league. It measures the projected scoring gap between a player and the replacement-level option at their position — not raw points. It changes with Team Count, required Starters, and FLEX slots, so a QB can score more raw points than an RB and still have a lower VORP, because it's easier to find a decent backup QB than a decent backup RB.",
-  },
-  {
-    term: "Replacement Baseline / Replacement Player (last starter needed league-wide for that position, based on your league)",
-    definition:
-      "Not the \"last player drafted\" — it's the player sitting at the replacement rank: roughly the last player the whole league would need in order to fill every starting lineup slot, including FLEX. Example: in a 12-team league starting 2 RBs, that's around the 24th-to-28th best RB. Every RB's VORP is measured against that one player's projected points — expand \"Why this rank?\" below to see exactly who it is for each position.",
-  },
-  {
-    term: "League Settings (Team Count / Starters)",
-    definition:
-      "Tell the board how big your league is and how many players start each week. Change these to match your real league — a bigger league or more starters at a position pushes the Replacement Baseline (and every VORP number) further down the list.",
-  },
-  {
-    term: "Tier",
-    definition:
-      "A group of players who are worth about the same right now, based on VORP — not a group of players with similar raw stats. It's fine to end up with anyone from the same tier; the real cost is crossing into a lower tier. Tier 1 is the best group on the board.",
-  },
-  {
-    term: "ADP",
-    definition:
-      'Average draft pick across tracked leagues — lower means earlier. "No live ADP yet" means adpIsPlaceholder is true and ESPN doesn\'t have meaningful ADP data yet (common early in a season); ADP and ADP-derived signals are hidden in that case rather than shown as real numbers.',
-  },
-  {
-    term: "Ownership %",
-    definition:
-      "Percentage of tracked leagues currently rostering this player.",
-  },
-  {
-    term: "Proj Total / Avg",
-    definition:
-      "ESPN's modelled expectation for the full season and per game, in the selected scoring format — not historical production. Fractional values (e.g. 14.5 TDs) are the tell that a number is projected. Kept visible for context, but VORP is the primary number to compare players on.",
-  },
-  {
-    term: "Actual Total / Games",
-    definition:
-      'Real box-score production once games are played. Reads "Not played yet" (not zero) until this player has an actual game logged this season.',
-  },
-  {
-    term: "Proj Rank (Pos) vs ADP Rank (Pos)",
-    definition:
-      "Where the model projects this player to finish among same-position peers, versus where leagues are actually drafting them.",
-  },
-  {
-    term: "ADP Delta",
-    definition:
-      "ADP Position Rank minus Projected Position Rank. Positive means the player is going later than their projection suggests (a value signal); negative means a likely reach.",
-  },
-  {
-    term: "Sleeper Score / Status",
-    definition:
-      'A composite value signal. A null score with a status like "Insufficient Data" or "No ADP Signal" is a distinct, legitimate state — not the same as a computed score near zero.',
-  },
-];
+type RosterSlot = {
+  key: string;
+  label: string;
+  eligiblePositions: string[];
+};
 
-const SLEEPERS_GLOSSARY: Array<{ term: string; definition: string }> = [
-  {
-    term: '"Draft Values," not guaranteed sleepers',
-    definition:
-      "This is a draft-only tool comparing a player's ADP position rank against their projected position rank — a value signal, not a promise. It goes quiet once the season starts and ESPN resets ADP.",
-  },
-  {
-    term: "ADP Delta / Draft vs Projected",
-    definition:
-      "Drafted as, e.g., RB46 but projected as RB40 is a 6-spot ADP Delta — the player is going later than their projection suggests. This is the headline number to lead with, not the raw sleeper score.",
-  },
-  {
-    term: "Sleeper Score",
-    definition:
-      "A positional z-score for draft value versus ADP — treat it as an intensity/confidence indicator, not the primary number. Above 1 is a meaningful value signal, -1 to 1 is expected market value, below -1 means expensive relative to projection. Null scores use Status instead (e.g. insufficient data/peers, no ADP signal).",
-  },
-  {
-    term: "Peer Sample",
-    definition:
-      "Number of same-position peers used to compute this player's ADP delta comparison.",
-  },
-  {
-    term: "Peer Distribution",
-    definition:
-      "The mean and standard deviation of ADP delta for each position — the statistical baseline used to judge whether a given sleeper score is meaningful versus typical position noise.",
-  },
-];
+const ROSTER_SLOT_ORDER = ["QB", "RB", "WR", "TE", "FLEX", "K", "DST"];
+
+const buildRosterSlots = (
+  starters: Record<string, number | undefined> | undefined,
+): RosterSlot[] => {
+  const slots: RosterSlot[] = [];
+
+  for (const position of ROSTER_SLOT_ORDER) {
+    const count = starters?.[position] ?? 0;
+    for (let index = 1; index <= count; index += 1) {
+      slots.push({
+        key: `${position}-${index}`,
+        label: count > 1 ? `${position}${index}` : position,
+        eligiblePositions:
+          position === "FLEX" ? ["RB", "WR", "TE"] : [position],
+      });
+    }
+  }
+
+  return slots;
+};
+
+export type DraftTeamRosters = Record<
+  number,
+  Record<string, FantasyPlayerCandidate>
+>;
+
+export type DraftRosterState = {
+  teamRosters: DraftTeamRosters;
+  selectedTeamIndex: number;
+  onTeamRostersChange: (next: DraftTeamRosters) => void;
+  onSelectTeam: (index: number) => void;
+  onUndraftPlayer: (id: string) => void;
+  onReset: () => void;
+};
+
+const getDraftTeamLabel = (index: number) =>
+  index === 0 ? "My Team" : `Team ${index + 1}`;
+
+const byVorpDesc = (a: FantasyPlayerCandidate, b: FantasyPlayerCandidate) =>
+  (typeof b.vorp === "number" ? b.vorp : -Infinity) -
+  (typeof a.vorp === "number" ? a.vorp : -Infinity);
+
+// A player rostered by any team in the league is off the board for every team.
+const collectRosteredIds = (teamRosters: DraftTeamRosters) =>
+  new Set(
+    Object.values(teamRosters).flatMap((roster) =>
+      Object.values(roster).map((player) => String(player.id)),
+    ),
+  );
+
+type RosterNeed = {
+  slotLabel: string;
+  positions: string[];
+  candidate: FantasyPlayerCandidate;
+};
+
+const buildRosterNeeds = (
+  data: DraftBoardResponse,
+  assignments: Record<string, FantasyPlayerCandidate>,
+  rosteredIds: Set<string>,
+): RosterNeed[] => {
+  const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+  const seenSlotTypes = new Set<string>();
+  const alreadySuggested = new Set<string>();
+  const needs: RosterNeed[] = [];
+
+  for (const slot of buildRosterSlots(data.leagueSettings?.starters)) {
+    if (assignments[slot.key]) {
+      continue;
+    }
+
+    const slotType = slot.eligiblePositions.join("/");
+    if (seenSlotTypes.has(slotType)) {
+      continue;
+    }
+    seenSlotTypes.add(slotType);
+
+    const best = candidates
+      .filter(
+        (candidate) =>
+          slot.eligiblePositions.includes(candidate.position) &&
+          !rosteredIds.has(String(candidate.id)) &&
+          !alreadySuggested.has(String(candidate.id)),
+      )
+      .sort(byVorpDesc)[0];
+
+    if (best) {
+      alreadySuggested.add(String(best.id));
+      needs.push({
+        slotLabel: slot.label,
+        positions: slot.eligiblePositions,
+        candidate: best,
+      });
+    }
+  }
+
+  return needs.sort((a, b) => byVorpDesc(a.candidate, b.candidate));
+};
+
+// Used by the one-click Draft buttons, which pick a player without naming a slot.
+export const assignCandidateToOpenSlot = (
+  teamRosters: DraftTeamRosters,
+  teamIndex: number,
+  starters: Record<string, number | undefined> | undefined,
+  candidate: FantasyPlayerCandidate,
+): DraftTeamRosters => {
+  if (collectRosteredIds(teamRosters).has(String(candidate.id))) {
+    return teamRosters;
+  }
+
+  const assignments = teamRosters[teamIndex] ?? {};
+  const openSlot = buildRosterSlots(starters).find(
+    (slot) =>
+      !assignments[slot.key] &&
+      slot.eligiblePositions.includes(candidate.position),
+  );
+
+  if (!openSlot) {
+    return teamRosters;
+  }
+
+  return {
+    ...teamRosters,
+    [teamIndex]: { ...assignments, [openSlot.key]: candidate },
+  };
+};
+
+type DraftLogEntry = {
+  id: string;
+  name: string;
+  position: string;
+  teamLabel: string;
+};
+
+const buildDraftLog = (teamRosters: DraftTeamRosters): DraftLogEntry[] =>
+  Object.entries(teamRosters).flatMap(([teamIndex, roster]) =>
+    Object.values(roster).map((player) => ({
+      id: String(player.id),
+      name: safeToText(player.name),
+      position: safeToText(player.position),
+      teamLabel: getDraftTeamLabel(Number(teamIndex)),
+    })),
+  );
+
+export type RosterSlotAssignments = Record<string, FantasyPlayerCandidate>;
+
+const ALL_FANTASY_POSITIONS = ["QB", "RB", "WR", "TE", "K", "DST"];
+
+const DEFAULT_STARTERS: Record<string, number> = {
+  QB: 1,
+  RB: 2,
+  WR: 2,
+  TE: 1,
+  FLEX: 1,
+  K: 1,
+  DST: 1,
+};
+
+// Parses the "QB:1,RB:2,..." text input the fantasy forms accept.
+export const parseStartersConfig = (starters: string): Record<string, number> => {
+  const parsed: Record<string, number> = {};
+
+  for (const part of starters.split(",")) {
+    const [position, count] = part.split(":");
+    const key = position?.trim().toUpperCase();
+    const value = Number(count);
+
+    if (key && Number.isFinite(value) && value > 0) {
+      parsed[key] = value;
+    }
+  }
+
+  return Object.keys(parsed).length ? parsed : DEFAULT_STARTERS;
+};
+
+export const buildRosterBuilderSlots = (
+  starters: string,
+  benchCount = 6,
+): RosterSlot[] => {
+  const slots = buildRosterSlots(parseStartersConfig(starters));
+
+  for (let index = 1; index <= benchCount; index += 1) {
+    slots.push({
+      key: `BN-${index}`,
+      label: `BN${index}`,
+      eligiblePositions: ALL_FANTASY_POSITIONS,
+    });
+  }
+
+  return slots;
+};
+
+const RosterSlotGrid = ({
+  slots,
+  assignments,
+  candidates,
+  unavailableIds,
+  onAssign,
+  onClear,
+}: {
+  slots: RosterSlot[];
+  assignments: RosterSlotAssignments;
+  candidates: FantasyPlayerCandidate[];
+  unavailableIds: Set<string>;
+  onAssign: (slot: RosterSlot, candidate: FantasyPlayerCandidate) => void;
+  onClear: (slotKey: string) => void;
+}) => {
+  const [openSlotKey, setOpenSlotKey] = useState<string | null>(null);
+  const [pickerFilter, setPickerFilter] = useState("");
+  const needle = pickerFilter.trim().toLowerCase();
+
+  const handlePick = (slot: RosterSlot, candidate: FantasyPlayerCandidate) => {
+    onAssign(slot, candidate);
+    setOpenSlotKey(null);
+    setPickerFilter("");
+  };
+
+  return (
+    <div className="draft-roster-grid">
+      {slots.map((slot) => {
+        const assigned = assignments[slot.key];
+        const isOpen = openSlotKey === slot.key;
+        const eligibleCandidates = candidates
+          .filter((candidate) =>
+            slot.eligiblePositions.includes(candidate.position),
+          )
+          .filter(
+            (candidate) =>
+              !unavailableIds.has(String(candidate.id)) ||
+              (assigned && String(assigned.id) === String(candidate.id)),
+          )
+          .filter((candidate) =>
+            needle ? candidate.name.toLowerCase().includes(needle) : true,
+          )
+          .sort(byVorpDesc)
+          .slice(0, 25);
+
+        return (
+          <div className="draft-roster-slot" key={slot.key}>
+            <button
+              type="button"
+              className={`draft-roster-slot__cell ${
+                assigned ? "filled" : "empty"
+              } ${isOpen ? "open" : ""}`}
+              onClick={() =>
+                setOpenSlotKey((current) =>
+                  current === slot.key ? null : slot.key,
+                )
+              }
+            >
+              <span className="draft-roster-slot__label">{slot.label}</span>
+              {assigned ? (
+                <span className="draft-roster-slot__player">
+                  <strong>{safeToText(assigned.name)}</strong>
+                  <span className="meta-line">
+                    {safeToText(assigned.position)} ·{" "}
+                    {formatFantasyTeam(assigned.team)} · VORP{" "}
+                    {formatMetricValue(assigned.vorp)}
+                  </span>
+                </span>
+              ) : (
+                <span className="draft-roster-slot__placeholder">
+                  + Add Player
+                </span>
+              )}
+            </button>
+            {assigned ? (
+              <button
+                type="button"
+                className="draft-roster-slot__clear"
+                aria-label={`Clear ${slot.label}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClear(slot.key);
+                }}
+              >
+                ×
+              </button>
+            ) : null}
+
+            {isOpen ? (
+              <div className="draft-roster-picker">
+                <input
+                  type="search"
+                  className="fantasy-search-input"
+                  placeholder={`Search ${slot.label} candidates...`}
+                  value={pickerFilter}
+                  onChange={(event) => setPickerFilter(event.target.value)}
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus
+                />
+                <div className="draft-roster-picker__list">
+                  {eligibleCandidates.length ? (
+                    eligibleCandidates.map((candidate, index) => (
+                      <button
+                        type="button"
+                        key={String(candidate.id)}
+                        className="draft-roster-picker__row"
+                        onClick={() => handlePick(slot, candidate)}
+                      >
+                        <span className="draft-roster-picker__rank">
+                          #{index + 1}
+                        </span>
+                        <span className="draft-roster-picker__name">
+                          {safeToText(candidate.name)}{" "}
+                          <span className="chip">
+                            {safeToText(candidate.position)}
+                          </span>
+                        </span>
+                        <span className="draft-roster-picker__meta">
+                          Tier {safeToText(candidate.tier)} · ADP{" "}
+                          {formatAdp(candidate.adp, candidate.adpIsPlaceholder)}{" "}
+                          · VORP {formatMetricValue(candidate.vorp)}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="empty-note">
+                      No available candidates for this slot.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export const FantasyRosterBuilder = ({
+  title,
+  hint,
+  starters,
+  candidates,
+  assignments,
+  unavailableIds,
+  onChange,
+}: {
+  title: string;
+  hint?: string;
+  starters: string;
+  candidates: FantasyPlayerCandidate[];
+  assignments: RosterSlotAssignments;
+  unavailableIds?: Set<string>;
+  onChange: (next: RosterSlotAssignments) => void;
+}) => {
+  const slots = buildRosterBuilderSlots(starters);
+  const ownIds = new Set(
+    Object.values(assignments).map((player) => String(player.id)),
+  );
+  const blocked = new Set([...ownIds, ...(unavailableIds ?? [])]);
+  const filled = Object.keys(assignments).length;
+
+  return (
+    <section className="draft-roster-board roster-builder">
+      <div className="draft-roster-board__header">
+        <div>
+          <h4 className="fantasy-section-heading">{title}</h4>
+          {hint ? <p className="helper-note">{hint}</p> : null}
+        </div>
+        <div className="draft-roster-board__actions">
+          <span className="draft-roster-board__count">
+            {filled}/{slots.length} filled
+          </span>
+          {filled ? (
+            <button
+              type="button"
+              className="draft-roster-board__reset"
+              onClick={() => onChange({})}
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <RosterSlotGrid
+        slots={slots}
+        assignments={assignments}
+        candidates={candidates}
+        unavailableIds={blocked}
+        onAssign={(slot, candidate) =>
+          onChange({ ...assignments, [slot.key]: candidate })
+        }
+        onClear={(slotKey) => {
+          const next = { ...assignments };
+          delete next[slotKey];
+          onChange(next);
+        }}
+      />
+    </section>
+  );
+};
+
+const DraftRosterBoard = ({
+  data,
+  draftState,
+  onPickPlayer,
+}: {
+  data: DraftBoardResponse;
+  draftState: DraftRosterState;
+  onPickPlayer: (candidate: FantasyPlayerCandidate) => void;
+}) => {
+  const teamCount = Math.max(1, data.leagueSettings?.teamCount ?? 1);
+  const { teamRosters, selectedTeamIndex } = draftState;
+
+  const slots = buildRosterSlots(data.leagueSettings?.starters);
+  const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+  const assignments = teamRosters[selectedTeamIndex] ?? {};
+  const assignedIds = collectRosteredIds(teamRosters);
+
+  const handlePick = (slot: RosterSlot, candidate: FantasyPlayerCandidate) => {
+    draftState.onTeamRostersChange({
+      ...teamRosters,
+      [selectedTeamIndex]: { ...assignments, [slot.key]: candidate },
+    });
+    onPickPlayer(candidate);
+  };
+
+  const handleClearSlot = (slotKey: string) => {
+    const cleared = assignments[slotKey];
+    const roster = { ...assignments };
+    delete roster[slotKey];
+    draftState.onTeamRostersChange({
+      ...teamRosters,
+      [selectedTeamIndex]: roster,
+    });
+
+    if (cleared) {
+      draftState.onUndraftPlayer(String(cleared.id));
+    }
+  };
+
+  const filledSlotCount = Object.keys(assignments).length;
+  const totalPicks = assignedIds.size;
+
+  return (
+    <section className="draft-roster-board">
+      <div className="draft-roster-board__header">
+        <div>
+          <h4 className="fantasy-section-heading">League Roster Board</h4>
+          <p className="helper-note">
+            Pick the team on the clock, then click a slot to fill it. Picks are
+            saved on this device and stay put if you leave the page.
+          </p>
+        </div>
+        <div className="draft-roster-board__actions">
+          <span className="draft-roster-board__count">
+            {filledSlotCount}/{slots.length} filled
+          </span>
+          {totalPicks ? (
+            <button
+              type="button"
+              className="draft-roster-board__reset"
+              onClick={draftState.onReset}
+            >
+              Reset Draft
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="draft-roster-team-tabs" role="tablist" aria-label="Teams">
+        {Array.from({ length: teamCount }, (_, index) => index).map(
+          (index) => {
+            const filled = Object.keys(teamRosters[index] ?? {}).length;
+            return (
+              <button
+                key={index}
+                type="button"
+                role="tab"
+                aria-selected={selectedTeamIndex === index}
+                className={`draft-roster-team-tab ${
+                  selectedTeamIndex === index ? "active" : ""
+                }`}
+                onClick={() => {
+                  draftState.onSelectTeam(index);
+                }}
+              >
+                {getDraftTeamLabel(index)}
+                {filled ? (
+                  <span className="draft-roster-team-tab__badge">
+                    {filled}
+                  </span>
+                ) : null}
+              </button>
+            );
+          },
+        )}
+      </div>
+
+      <RosterSlotGrid
+        key={selectedTeamIndex}
+        slots={slots}
+        assignments={assignments}
+        candidates={candidates}
+        unavailableIds={assignedIds}
+        onAssign={handlePick}
+        onClear={handleClearSlot}
+      />
+    </section>
+  );
+};
 
 const FantasyGlossary = ({
   items,
@@ -2316,62 +2953,6 @@ type FantasyStrategySection = {
   tips: string[];
 };
 
-const DRAFT_BOARD_STRATEGY: FantasyStrategySection[] = [
-  {
-    phase: "Before your draft",
-    tips: [
-      "Set Team Count and Starters (including FLEX) to match your real league before anything else — the Replacement Baseline, and therefore every VORP and Tier on the board, is computed directly from these settings.",
-      "Set Scoring Format to match your league too — rankings shift meaningfully at RB/WR/TE between Standard, Half-PPR, and PPR, so a board built on the wrong format will mislead you.",
-      "Filter by Position (or FLEX) to pre-build a cheat sheet round-by-round: scan Tier boundaries (now VORP-based, not raw points) and note where each position's talent drop-off happens so you know when to pivot rather than reach.",
-      "Use the tier's Std Dev as a tightness check: a low Std Dev means the players in that tier are genuinely close in value over replacement (safe to grab any of them); a high Std Dev means treat the tier loosely and lean on ADP/status to break ties.",
-    ],
-  },
-  {
-    phase: "During your draft",
-    tips: [
-      'Every time any team picks a player (not just yours), search them in "Mark Player As Drafted" and add them, then reload — Available Count and Pool Size will drop to confirm the board is now accurate for who\'s actually left.',
-      "When it's your turn, work tier-first: if you're going to leave a tier anyway, take the last-ranked player left in it before reaching into the next tier for a marginal VORP upgrade.",
-      "Compare VORP across positions, not Proj Total — Proj Total makes QBs look best every time, but VORP already accounts for how replaceable each position is, so it's the number that should decide close calls between positions.",
-      'Use Status + ADP Delta together as a tiebreaker within a tier: "Undervalued" with a larger positive ADP Delta means the field is passing on them relative to projection — safer to wait one more round; "Overvalued"/negative ADP Delta means take them now if you want them, they won\'t last.',
-      "Check the injury badge before locking in a pick that's close to your turn — Questionable/Doubtful/Out next to a name is a real risk signal the projection alone won't show you.",
-    ],
-  },
-  {
-    phase: "What to look at once games start",
-    tips: [
-      'Proj Total and VORP are always ESPN\'s modelled expectation, never history — don\'t read them as "what they did." Once Actual Total stops reading "Not played yet," compare it against Proj Total to spot early breakouts or busts for keeper/dynasty re-evaluation.',
-      'Expand "Season Stat Breakdown" per player to see the Projected vs Actual split side by side — this is the fastest way to tell whether a player\'s box score is tracking ahead of or behind what was expected of them.',
-      'Ownership % is a quick gut-check on how widely-known a player already is: a low Own % paired with "Undervalued" status is the clearest late-round or waiver-priority signal the board can give you.',
-      "Once games are underway, the Waivers and Consistency tabs pick up where this board's projections leave off — use them for actual-production signal instead of re-reading pre-season VORP.",
-    ],
-  },
-];
-
-const SLEEPERS_STRATEGY: FantasyStrategySection[] = [
-  {
-    phase: "Draft-day prep",
-    tips: [
-      "Run this 1-2 rounds before you're on the clock at a given position — filter by Position and scan for names with a high Sleeper Score to build a short list of late-round targets before you need them.",
-      'Read the "Draft vs Projected" line literally as your pick rationale (e.g. "drafted as RB46, projects as RB40") — it\'s the same phrasing you\'d use to justify the pick out loud in your draft room.',
-      "Before trusting a single Sleeper Score, expand Peer Distribution for that position: a high Std Dev ADP Delta means the whole position is noisy this year, so an average score isn't special; a low Std Dev means even a moderate score is a real signal.",
-    ],
-  },
-  {
-    phase: "Treat these statuses differently",
-    tips: [
-      '"Undervalued" with a real Sleeper Score is an actionable target. "Insufficient Data" or "Insufficient Peers" means the model doesn\'t have enough signal yet — put these on a watchlist, don\'t draft on the score alone.',
-      "Cross-check a promising name on the Draft Board too: same player, same scoring format, so you can see their Tier and full ADP context alongside the sleeper signal before committing a pick.",
-    ],
-  },
-  {
-    phase: "In-season use",
-    tips: [
-      "This endpoint is a draft-time signal — ADP effectively resets to a placeholder once the season starts, so expect it to return few or no results in-season. That's expected behavior, not a bug.",
-      "Once ADP dries up, use Actual Total vs Proj Total on the Draft Board instead — that's the in-season equivalent for finding players outperforming or underperforming their offseason expectation (waiver-wire and start/sit calls).",
-    ],
-  },
-];
-
 const FantasyStrategyGuide = ({
   title,
   sections,
@@ -2392,191 +2973,6 @@ const FantasyStrategyGuide = ({
       </div>
     ))}
   </details>
-);
-
-const FantasyKeyStatsDetails = ({
-  candidate,
-}: {
-  candidate: Pick<FantasyPlayerCandidate, "keyStats" | "rawStats" | "position">;
-}) => {
-  const { projected, actual } = getFantasyKeyStatsBreakdown(candidate);
-  const isSkillPosition =
-    candidate.position !== "K" && candidate.position !== "DST";
-
-  return (
-    <details className="fantasy-key-stats">
-      <summary>Season Stat Breakdown (Projected vs Actual)</summary>
-      <div className="fantasy-stat-breakdown">
-        <div>
-          <p
-            className="fantasy-stat-breakdown__label"
-            title="ESPN's modelled expectation for this player this season — not historical production."
-          >
-            Projected
-          </p>
-          {projected.length ? (
-            <div className="chip-grid">
-              {projected.map((entry) => (
-                <span className="chip" key={`proj-${entry.label}`}>
-                  {entry.label}: {entry.value}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="empty-note">
-              No projected stat breakdown available for this player
-              {isSkillPosition
-                ? "."
-                : " — the backend does not compute keyStats for K/DST by design."}
-            </p>
-          )}
-        </div>
-        <div>
-          <p
-            className="fantasy-stat-breakdown__label"
-            title="Real box-score production. Stays null until this player has an actual game logged this season."
-          >
-            Actual
-          </p>
-          {actual.length ? (
-            <div className="chip-grid">
-              {actual.map((entry) => (
-                <span className="chip" key={`act-${entry.label}`}>
-                  {entry.label}: {entry.value}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="empty-note">
-              Not played yet this season
-              {isSkillPosition
-                ? "."
-                : " — the backend does not compute keyStats for K/DST by design."}
-            </p>
-          )}
-        </div>
-      </div>
-    </details>
-  );
-};
-
-const FantasyPlayerRow = ({
-  candidate,
-}: {
-  candidate: FantasyPlayerCandidate;
-}) => (
-  <article
-    className={`fantasy-player-row ${getFantasyRowAccentClass(candidate.status)}`}
-  >
-    <div className="fantasy-player-row__primary">
-      <div>
-        <p className="fantasy-player-row__name">
-          {safeToText(candidate.name)}{" "}
-          <span className="chip">{safeToText(candidate.position)}</span>
-        </p>
-        <p className="meta-line">
-          {formatFantasyTeam(candidate.team)}{" "}
-          <span className={getInjuryChipClass(candidate.injuryStatus)}>
-            {formatFantasyInjury(candidate.injuryStatus)}
-          </span>
-        </p>
-      </div>
-      <span className={getFantasyStatusChipClass(candidate.status)}>
-        {getFantasyStatusLabel(candidate.status)}
-      </span>
-    </div>
-
-    <div className="impact-summary-grid fantasy-player-row__stats">
-      <div className="overview-pill overview-pill--highlight">
-        <p
-          className="overview-pill-label"
-          title="Projected points minus the Replacement Baseline for this position — what the board is ranked and tiered on."
-        >
-          VORP
-        </p>
-        <p className="overview-pill-value">
-          {formatMetricValue(candidate.vorp)}
-        </p>
-      </div>
-      <div className="overview-pill">
-        <p className="overview-pill-label">VORP Rank (Overall)</p>
-        <p className="overview-pill-value">{safeToText(candidate.vorpRank)}</p>
-      </div>
-      <div className="overview-pill">
-        <p className="overview-pill-label">ADP</p>
-        <p className="overview-pill-value">
-          {formatAdp(candidate.adp, candidate.adpIsPlaceholder)}
-        </p>
-      </div>
-      <div className="overview-pill">
-        <p className="overview-pill-label">Own %</p>
-        <p className="overview-pill-value">
-          {formatUsagePercent(candidate.ownershipPct)}
-        </p>
-      </div>
-      <div className="overview-pill">
-        <p
-          className="overview-pill-label"
-          title="ESPN's modelled expectation for the season — not historical production."
-        >
-          Proj Total
-        </p>
-        <p className="overview-pill-value">
-          {formatMetricValue(candidate.projectedTotal)}
-        </p>
-      </div>
-      <div className="overview-pill">
-        <p
-          className="overview-pill-label"
-          title="Real box-score production so far this season. Reads 'Not played yet' until a game is logged."
-        >
-          Actual Total
-        </p>
-        <p className="overview-pill-value">
-          {formatActualStat(candidate.actualTotal)}
-        </p>
-      </div>
-      <div className="overview-pill">
-        <p className="overview-pill-label">Proj Rank (Pos)</p>
-        <p className="overview-pill-value">
-          {safeToText(candidate.projectedPositionRank)}
-        </p>
-      </div>
-      {candidate.adpIsPlaceholder ? (
-        <div className="overview-pill overview-pill--muted">
-          <p
-            className="overview-pill-label"
-            title="ADP-derived draft signals (position rank, delta) are hidden until ESPN has meaningful ADP data — showing them from placeholder data would be misleading."
-          >
-            Draft Signal
-          </p>
-          <p className="overview-pill-value">No live ADP yet</p>
-        </div>
-      ) : (
-        <>
-          <div className="overview-pill">
-            <p className="overview-pill-label">ADP Rank (Pos)</p>
-            <p className="overview-pill-value">
-              {safeToText(candidate.adpPositionRank)}
-            </p>
-          </div>
-          <div className="overview-pill">
-            <p
-              className="overview-pill-label"
-              title="Positive means going later in position rank than projection suggests — a value signal."
-            >
-              ADP Delta
-            </p>
-            <p className="overview-pill-value">
-              {formatMetricValue(candidate.adpDelta)}
-            </p>
-          </div>
-        </>
-      )}
-    </div>
-
-    <FantasyKeyStatsDetails candidate={candidate} />
-  </article>
 );
 
 const FLEX_ELIGIBLE_POSITIONS = new Set(["RB", "WR", "TE"]);
@@ -2665,17 +3061,13 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
   );
 
   return (
-    <details className="context-wrap fantasy-peer-details" open>
-      <summary>Why this rank? (Replacement Baselines)</summary>
+    <details className="context-wrap fantasy-peer-details">
+      <summary>Why this rank?</summary>
       <p className="derive-note">
-        For each position, the "replacement player" isn't the last player
-        drafted — it's the player at the replacement rank: roughly the last
-        player the whole league would need to fill every starting lineup slot,
-        including FLEX. VORP measures the gap above that one player's projected
-        points, not raw points. A bigger gap between the best available player
-        and this baseline means the position is scarce right now and worth
-        reaching for; a small gap means plenty of similar options remain, so
-        it's safer to wait. Rows below are sorted by that gap, biggest first.
+        The "replacement player" is roughly the last player the league would
+        need to fill every starting slot at that position. A bigger gap
+        between the best available player and that baseline means the
+        position is scarce right now; a small gap means it's safe to wait.
       </p>
       <div className="scarcity-board">
         {rows.map((row) => {
@@ -2742,11 +3134,6 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
           );
         })}
       </div>
-      <p className="derive-note">
-        This ranking can change as players are drafted — a position with a small
-        gap now can open up once its top few players are gone, so re-check this
-        panel after marking players as drafted.
-      </p>
     </details>
   );
 };
@@ -2754,45 +3141,31 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
 export const DraftBoardCard = ({
   data,
   rosterLabel,
+  draftState,
+  onMarkDrafted,
+  onDraftCandidate,
 }: {
   data: DraftBoardResponse;
   rosterLabel?: string;
+  draftState?: DraftRosterState;
+  onMarkDrafted?: (id: string) => void;
+  onDraftCandidate?: (candidate: FantasyPlayerCandidate) => void;
 }) => {
-  const [nameFilter, setNameFilter] = useState("");
-  const [collapsedTiers, setCollapsedTiers] = useState<Set<number>>(
-    () => new Set(),
-  );
-
   const candidates = Array.isArray(data.candidates) ? data.candidates : [];
-  const tiers = Array.isArray(data.tiers)
-    ? [...data.tiers].sort((a, b) => a.tier - b.tier)
+  const rosteredIds = draftState
+    ? collectRosteredIds(draftState.teamRosters)
+    : new Set<string>();
+  const bestOverall = candidates.find(
+    (candidate) => !rosteredIds.has(String(candidate.id)),
+  );
+  const rosterNeeds = draftState
+    ? buildRosterNeeds(
+        data,
+        draftState.teamRosters[draftState.selectedTeamIndex] ?? {},
+        rosteredIds,
+      )
     : [];
-
-  const candidatesByTier = new Map<number, FantasyPlayerCandidate[]>();
-  candidates.forEach((candidate) => {
-    const tierKey = typeof candidate.tier === "number" ? candidate.tier : -1;
-    const bucket = candidatesByTier.get(tierKey) ?? [];
-    bucket.push(candidate);
-    candidatesByTier.set(tierKey, bucket);
-  });
-
-  const tierKeys = tiers.length
-    ? tiers.map((tier) => tier.tier)
-    : Array.from(candidatesByTier.keys()).sort((a, b) => a - b);
-
-  const needle = nameFilter.trim().toLowerCase();
-
-  const toggleTier = (tierNumber: number, isOpen: boolean) => {
-    setCollapsedTiers((current) => {
-      const next = new Set(current);
-      if (isOpen) {
-        next.delete(tierNumber);
-      } else {
-        next.add(tierNumber);
-      }
-      return next;
-    });
-  };
+  const draftLog = draftState ? buildDraftLog(draftState.teamRosters) : [];
 
   return (
     <article className="scout-card fantasy-card">
@@ -2804,20 +3177,81 @@ export const DraftBoardCard = ({
       </div>
       <p className="viz-subtitle">
         {safeToText(data.scoring)} scoring | Season {safeToText(data.season)} |{" "}
-        Position {safeToText(data.position)} | Ranked by{" "}
-        {safeToText(data.tierMetric || "vorp").toUpperCase()}
+        Position {safeToText(data.position)}
       </p>
-      <p className="selector-note">
-        League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
-        Starters: {formatStartersSummary(data.leagueSettings?.starters)}
+      <p className="fantasy-tip">
+        VORP = value over a replacement-level player at that position, higher
+        is better.
       </p>
-      <FantasyPlainSummary>
-        This board ranks every available player by how much better they are than
-        a replacement-level pick at their position. Bigger number (VORP) =
-        better pick right now.
-      </FantasyPlainSummary>
+      <FantasyStatusLegend />
       {data.decisionInsights ? (
         <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+
+      {bestOverall && onDraftCandidate ? (
+        <section className="fantasy-next-up">
+          <p className="fantasy-next-up__label">Next Best Available (Overall)</p>
+          <div className="fantasy-next-up__row">
+            <p className="fantasy-next-up__name">
+              {safeToText(bestOverall.name)}{" "}
+              <span className="chip">{safeToText(bestOverall.position)}</span>{" "}
+              <span className="chip">
+                VORP {formatMetricValue(bestOverall.vorp)}
+              </span>
+            </p>
+            <button
+              type="button"
+              className="fantasy-draft-button"
+              onClick={() => onDraftCandidate(bestOverall)}
+            >
+              Draft
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {rosterNeeds.length && draftState && onDraftCandidate ? (
+        <section className="draft-needs">
+          <div className="draft-needs__header">
+            <p className="draft-needs__title">
+              Best Picks For {getDraftTeamLabel(draftState.selectedTeamIndex)}
+            </p>
+            <span className="draft-needs__hint">
+              Ranked by VORP across the slots still open
+            </span>
+          </div>
+          <ol className="draft-needs__list">
+            {rosterNeeds.map((need, index) => (
+              <li className="draft-needs__row" key={need.slotLabel}>
+                <span className="draft-needs__rank">{index + 1}</span>
+                <span className="draft-needs__slot">{need.slotLabel}</span>
+                <span className="draft-needs__player">
+                  <strong>{safeToText(need.candidate.name)}</strong>
+                  <span className="meta-line">
+                    {safeToText(need.candidate.position)} ·{" "}
+                    {formatFantasyTeam(need.candidate.team)} · VORP{" "}
+                    {formatMetricValue(need.candidate.vorp)}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="fantasy-draft-button"
+                  onClick={() => onDraftCandidate(need.candidate)}
+                >
+                  Draft
+                </button>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
+      {draftState && onMarkDrafted ? (
+        <DraftRosterBoard
+          data={data}
+          draftState={draftState}
+          onPickPlayer={(candidate) => onMarkDrafted(String(candidate.id))}
+        />
       ) : null}
 
       <div className="impact-summary-grid">
@@ -2847,99 +3281,23 @@ export const DraftBoardCard = ({
       Object.keys(data.replacementBaselines).length ? (
         <PositionScarcityPanel data={data} />
       ) : null}
-      {rosterLabel ? (
+      {draftLog.length ? (
+        <div className="draft-log">
+          <p className="draft-log__label">
+            Who drafted who ({draftLog.length} picks)
+          </p>
+          <div className="chip-grid">
+            {draftLog.map((entry) => (
+              <span className="chip draft-log__chip" key={entry.id}>
+                {entry.name} ({entry.position}){" "}
+                <strong>{entry.teamLabel}</strong>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : rosterLabel ? (
         <p className="selector-note">Drafted so far: {rosterLabel}</p>
       ) : null}
-
-      <FantasyStrategyGuide
-        title="How to use this for your draft"
-        sections={DRAFT_BOARD_STRATEGY}
-      />
-      <FantasyGlossary items={DRAFT_BOARD_GLOSSARY} />
-      <FantasyStatusLegend />
-
-      {tierKeys.length ? (
-        <>
-          <div className="fantasy-toolbar context-wrap">
-            <input
-              type="search"
-              className="fantasy-search-input"
-              placeholder="Search by player name..."
-              value={nameFilter}
-              onChange={(event) => setNameFilter(event.target.value)}
-              aria-label="Search candidates by name"
-            />
-            <div className="fantasy-toolbar-actions">
-              <button
-                type="button"
-                className="fantasy-link-button"
-                onClick={() => setCollapsedTiers(new Set())}
-              >
-                Expand All
-              </button>
-              <button
-                type="button"
-                className="fantasy-link-button"
-                onClick={() => setCollapsedTiers(new Set(tierKeys))}
-              >
-                Collapse All
-              </button>
-            </div>
-          </div>
-
-          {tierKeys.map((tierNumber) => {
-            const tierMeta = tiers.find((tier) => tier.tier === tierNumber);
-            const tierCandidates = (
-              candidatesByTier.get(tierNumber) ?? []
-            ).filter((candidate) =>
-              needle ? candidate.name.toLowerCase().includes(needle) : true,
-            );
-
-            if (needle && !tierCandidates.length) {
-              return null;
-            }
-
-            return (
-              <details
-                key={`tier-${tierNumber}`}
-                className="tier-group"
-                open={needle ? true : !collapsedTiers.has(tierNumber)}
-                onToggle={(event) =>
-                  toggleTier(
-                    tierNumber,
-                    (event.target as HTMLDetailsElement).open,
-                  )
-                }
-              >
-                <summary className="tier-group-header">
-                  <h4>
-                    {tierNumber >= 0 ? `Tier ${tierNumber}` : "Unranked"}
-                    {tierMeta ? ` (${tierMeta.count} players)` : ""}
-                  </h4>
-                  {tierMeta ? (
-                    <p className="tier-group-range">
-                      High {formatMetricValue(tierMeta.high)} · Mean{" "}
-                      {formatMetricValue(tierMeta.mean)} · Low{" "}
-                      {formatMetricValue(tierMeta.low)} · Std Dev{" "}
-                      {formatFactor(tierMeta.stdDev, 2)}
-                    </p>
-                  ) : null}
-                </summary>
-                <div className="fantasy-player-row-list">
-                  {tierCandidates.map((candidate) => (
-                    <FantasyPlayerRow
-                      key={String(candidate.id)}
-                      candidate={candidate}
-                    />
-                  ))}
-                </div>
-              </details>
-            );
-          })}
-        </>
-      ) : (
-        <p className="empty-note">No candidates returned for this filter.</p>
-      )}
     </article>
   );
 };
@@ -3022,11 +3380,11 @@ export const SleepersCard = ({
         </div>
       </div>
 
-      <FantasyStrategyGuide
-        title="How to use sleepers for your fantasy team"
-        sections={SLEEPERS_STRATEGY}
-      />
-      <FantasyGlossary items={SLEEPERS_GLOSSARY} />
+      <p className="fantasy-tip">
+        Sleeper Score compares a player's draft position to how their projection
+        stacks up against others at the same position — higher means better
+        value.
+      </p>
       <FantasyStatusLegend />
 
       {peerDistributions.length ? (
@@ -3320,52 +3678,6 @@ const FantasyRecentFormSummary = ({
   );
 };
 
-const WAIVER_GLOSSARY: Array<{ term: string; definition: string }> = [
-  {
-    term: "Ownership Max",
-    definition:
-      "Caps results to players rostered below this percentage. Lower values (e.g. under 25%) surface true wire pickups; raising it toward 75% also includes bench-rostered players outperforming their roster spot.",
-  },
-  {
-    term: "Window",
-    definition:
-      "Number of most recent completed games averaged for the Actual vs Projected comparison.",
-  },
-  {
-    term: "Δ vs Proj (deltaFromProjection)",
-    definition:
-      "Recent actual average minus recent projected average over the window — the core waiver signal. Positive means a player is producing above what ESPN expected of them lately.",
-  },
-  {
-    term: "Breakouts vs Safer Pickups",
-    definition:
-      "Breakouts are ranked purely by the highest Δ vs Proj — the biggest recent outperformance, even if it's a bit volatile. Safer Pickups are still outperforming (Δ vs Proj ≥ 0) but ranked by the lowest Std Dev — a steadier, lower-volatility bet.",
-  },
-  {
-    term: "Insufficient Sample",
-    definition:
-      "Fewer than 2 completed games exist yet this season, so no waiver signal can be computed — this is expected pre-season, not an error. Check back after more weeks are played.",
-  },
-];
-
-const WAIVER_STRATEGY: FantasyStrategySection[] = [
-  {
-    phase: "When to check this",
-    tips: [
-      "Run this weekly after games finish once Status reads \"Ready\" — it's driven entirely by completed actual production, so it's a post-game, not pre-game, tool.",
-      "Lower Ownership Max first (e.g. under 25%) to see true widely-available pickups; raise it toward 75% if you want to also catch players outperforming their roster spot on someone else's bench.",
-    ],
-  },
-  {
-    phase: "How to read a candidate",
-    tips: [
-      "Breakouts leads with the biggest recent outperformance regardless of volatility — good for spotting a player about to take over a role.",
-      "Safer Pickups favors a low Std Dev over a huge single game — that's sustained outperformance, a better bet for a start-now roster spot.",
-      "Cross-check Own % and Started % together: low ownership with rising started % elsewhere is often a sign the wider market is starting to notice too, so don't wait too long.",
-    ],
-  },
-];
-
 export const WaiverWireCard = ({ data }: { data: WaiverWireResponse }) => {
   const [nameFilter, setNameFilter] = useState("");
   const needle = nameFilter.trim().toLowerCase();
@@ -3421,11 +3733,10 @@ export const WaiverWireCard = ({ data }: { data: WaiverWireResponse }) => {
         {getInSeasonStatusLabel(data.status)}
       </p>
 
-      <FantasyStrategyGuide
-        title="How to use waivers for your team"
-        sections={WAIVER_STRATEGY}
-      />
-      <FantasyGlossary items={WAIVER_GLOSSARY} />
+      <p className="fantasy-tip">
+        Delta vs Projection is how many points a player is beating their own
+        projection by over the last few games — higher means hotter.
+      </p>
       <FantasyStatusLegend />
 
       {data.status !== "ready" ? (
@@ -3526,29 +3837,6 @@ export const WaiverWireCard = ({ data }: { data: WaiverWireResponse }) => {
   );
 };
 
-const CONSISTENCY_GLOSSARY: Array<{ term: string; definition: string }> = [
-  {
-    term: "Consistency Score",
-    definition:
-      "Actual Avg minus Std Dev over the window. Rewards a steady floor rather than one huge ceiling week — a high score means dependable production, not necessarily the highest upside.",
-  },
-  {
-    term: "Std Dev",
-    definition:
-      "Game-to-game variance over the sampled window. Lower means more predictable output week to week.",
-  },
-];
-
-const CONSISTENCY_STRATEGY: FantasyStrategySection[] = [
-  {
-    phase: "When to use this",
-    tips: [
-      "Use it to pick the safer of two similarly-projected players for your lineup — Consistency Score favors the steadier floor over a spikier ceiling.",
-      "Watch for players with a high Consistency Score but a recently underwhelming projection — that combination can be a buy-low trade target since the underlying floor is proven.",
-    ],
-  },
-];
-
 export const ConsistencyCard = ({ data }: { data: ConsistencyResponse }) => {
   const [nameFilter, setNameFilter] = useState("");
   const needle = nameFilter.trim().toLowerCase();
@@ -3582,11 +3870,10 @@ export const ConsistencyCard = ({ data }: { data: ConsistencyResponse }) => {
         {getInSeasonStatusLabel(data.status)}
       </p>
 
-      <FantasyStrategyGuide
-        title="How to use consistency for your lineup"
-        sections={CONSISTENCY_STRATEGY}
-      />
-      <FantasyGlossary items={CONSISTENCY_GLOSSARY} />
+      <p className="fantasy-tip">
+        Std Dev is how much a player's weekly score swings — lower means more
+        predictable, higher means boom-or-bust.
+      </p>
       <FantasyStatusLegend />
 
       {data.status !== "ready" ? (
@@ -3640,30 +3927,6 @@ export const ConsistencyCard = ({ data }: { data: ConsistencyResponse }) => {
   );
 };
 
-const START_SIT_GLOSSARY: Array<{ term: string; definition: string }> = [
-  {
-    term: "Recommendation",
-    definition:
-      "Start (recent form supports or exceeds next week's projection), Consider Sit (recent form trails it), Insufficient Sample (fewer than 2 completed games), or No Upcoming Projection (no projection exists for the next period, e.g. a completed season or bye).",
-  },
-  {
-    term: "Next Projection",
-    definition:
-      "ESPN's projection for the next scoring period only — a single-week number, not a season total.",
-  },
-];
-
-const START_SIT_STRATEGY: FantasyStrategySection[] = [
-  {
-    phase: "How to use this",
-    tips: [
-      "Add the players you're deciding between for this week, then compare Next Projection alongside Δ vs Proj from their recent form — a Start recommendation with a rising Δ is the strongest combination.",
-      "This tool does not include opponent-matchup analysis — combine it with your own read on the upcoming defense before finalizing your lineup.",
-      '"No Upcoming Projection" is expected for a completed season or off week, not an error — it just means there\'s nothing to recommend yet for that player.',
-    ],
-  },
-];
-
 export const StartSitCard = ({ data }: { data: StartSitResponse }) => (
   <article className="scout-card fantasy-card">
     <div className="fantasy-header-row">
@@ -3687,17 +3950,10 @@ export const StartSitCard = ({ data }: { data: StartSitResponse }) => (
       Window {safeToText(data.window)} games | Status{" "}
       {getInSeasonStatusLabel(data.status)}
     </p>
-    <p className="empty-note">
-      Not included yet: matchup, weather, defensive opponent, and late injury
-      news. Treat Start/Consider Sit as a data-driven nudge from projection and
-      recent form only, not a guarantee.
+    <p className="fantasy-tip">
+      Based on projection and recent form only — matchup, weather, and late
+      injury news are not factored in.
     </p>
-
-    <FantasyStrategyGuide
-      title="How to use start/sit for your lineup"
-      sections={START_SIT_STRATEGY}
-    />
-    <FantasyGlossary items={START_SIT_GLOSSARY} />
     <FantasyStatusLegend />
 
     {data.players?.length ? (
@@ -3898,3 +4154,532 @@ export const TradeAnalyzerCard = ({
     </div>
   </article>
 );
+
+const FANTASY_COMPARE_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "VORP",
+    definition:
+      "The main number to trust here — projected points above the replacement-level player at that position. Higher is more valuable for your league settings.",
+  },
+  {
+    term: "Projected Positional Rank",
+    definition:
+      "Where this player is expected to finish among others at the same position — lower is better.",
+  },
+  {
+    term: "ADP",
+    definition:
+      "Average draft pick. Lower means drafted earlier. Not shown as a real number when a player has no live ADP yet.",
+  },
+];
+
+export const FantasyPlayerCompareCard = ({
+  data,
+}: {
+  data: FantasyPlayerCompareResponse;
+}) => {
+  const renderPlayer = (player: FantasyCompactPlayer, label: string) => (
+    <section className="scout-card" key={label}>
+      <h4>
+        {safeToText(player.name)}{" "}
+        <span className="chip">{safeToText(player.position)}</span>
+      </h4>
+      <p className="meta-line">
+        {formatFantasyTeam(player.team)}{" "}
+        <span className={getInjuryChipClass(player.injuryStatus)}>
+          {formatFantasyInjury(player.injuryStatus)}
+        </span>
+      </p>
+      <div className="impact-summary-grid fantasy-player-row__stats">
+        <div className="overview-pill overview-pill--highlight">
+          <p className="overview-pill-label">VORP</p>
+          <p className="overview-pill-value">
+            {formatMetricValue(player.vorp)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Proj Total</p>
+          <p className="overview-pill-value">
+            {formatMetricValue(player.projectedTotal)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Actual Total</p>
+          <p className="overview-pill-value">
+            {formatActualStat(player.actualTotal)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">ADP</p>
+          <p className="overview-pill-value">{formatAdp(player.adp, false)}</p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Proj Rank (Pos)</p>
+          <p className="overview-pill-value">
+            {safeToText(player.projectedPositionRank)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Tier</p>
+          <p className="overview-pill-value">{safeToText(player.tier)}</p>
+        </div>
+      </div>
+    </section>
+  );
+
+  const advantageLabel =
+    data.advantage === "tie"
+      ? "Even matchup on projected value"
+      : data.advantage === "playerA"
+        ? `${data.playerA.name} has more projected value`
+        : `${data.playerB.name} has more projected value`;
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge">NFL Fantasy</span>
+        <h3 title="GET /api/fantasy/compare/players compares two individual players on projected VORP for your league settings.">
+          Player Compare
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
+      </p>
+      <FantasyPlainSummary>
+        Add two players to see who's actually worth more in your league —
+        VORP already accounts for position scarcity, so it's a fairer
+        comparison than raw projected points.
+      </FantasyPlainSummary>
+      <p className="selector-note">
+        League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
+        Starters: {formatStartersSummary(data.leagueSettings?.starters)}
+      </p>
+      {data.decisionInsights ? (
+        <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+      <p className="callout-note callout-note--compact">{advantageLabel}</p>
+
+      <FantasyGlossary items={FANTASY_COMPARE_GLOSSARY} />
+
+      <div className="comparison-grid context-wrap">
+        {renderPlayer(data.playerA, "Player A")}
+        {renderPlayer(data.playerB, "Player B")}
+      </div>
+
+      {data.metrics.length ? (
+        <div className="compare-table-wrap context-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>{safeToText(data.playerA.name)}</th>
+                <th>{safeToText(data.playerB.name)}</th>
+                <th>Edge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.metrics.map((metric) => (
+                <tr key={metric.label}>
+                  <td>{metric.label}</td>
+                  <td>{formatMetricValue(metric.playerA)}</td>
+                  <td>{formatMetricValue(metric.playerB)}</td>
+                  <td>
+                    {metric.advantage === "tie" || !metric.advantage
+                      ? "Tie"
+                      : metric.advantage === "playerA"
+                        ? safeToText(data.playerA.name)
+                        : safeToText(data.playerB.name)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </article>
+  );
+};
+
+const FANTASY_ROSTER_COMPARE_GLOSSARY: Array<{
+  term: string;
+  definition: string;
+}> = [
+  {
+    term: "Starter VORP",
+    definition:
+      "Each roster's best possible starting lineup, added up in VORP (value over replacement). This is the headline number — higher is stronger for your league settings.",
+  },
+  {
+    term: "Lineup Coverage",
+    definition:
+      "Whether a roster actually has enough players to fill every starting slot, including FLEX. A low coverage score means missing starters, not just a weak lineup.",
+  },
+  {
+    term: "Position VORP Breakdown",
+    definition:
+      "How much of each roster's Starter VORP comes from each position — useful for spotting whether an edge is broad or comes from one or two elite players.",
+  },
+  {
+    term: "Missing Starter Slots",
+    definition:
+      "Positions where a roster doesn't have enough players to fill every starting slot your league requires.",
+  },
+];
+
+const renderFantasyRosterCompareSide = (
+  label: string,
+  side: FantasyRosterCompareSide | undefined,
+) => {
+  const missingSlots = Object.entries(side?.missingStarterSlots || {});
+  const byPosition = Object.entries(side?.byPosition || {});
+
+  return (
+    <section className="scout-card" key={label}>
+      <h4>
+        {label} — Starter VORP {formatMetricValue(side?.starterVorp)}
+      </h4>
+      <p className="meta-line">
+        Roster Size {safeToText(side?.rosterSize)} | Coverage{" "}
+        {formatMetricValue(side?.coverageScore)}
+      </p>
+      {byPosition.length ? (
+        <div className="chip-grid">
+          {byPosition.map(([position, vorp]) => (
+            <span className="chip" key={position}>
+              {position} VORP: {formatMetricValue(vorp)}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {missingSlots.length ? (
+        <div className="chip-grid context-wrap">
+          {missingSlots.map(([position, count]) => (
+            <span className="chip miss" key={position}>
+              {position}: need {count} more
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {side?.missingPlayerIds?.length ? (
+        <p className="empty-note">
+          Missing player IDs: {side.missingPlayerIds.join(", ")}
+        </p>
+      ) : null}
+      {side?.suggestedStarters?.length ? (
+        <div className="compare-table-wrap context-wrap">
+          <table className="compare-table">
+            <thead>
+              <tr>
+                <th>Starter</th>
+                <th>Pos</th>
+                <th>Team</th>
+                <th>Proj Total</th>
+                <th>VORP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {side.suggestedStarters.map((player) => (
+                <tr key={String(player.id)}>
+                  <td>{safeToText(player.name)}</td>
+                  <td>{safeToText(player.position)}</td>
+                  <td>{formatFantasyTeam(player.team)}</td>
+                  <td>{formatMetricValue(player.projectedTotal)}</td>
+                  <td>{formatMetricValue(player.vorp)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="empty-note">No suggested starters available.</p>
+      )}
+    </section>
+  );
+};
+
+export const FantasyRosterCompareCard = ({
+  data,
+}: {
+  data: FantasyRosterCompareResponse;
+}) => {
+  const advantageLabel =
+    data.comparison.advantage === "tie"
+      ? "Even matchup on starter value"
+      : data.comparison.advantage === "rosterA"
+        ? "Roster A has the stronger starting lineup"
+        : "Roster B has the stronger starting lineup";
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge">NFL Fantasy</span>
+        <h3 title="GET /api/fantasy/compare/head-to-head compares two full rosters' best starting lineups on VORP.">
+          Roster Head-to-Head
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
+      </p>
+      <FantasyPlainSummary>
+        Add both full rosters and see which one has the stronger starting
+        lineup right now — this compares best-starters-vs-best-starters, not
+        just adding up every player on the bench.
+      </FantasyPlainSummary>
+      <p className="selector-note">
+        League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
+        Starters: {formatStartersSummary(data.leagueSettings?.starters)}
+      </p>
+      {data.comparison.decisionInsights ? (
+        <p className="callout-note">{data.comparison.decisionInsights}</p>
+      ) : null}
+      <p className="callout-note callout-note--compact">{advantageLabel}</p>
+
+      <FantasyGlossary items={FANTASY_ROSTER_COMPARE_GLOSSARY} />
+
+      <div className="comparison-grid context-wrap">
+        {renderFantasyRosterCompareSide("Roster A", data.rosterA)}
+        {renderFantasyRosterCompareSide("Roster B", data.rosterB)}
+      </div>
+    </article>
+  );
+};
+
+const FANTASY_TEAM_GRADE_GLOSSARY: Array<{ term: string; definition: string }> = [
+  {
+    term: "Grade / Score",
+    definition:
+      "Combines Starter Value, Market Value, and Lineup Coverage into one letter grade using the Score Weights shown below — A is excellent, F means the roster is missing real value, is being drafted like a weak team, or is missing real starters for your league settings.",
+  },
+  {
+    term: "Starter Value Score",
+    definition:
+      "League-relative, not \"percent of a perfect lineup\" — an impossible perfect lineup would make an A unreachable in any real league. Instead, each starter is scored against the replacement range for their position in your exact league size: replacement-level starters sit around 50, strong starters land around 80-90, and elite starters approach 100. A realistic top-half roster can genuinely earn an A or B here.",
+  },
+  {
+    term: "Market Value Score",
+    definition:
+      "How your roster stacks up against what real drafters actually value these players at (ADP/ownership), not just the model's projections — this is what accounts for league size and what other players are being drafted. A roster full of proven, widely-owned players scores higher here than one leaning on deep sleepers, even at similar VORP.",
+  },
+  {
+    term: "Lineup Coverage Score",
+    definition:
+      "Whether your roster actually has enough players to fill every starting slot (including FLEX). Below 100 means you have open or thin starting slots.",
+  },
+  {
+    term: "Score Weights",
+    definition:
+      "How much each component above counts toward the final Score — these come straight from the backend, so if the mix ever changes, this panel reflects it automatically.",
+  },
+  {
+    term: "Why this can differ from ESPN's own grade",
+    definition:
+      "This grade only knows your final roster — not your actual draft picks, private league draft history, or ESPN's proprietary rankings. It's a measure of roster strength for your league settings, not a recreation of ESPN's draft grade.",
+  },
+  {
+    term: "Missing Starter Slots",
+    definition:
+      "Positions where your roster doesn't have enough players to fill every starting slot your league requires — a direct waiver/trade target list.",
+  },
+];
+
+const formatWeightPercent = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return `${Math.round(value * 100)}%`;
+};
+
+export const FantasyTeamGradeCard = ({
+  data,
+}: {
+  data: FantasyTeamGradeResponse;
+}) => {
+  const missingSlots = Object.entries(data.missingStarterSlots || {});
+
+  return (
+    <article className="scout-card fantasy-card">
+      <div className="fantasy-header-row">
+        <span className="fantasy-badge">NFL Fantasy</span>
+        <h3 title="GET /api/fantasy/team-grade grades your roster's starter value, market value, and lineup coverage for your league settings.">
+          Team / Roster Grade
+        </h3>
+      </div>
+      <p className="viz-subtitle">
+        {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
+      </p>
+      <FantasyPlainSummary>
+        Add your whole roster and see a letter grade for how strong your
+        starting lineup is relative to your league size and starter
+        settings — not against some impossible perfect lineup, and factoring
+        in what other drafters actually value these players at.
+      </FantasyPlainSummary>
+      <p className="selector-note">
+        League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
+        Starters: {formatStartersSummary(data.leagueSettings?.starters)}
+      </p>
+      {data.decisionInsights ? (
+        <p className="callout-note">{data.decisionInsights}</p>
+      ) : null}
+      {data.missingPlayerIds.length ? (
+        <p className="empty-note">
+          Missing player IDs (not found in pool): {data.missingPlayerIds.join(", ")}
+        </p>
+      ) : null}
+
+      <div className="impact-summary-grid">
+        <div className="overview-pill overview-pill--highlight">
+          <p className="overview-pill-label">Grade</p>
+          <p className="overview-pill-value">
+            <span className={getTeamGradeChipClass(data.grade)}>
+              {safeToText(data.grade)}
+            </span>
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Score (0-100)</p>
+          <p className="overview-pill-value">{formatMetricValue(data.score)}</p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title={`Weight: ${formatWeightPercent(data.scoreWeights?.starterValue)}. League-relative: ~50 is replacement level, 80-90 is a strong starter, 100 is elite.`}
+          >
+            Starter Value
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.valueScore)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title={`Weight: ${formatWeightPercent(data.scoreWeights?.marketValue)}. Accounts for league size and what other drafters actually value these players at.`}
+          >
+            Market Value
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.marketScore)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p
+            className="overview-pill-label"
+            title={`Weight: ${formatWeightPercent(data.scoreWeights?.coverage)}`}
+          >
+            Lineup Coverage
+          </p>
+          <p className="overview-pill-value">
+            {formatMetricValue(data.coverageScore)}
+          </p>
+        </div>
+        <div className="overview-pill">
+          <p className="overview-pill-label">Roster Size</p>
+          <p className="overview-pill-value">{safeToText(data.rosterSize)}</p>
+        </div>
+      </div>
+
+      {data.scoreWeights ? (
+        <p className="selector-note">
+          Score Weights: Starter Value{" "}
+          {formatWeightPercent(data.scoreWeights.starterValue)} | Market Value{" "}
+          {formatWeightPercent(data.scoreWeights.marketValue)} | Coverage{" "}
+          {formatWeightPercent(data.scoreWeights.coverage)}
+        </p>
+      ) : null}
+      {data.valueScoreMethod ? (
+        <p
+          className="selector-note"
+          title="This is roster strength for your league settings, not a recreation of ESPN's proprietary draft grade — it only knows your final roster, not your actual draft picks."
+        >
+          Starter Value Method: {safeToText(data.valueScoreMethod)}
+        </p>
+      ) : null}
+
+      <FantasyGlossary items={FANTASY_TEAM_GRADE_GLOSSARY} />
+
+      {missingSlots.length ? (
+        <section className="context-wrap">
+          <h4 className="fantasy-section-heading">Missing Starter Slots</h4>
+          <div className="chip-grid">
+            {missingSlots.map(([position, count]) => (
+              <span className="chip miss" key={position}>
+                {position}: need {count} more
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <p className="empty-note context-wrap">
+          No missing starter slots — your roster can fill every starting spot.
+        </p>
+      )}
+
+      {data.suggestedStarters?.length ? (
+        <section className="context-wrap">
+          <h4 className="fantasy-section-heading">Suggested Starting Lineup</h4>
+          <div className="compare-table-wrap">
+            <table className="compare-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Team</th>
+                  <th>Proj Total</th>
+                  <th>VORP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.suggestedStarters.map((player) => (
+                  <tr key={String(player.id)}>
+                    <td>{safeToText(player.name)}</td>
+                    <td>{safeToText(player.position)}</td>
+                    <td>{formatFantasyTeam(player.team)}</td>
+                    <td>{formatMetricValue(player.projectedTotal)}</td>
+                    <td>{formatMetricValue(player.vorp)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {data.roster?.length ? (
+        <section className="context-wrap">
+          <h4 className="fantasy-section-heading">Full Roster</h4>
+          <div className="compare-table-wrap">
+            <table className="compare-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Pos</th>
+                  <th>Team</th>
+                  <th>Proj Total</th>
+                  <th>VORP</th>
+                  <th>Starter?</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.roster.map((player) => (
+                  <tr key={String(player.id)}>
+                    <td>{safeToText(player.name)}</td>
+                    <td>{safeToText(player.position)}</td>
+                    <td>{formatFantasyTeam(player.team)}</td>
+                    <td>{formatMetricValue(player.projectedTotal)}</td>
+                    <td>{formatMetricValue(player.vorp)}</td>
+                    <td>
+                      <span className={player.isStarter ? "chip hit" : "chip"}>
+                        {player.isStarter ? "Starter" : "Bench"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+    </article>
+  );
+};

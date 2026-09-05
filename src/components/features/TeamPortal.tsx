@@ -2,10 +2,12 @@ import type { FormEvent } from "react";
 import SearchableEntitySelect from "../common/SearchableEntitySelect";
 import {
   TeamEfficiencyCard,
+  TeamGradeCard,
   TeamNeedGapCard,
 } from "../dashboard/DashboardCards";
 import type {
   TeamEfficiencyResponse,
+  TeamGradeResponse,
   TeamNeedGapResponse,
   TeamOption,
   TeamSeasonType,
@@ -18,6 +20,7 @@ type TeamPortalProps = {
   teamOptions: TeamOption[];
   teamEfficiency: TeamEfficiencyResponse | null;
   teamNeedGap: TeamNeedGapResponse | null;
+  teamGrade: TeamGradeResponse | null;
   loadingTeam: boolean;
   loadingTeamOptions: boolean;
   onTeamIdChange: (id: string) => void;
@@ -34,6 +37,7 @@ const TeamPortal = ({
   teamOptions,
   teamEfficiency,
   teamNeedGap,
+  teamGrade,
   loadingTeam,
   loadingTeamOptions,
   onTeamIdChange,
@@ -136,6 +140,17 @@ const TeamPortal = ({
               {teamNeedGap ? (
                 <TeamNeedGapCard
                   data={teamNeedGap}
+                  teamLabel={
+                    teamOptions.find((option) => option.id === teamId)?.label ||
+                    (teamEfficiency.team as { displayName?: string })
+                      ?.displayName ||
+                    `Team #${teamId}`
+                  }
+                />
+              ) : null}
+              {teamGrade ? (
+                <TeamGradeCard
+                  data={teamGrade}
                   teamLabel={
                     teamOptions.find((option) => option.id === teamId)?.label ||
                     (teamEfficiency.team as { displayName?: string })

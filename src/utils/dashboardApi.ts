@@ -4,9 +4,12 @@ import type {
   CompareResponse,
   ConsistencyResponse,
   DraftBoardResponse,
+  FantasyPlayerCompareResponse,
   FantasyPosition,
+  FantasyRosterCompareResponse,
   FantasyScoringId,
   FantasySeasonState,
+  FantasyTeamGradeResponse,
   HealthResponse,
   PlayerUsageValueResponse,
   PlayerOption,
@@ -18,6 +21,8 @@ import type {
   SleepersResponse,
   StartSitResponse,
   TeamSeasonType,
+  TeamCompareResponse,
+  TeamGradeResponse,
   TeamNeedGapResponse,
   TeamOption,
   TeamEfficiencyResponse,
@@ -205,6 +210,49 @@ export const fetchTeamNeedGap = async (
   return response.data.data;
 };
 
+export const fetchTeamGrade = async (
+  teamId: number,
+  forceRefresh: boolean,
+  games = 5,
+  seasonType: TeamSeasonType = "regular",
+) => {
+  const response = await api.get<ApiEnvelope<TeamGradeResponse>>(
+    `/teams/${teamId}/grade`,
+    {
+      params: {
+        games,
+        seasonType,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchTeamCompare = async (
+  teamAId: number,
+  teamBId: number,
+  forceRefresh: boolean,
+  games = 5,
+  seasonType: TeamSeasonType = "regular",
+) => {
+  const response = await api.get<ApiEnvelope<TeamCompareResponse>>(
+    "/teams/compare/head-to-head",
+    {
+      params: {
+        teamAId,
+        teamBId,
+        games,
+        seasonType,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
 export type FantasyLeagueSettingsParams = {
   teamCount?: number;
   // Raw backend format, e.g. "QB:1,RB:2,WR:2,TE:1,FLEX:1,K:1,DST:1".
@@ -353,6 +401,82 @@ export const fetchFantasyStartSit = async (
         scoringId,
         season,
         window,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyPlayerCompare = async (
+  forceRefresh: boolean,
+  playerAId: string,
+  playerBId: string,
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<ApiEnvelope<FantasyPlayerCompareResponse>>(
+    "/fantasy/compare/players",
+    {
+      params: {
+        playerAId,
+        playerBId,
+        scoringId,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyRosterCompare = async (
+  forceRefresh: boolean,
+  rosterA: string[],
+  rosterB: string[],
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<ApiEnvelope<FantasyRosterCompareResponse>>(
+    "/fantasy/compare/head-to-head",
+    {
+      params: {
+        rosterA: rosterA.join(","),
+        rosterB: rosterB.join(","),
+        scoringId,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
+    },
+  );
+
+  return response.data.data;
+};
+
+export const fetchFantasyTeamGrade = async (
+  forceRefresh: boolean,
+  roster: string[],
+  scoringId: FantasyScoringId = 3,
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<ApiEnvelope<FantasyTeamGradeResponse>>(
+    "/fantasy/team-grade",
+    {
+      params: {
+        roster: roster.join(","),
+        scoringId,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
         forceRefresh,
       },
     },
