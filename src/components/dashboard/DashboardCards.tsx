@@ -2403,7 +2403,25 @@ type RosterSlot = {
   eligiblePositions: string[];
 };
 
-const ROSTER_SLOT_ORDER = ["QB", "RB", "WR", "TE", "FLEX", "K", "DST"];
+const ROSTER_SLOT_ORDER = [
+  "QB",
+  "RB",
+  "WR",
+  "TE",
+  "FLEX",
+  "K",
+  "DST",
+  "PG",
+  "SG",
+  "SF",
+  "PF",
+  "C",
+  "G",
+  "F",
+  "UTIL",
+];
+
+const NBA_POSITIONS = ["PG", "SG", "SF", "PF", "C"];
 
 const buildRosterSlots = (
   starters: Record<string, number | undefined> | undefined,
@@ -2417,7 +2435,15 @@ const buildRosterSlots = (
         key: `${position}-${index}`,
         label: count > 1 ? `${position}${index}` : position,
         eligiblePositions:
-          position === "FLEX" ? ["RB", "WR", "TE"] : [position],
+          position === "FLEX"
+            ? ["RB", "WR", "TE"]
+            : position === "G"
+              ? ["PG", "SG"]
+              : position === "F"
+                ? ["SF", "PF"]
+                : position === "UTIL"
+                  ? NBA_POSITIONS
+                  : [position],
       });
     }
   }

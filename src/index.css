@@ -708,6 +708,128 @@ select:focus-visible {
   --stage-h: 160;
 }
 
+.feature-stage--nba-fantasy {
+  --stage-h: 168;
+}
+
+.nba-fantasy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.nba-fantasy-header h2 {
+  margin: 6px 0 2px;
+}
+
+.nba-fantasy-header .helper-note {
+  margin: 0;
+}
+
+.nba-fantasy-season {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #b7d7d0;
+  border-radius: 8px;
+  background: #f1faf7;
+  color: #236459;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.nba-fantasy-tools {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.nba-fantasy-tools button {
+  flex: 0 0 auto;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #52636d;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.nba-fantasy-tools button:hover {
+  background: #edf6f4;
+  color: #155f53;
+}
+
+.nba-fantasy-tools button.active {
+  border-color: #b7d7d0;
+  background: #e4f3ef;
+  color: #155f53;
+}
+
+.nba-fantasy-trade-sides,
+.nba-fantasy-rosters,
+.nba-fantasy-compare-picks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nba-fantasy-trade-sides > section {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.nba-fantasy-trade-sides h3 {
+  margin: 0;
+}
+
+.nba-fantasy-trade-sides > section > button {
+  justify-self: start;
+}
+
+.nba-fantasy-rosters .draft-roster-board {
+  min-width: 0;
+}
+
+.nba-draft-picks {
+  margin: 8px 0 12px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d5e7e2;
+  border-radius: 9px;
+  background: #f7fbfa;
+}
+
+.nba-draft-picks__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: #285c52;
+  font-size: 0.84rem;
+}
+
+.nba-draft-picks .empty-note {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .nba-fantasy-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .nba-fantasy-trade-sides,
+  .nba-fantasy-rosters,
+  .nba-fantasy-compare-picks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .feature-stage--draft-board {
   --stage-h: 268;
 }

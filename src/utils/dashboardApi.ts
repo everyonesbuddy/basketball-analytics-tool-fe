@@ -28,6 +28,14 @@ import type {
   TeamEfficiencyResponse,
   TradeAnalysisResponse,
   WaiverWireResponse,
+  NbaFantasyDraftBoardResponse,
+  NbaFantasyPlayerCompareResponse,
+  NbaFantasyPosition,
+  NbaFantasyRosterCompareResponse,
+  NbaFantasySeasonState,
+  NbaFantasySleepersResponse,
+  NbaFantasyTeamGradeResponse,
+  NbaFantasyTradeAnalysisResponse,
 } from "./dashboardTypes";
 
 const LOCAL_API_BASE_URL = "http://localhost:5000/api";
@@ -257,6 +265,137 @@ export type FantasyLeagueSettingsParams = {
   teamCount?: number;
   // Raw backend format, e.g. "QB:1,RB:2,WR:2,TE:1,FLEX:1,K:1,DST:1".
   starters?: string;
+};
+
+const NBA_FANTASY_BASE = "/fantasy/nba";
+
+export const fetchNbaFantasySeasonState = async (forceRefresh: boolean) => {
+  const response = await api.get<ApiEnvelope<NbaFantasySeasonState>>(
+    `${NBA_FANTASY_BASE}/season`,
+    { params: { forceRefresh } },
+  );
+  return response.data.data;
+};
+
+export const fetchNbaFantasyDraftBoard = async (
+  forceRefresh: boolean,
+  position?: NbaFantasyPosition,
+  rosterSoFar?: string[],
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<ApiEnvelope<NbaFantasyDraftBoardResponse>>(
+    `${NBA_FANTASY_BASE}/draft-board`,
+    {
+      params: {
+        position,
+        rosterSoFar:
+          rosterSoFar?.length ? rosterSoFar.join(",") : undefined,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
+    },
+  );
+  return response.data.data;
+};
+
+export const fetchNbaFantasySleepers = async (
+  forceRefresh: boolean,
+  season?: number | string,
+) => {
+  const response = await api.get<ApiEnvelope<NbaFantasySleepersResponse>>(
+    `${NBA_FANTASY_BASE}/sleepers`,
+    { params: { season, forceRefresh } },
+  );
+  return response.data.data;
+};
+
+export const fetchNbaFantasyTradeAnalysis = async (
+  forceRefresh: boolean,
+  sideA: string[],
+  sideB: string[],
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<
+    ApiEnvelope<NbaFantasyTradeAnalysisResponse>
+  >(`${NBA_FANTASY_BASE}/trades/analyze`, {
+    params: {
+      sideA: sideA.join(","),
+      sideB: sideB.join(","),
+      season,
+      teamCount: leagueSettings?.teamCount,
+      starters: leagueSettings?.starters || undefined,
+      forceRefresh,
+    },
+  });
+  return response.data.data;
+};
+
+export const fetchNbaFantasyPlayerCompare = async (
+  forceRefresh: boolean,
+  playerAId: string,
+  playerBId: string,
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<
+    ApiEnvelope<NbaFantasyPlayerCompareResponse>
+  >(`${NBA_FANTASY_BASE}/compare/players`, {
+    params: {
+      playerAId,
+      playerBId,
+      season,
+      teamCount: leagueSettings?.teamCount,
+      starters: leagueSettings?.starters || undefined,
+      forceRefresh,
+    },
+  });
+  return response.data.data;
+};
+
+export const fetchNbaFantasyRosterCompare = async (
+  forceRefresh: boolean,
+  rosterA: string[],
+  rosterB: string[],
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<
+    ApiEnvelope<NbaFantasyRosterCompareResponse>
+  >(`${NBA_FANTASY_BASE}/compare/head-to-head`, {
+    params: {
+      rosterA: rosterA.join(","),
+      rosterB: rosterB.join(","),
+      season,
+      teamCount: leagueSettings?.teamCount,
+      starters: leagueSettings?.starters || undefined,
+      forceRefresh,
+    },
+  });
+  return response.data.data;
+};
+
+export const fetchNbaFantasyTeamGrade = async (
+  forceRefresh: boolean,
+  roster: string[],
+  season?: number | string,
+  leagueSettings?: FantasyLeagueSettingsParams,
+) => {
+  const response = await api.get<
+    ApiEnvelope<NbaFantasyTeamGradeResponse>
+  >(`${NBA_FANTASY_BASE}/team-grade`, {
+    params: {
+      roster: roster.join(","),
+      season,
+      teamCount: leagueSettings?.teamCount,
+      starters: leagueSettings?.starters || undefined,
+      forceRefresh,
+    },
+  });
+  return response.data.data;
 };
 
 export const fetchFantasySeasonState = async (forceRefresh: boolean) => {

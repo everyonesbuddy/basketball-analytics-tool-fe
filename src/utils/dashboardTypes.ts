@@ -855,3 +855,66 @@ export type FantasyRosterCompareResponse = {
   lastUpdatedAt?: string;
   _cache?: "HIT" | "MISS";
 };
+
+export type NbaFantasyPosition =
+  | "PG"
+  | "SG"
+  | "SF"
+  | "PF"
+  | "C"
+  | "G"
+  | "F"
+  | "UTIL";
+
+export type NbaFantasyLeagueSettings = {
+  teamCount: number;
+  starters: Record<string, number>;
+};
+
+export type NbaFantasySeasonState = FantasySeasonState & {
+  sport?: "nba";
+};
+
+export type NbaFantasyDraftBoardResponse = Omit<
+  DraftBoardResponse,
+  "leagueSettings"
+> & {
+  sport?: "nba";
+  leagueSettings: NbaFantasyLeagueSettings;
+};
+
+export type NbaFantasySleepersResponse = SleepersResponse & {
+  sport?: "nba";
+};
+
+export type NbaFantasyTradeAnalysisResponse = Omit<
+  TradeAnalysisResponse,
+  "leagueSettings"
+> & {
+  sport?: "nba";
+  leagueSettings: NbaFantasyLeagueSettings;
+};
+
+export type NbaFantasyPlayerCompareResponse = Omit<
+  FantasyPlayerCompareResponse,
+  "leagueSettings"
+> & {
+  sport?: "nba";
+  leagueSettings: NbaFantasyLeagueSettings;
+};
+
+export type NbaFantasyRosterCompareResponse = Omit<
+  FantasyRosterCompareResponse,
+  "leagueSettings"
+> & {
+  sport?: "nba";
+  leagueSettings: NbaFantasyLeagueSettings;
+};
+
+export type NbaFantasyTeamGradeResponse = Omit<
+  FantasyTeamGradeResponse,
+  "leagueSettings"
+> & {
+  sport?: "nba";
+  leagueSettings: NbaFantasyLeagueSettings;
+};

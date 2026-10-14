@@ -77,6 +77,7 @@ import TradeAnalyzerPortal from "./features/TradeAnalyzerPortal";
 import TrajectoryPortal from "./features/TrajectoryPortal";
 import UsageValuePortal from "./features/UsageValuePortal";
 import WaiverWirePortal from "./features/WaiverWirePortal";
+import NbaFantasyPortal from "./features/NbaFantasyPortal";
 
 type FeatureKey =
   | "profile"
@@ -87,6 +88,7 @@ type FeatureKey =
   | "trajectory"
   | "team"
   | "team-compare"
+  | "nba-fantasy"
   | "draft-board"
   | "sleepers"
   | "trade"
@@ -155,6 +157,16 @@ const NAV_GROUPS: NavGroup[] = [
         key: "team-compare",
         label: "Team Head-to-Head",
         title: "Compares two teams' recent efficiency metrics and grades head-to-head.",
+      },
+    ],
+  },
+  {
+    title: "NBA Fantasy",
+    items: [
+      {
+        key: "nba-fantasy",
+        label: "NBA Fantasy Tools",
+        title: "NBA points-league draft values, trades, player and roster comparisons, and team grades.",
       },
     ],
   },
@@ -1389,6 +1401,8 @@ const Dashboard = () => {
           onTeamSeasonTypeChange={setTeamSeasonType}
           onSubmit={loadTeamCompare}
         />
+      ) : activeFeature === "nba-fantasy" ? (
+        <NbaFantasyPortal forceRefresh={forceRefresh} />
       ) : activeFeature === "draft-board" ? (
         <DraftBoardPortal
           draftBoardPosition={draftBoardPosition}
