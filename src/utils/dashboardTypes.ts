@@ -918,3 +918,78 @@ export type NbaFantasyTeamGradeResponse = Omit<
   sport?: "nba";
   leagueSettings: NbaFantasyLeagueSettings;
 };
+
+export type DraftSimulatorSport = "nfl" | "nba";
+
+export type DraftSimulatorPickOption = {
+  id: string | number;
+  name: string;
+  position: string;
+  team?: FantasyTeamValue;
+  availabilityPct: number | null;
+  expectedLineupVorp: number | null;
+  sampleSize?: number | null;
+  isDefaultPick?: boolean;
+  vsBestValue?: { meanDifference: number | null } | null;
+};
+
+export type DraftSimulatorAvailability = {
+  id: string | number;
+  name: string;
+  position: string;
+  vorp?: number | null;
+  availabilityPct: number | null;
+};
+
+export type DraftSimulatorPlanEntry = {
+  round?: number | null;
+  name?: string | null;
+  playerName?: string | null;
+  position?: string | null;
+  pct?: number | null;
+  sharePct?: number | null;
+};
+
+export type DraftSimulatorStrategy = {
+  key?: string;
+  id?: string;
+  strategy?: string;
+  name?: string;
+  label?: string;
+  rank?: number | null;
+  starterVorp: {
+    mean: number | null;
+    p10: number | null;
+    p50: number | null;
+    p90: number | null;
+  } | null;
+  vsBestValue?: {
+    meanDifference?: number | null;
+    beatsPct?: number | null;
+    winPct?: number | null;
+  } | null;
+  lineupCompletePct?: number | null;
+  positionMix?: Record<string, number> | null;
+  pickPlan?: DraftSimulatorPlanEntry[] | null;
+};
+
+export type DraftSimulatorResponse = {
+  season?: number | string;
+  simulations?: number;
+  situation?: {
+    picksMade?: number;
+    yourPickNumbers?: number[];
+    yourNextPick?: {
+      pickNumber?: number | null;
+      round?: number | null;
+      picksUntilYou?: number | null;
+    } | null;
+  } | null;
+  pickOptions?: DraftSimulatorPickOption[];
+  nextPickAvailability?: DraftSimulatorAvailability[];
+  strategies?: DraftSimulatorStrategy[];
+  decisionInsights?: string | null;
+  assumptions?: string[] | null;
+  lastUpdatedAt?: string;
+  _cache?: "HIT" | "MISS";
+};

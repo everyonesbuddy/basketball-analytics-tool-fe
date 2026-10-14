@@ -15,6 +15,8 @@ import type {
   PlayerOption,
   PlayerCompsResponse,
   CompSplitMode,
+  DraftSimulatorResponse,
+  DraftSimulatorSport,
   PlayerImpactResponse,
   PlayerProfile,
   PlayerTrajectoryResponse,
@@ -269,6 +271,47 @@ export type FantasyLeagueSettingsParams = {
 
 const NBA_FANTASY_BASE = "/fantasy/nba";
 
+export type DraftSimulatorParams = {
+  draftPosition: number;
+  teamCount?: number;
+  starters?: string;
+  scoringId?: FantasyScoringId;
+  season?: number | string;
+  rounds?: number;
+  simulations?: number;
+  // Every player id drafted so far, in pick order, including your own.
+  picks?: string[];
+  strategies?: string[];
+};
+
+export const fetchFantasyDraftSimulator = async (
+  sport: DraftSimulatorSport,
+  forceRefresh: boolean,
+  params: DraftSimulatorParams,
+) => {
+  const response = await api.get<ApiEnvelope<DraftSimulatorResponse>>(
+    `${sport === "nba" ? NBA_FANTASY_BASE : "/fantasy"}/draft-simulator`,
+    {
+      params: {
+        draftPosition: params.draftPosition,
+        teamCount: params.teamCount,
+        starters: params.starters || undefined,
+        scoringId: sport === "nfl" ? params.scoringId : undefined,
+        season: params.season,
+        rounds: params.rounds,
+        simulations: params.simulations,
+        picks: params.picks?.length ? params.picks.join(",") : undefined,
+        strategies: params.strategies?.length
+          ? params.strategies.join(",")
+          : undefined,
+        forceRefresh,
+      },
+      timeout: 90000,
+    },
+  );
+  return response.data.data;
+};
+
 export const fetchNbaFantasySeasonState = async (forceRefresh: boolean) => {
   const response = await api.get<ApiEnvelope<NbaFantasySeasonState>>(
     `${NBA_FANTASY_BASE}/season`,
@@ -289,8 +332,7 @@ export const fetchNbaFantasyDraftBoard = async (
     {
       params: {
         position,
-        rosterSoFar:
-          rosterSoFar?.length ? rosterSoFar.join(",") : undefined,
+        rosterSoFar: rosterSoFar?.length ? rosterSoFar.join(",") : undefined,
         season,
         teamCount: leagueSettings?.teamCount,
         starters: leagueSettings?.starters || undefined,
@@ -319,18 +361,19 @@ export const fetchNbaFantasyTradeAnalysis = async (
   season?: number | string,
   leagueSettings?: FantasyLeagueSettingsParams,
 ) => {
-  const response = await api.get<
-    ApiEnvelope<NbaFantasyTradeAnalysisResponse>
-  >(`${NBA_FANTASY_BASE}/trades/analyze`, {
-    params: {
-      sideA: sideA.join(","),
-      sideB: sideB.join(","),
-      season,
-      teamCount: leagueSettings?.teamCount,
-      starters: leagueSettings?.starters || undefined,
-      forceRefresh,
+  const response = await api.get<ApiEnvelope<NbaFantasyTradeAnalysisResponse>>(
+    `${NBA_FANTASY_BASE}/trades/analyze`,
+    {
+      params: {
+        sideA: sideA.join(","),
+        sideB: sideB.join(","),
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
     },
-  });
+  );
   return response.data.data;
 };
 
@@ -341,18 +384,19 @@ export const fetchNbaFantasyPlayerCompare = async (
   season?: number | string,
   leagueSettings?: FantasyLeagueSettingsParams,
 ) => {
-  const response = await api.get<
-    ApiEnvelope<NbaFantasyPlayerCompareResponse>
-  >(`${NBA_FANTASY_BASE}/compare/players`, {
-    params: {
-      playerAId,
-      playerBId,
-      season,
-      teamCount: leagueSettings?.teamCount,
-      starters: leagueSettings?.starters || undefined,
-      forceRefresh,
+  const response = await api.get<ApiEnvelope<NbaFantasyPlayerCompareResponse>>(
+    `${NBA_FANTASY_BASE}/compare/players`,
+    {
+      params: {
+        playerAId,
+        playerBId,
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
     },
-  });
+  );
   return response.data.data;
 };
 
@@ -363,18 +407,19 @@ export const fetchNbaFantasyRosterCompare = async (
   season?: number | string,
   leagueSettings?: FantasyLeagueSettingsParams,
 ) => {
-  const response = await api.get<
-    ApiEnvelope<NbaFantasyRosterCompareResponse>
-  >(`${NBA_FANTASY_BASE}/compare/head-to-head`, {
-    params: {
-      rosterA: rosterA.join(","),
-      rosterB: rosterB.join(","),
-      season,
-      teamCount: leagueSettings?.teamCount,
-      starters: leagueSettings?.starters || undefined,
-      forceRefresh,
+  const response = await api.get<ApiEnvelope<NbaFantasyRosterCompareResponse>>(
+    `${NBA_FANTASY_BASE}/compare/head-to-head`,
+    {
+      params: {
+        rosterA: rosterA.join(","),
+        rosterB: rosterB.join(","),
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
     },
-  });
+  );
   return response.data.data;
 };
 
@@ -384,17 +429,18 @@ export const fetchNbaFantasyTeamGrade = async (
   season?: number | string,
   leagueSettings?: FantasyLeagueSettingsParams,
 ) => {
-  const response = await api.get<
-    ApiEnvelope<NbaFantasyTeamGradeResponse>
-  >(`${NBA_FANTASY_BASE}/team-grade`, {
-    params: {
-      roster: roster.join(","),
-      season,
-      teamCount: leagueSettings?.teamCount,
-      starters: leagueSettings?.starters || undefined,
-      forceRefresh,
+  const response = await api.get<ApiEnvelope<NbaFantasyTeamGradeResponse>>(
+    `${NBA_FANTASY_BASE}/team-grade`,
+    {
+      params: {
+        roster: roster.join(","),
+        season,
+        teamCount: leagueSettings?.teamCount,
+        starters: leagueSettings?.starters || undefined,
+        forceRefresh,
+      },
     },
-  });
+  );
   return response.data.data;
 };
 

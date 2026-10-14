@@ -15,6 +15,7 @@ import {
   fetchNbaFantasyTradeAnalysis,
 } from "../../utils/dashboardApi";
 import { safeToText } from "../../utils/dashboardFormatters";
+import DraftSimulatorPortal from "./DraftSimulatorPortal";
 import type {
   FantasyPlayerCandidate,
   NbaFantasyDraftBoardResponse,
@@ -30,6 +31,7 @@ import type {
 
 type ToolKey =
   | "draft-board"
+  | "draft-simulator"
   | "draft-values"
   | "trade"
   | "player-compare"
@@ -38,6 +40,7 @@ type ToolKey =
 
 const TOOLS: Array<{ key: ToolKey; label: string }> = [
   { key: "draft-board", label: "Draft Board" },
+  { key: "draft-simulator", label: "Draft Simulator" },
   { key: "draft-values", label: "Draft Values" },
   { key: "trade", label: "Trade Analyzer" },
   { key: "player-compare", label: "Player Compare" },
@@ -63,6 +66,8 @@ const NBA_FANTASY_STORAGE_KEY = "fantasy.nbaFantasyState.v1";
 type PersistedNbaFantasyState = {
   activeTool: ToolKey;
   teams: Record<number, string[]>;
+  // Global pick order across all teams; the simulator needs it in sequence.
+  pickOrder: string[];
   selectedTeamIndex: number;
   position: NbaFantasyPosition | "ALL";
   season: string;
@@ -80,6 +85,7 @@ type PersistedNbaFantasyState = {
 const EMPTY_NBA_FANTASY_STATE: PersistedNbaFantasyState = {
   activeTool: "draft-board",
   teams: {},
+  pickOrder: [],
   selectedTeamIndex: 0,
   position: "ALL",
   season: "",
@@ -108,6 +114,7 @@ const readPersistedNbaFantasyState = (): PersistedNbaFantasyState => {
         typeof parsed.selectedTeamIndex === "number"
           ? parsed.selectedTeamIndex
           : 0,
+      pickOrder: Array.isArray(parsed.pickOrder) ? parsed.pickOrder : [],
       sideA: Array.isArray(parsed.sideA) ? parsed.sideA : [],
       sideB: Array.isArray(parsed.sideB) ? parsed.sideB : [],
       rosterA:
@@ -253,6 +260,7 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
   const [teamGrade, setTeamGrade] =
     useState<NbaFantasyTeamGradeResponse | null>(null);
   const [draftTeams, setDraftTeams] = useState(savedState.teams);
+  const [pickOrder, setPickOrder] = useState(savedState.pickOrder);
   const [selectedDraftTeam, setSelectedDraftTeam] = useState(
     savedState.selectedTeamIndex,
   );
@@ -268,8 +276,12 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
   const [sideBPick, setSideBPick] = useState("");
   const [sideA, setSideA] = useState<string[]>(savedState.sideA);
   const [sideB, setSideB] = useState<string[]>(savedState.sideB);
-  const [rosterA, setRosterA] = useState<RosterSlotAssignments>(savedState.rosterA);
-  const [rosterB, setRosterB] = useState<RosterSlotAssignments>(savedState.rosterB);
+  const [rosterA, setRosterA] = useState<RosterSlotAssignments>(
+    savedState.rosterA,
+  );
+  const [rosterB, setRosterB] = useState<RosterSlotAssignments>(
+    savedState.rosterB,
+  );
   const [gradeRoster, setGradeRoster] = useState<RosterSlotAssignments>(
     savedState.gradeRoster,
   );
@@ -281,6 +293,11 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
   ];
   const draftedIdsRef = useRef(draftedIds);
   draftedIdsRef.current = draftedIds;
+  // Picks saved before order tracking existed fall back to team grouping.
+  const orderedPickIds = [
+    ...pickOrder.filter((id) => draftedIds.includes(id)),
+    ...draftedIds.filter((id) => !pickOrder.includes(id)),
+  ];
   const playerOptions = toPlayerOptions(candidatePool);
   const seasonParam = season.trim() || undefined;
   const leagueSettings = {
@@ -328,10 +345,7 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
         }
         if (boardResult.status === "fulfilled") {
           setCandidatePool(boardResult.value.candidates ?? []);
-          if (
-            draftedIdsRef.current.length ||
-            position !== "ALL"
-          ) {
+          if (draftedIdsRef.current.length || position !== "ALL") {
             const filteredBoard = await fetchNbaFantasyDraftBoard(
               forceRefresh,
               position === "ALL" ? undefined : position,
@@ -360,6 +374,7 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
         JSON.stringify({
           activeTool,
           teams: draftTeams,
+          pickOrder,
           selectedTeamIndex: selectedDraftTeam,
           position,
           season,
@@ -380,6 +395,7 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
   }, [
     activeTool,
     draftTeams,
+    pickOrder,
     selectedDraftTeam,
     position,
     season,
@@ -412,6 +428,7 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
     const nextTeams = { ...draftTeams, [selectedDraftTeam]: nextTeamIds };
     const nextIds = [...new Set(Object.values(nextTeams).flat())];
     setDraftTeams(nextTeams);
+    setPickOrder([...orderedPickIds, id]);
     void loadBoard(nextIds);
   };
 
@@ -424,11 +441,13 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
     ) as Record<number, string[]>;
     const nextIds = [...new Set(Object.values(nextTeams).flat())];
     setDraftTeams(nextTeams);
+    setPickOrder(orderedPickIds.filter((playerId) => playerId !== id));
     void loadBoard(nextIds);
   };
 
   const resetNbaDraft = () => {
     setDraftTeams({});
+    setPickOrder([]);
     setSelectedDraftTeam(0);
     void loadBoard([]);
   };
@@ -534,12 +553,17 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
     candidatePool.find((player) => String(player.id) === id);
 
   const removeTradePlayer = (side: "A" | "B", id: string) => {
-    if (side === "A") setSideA((current) => current.filter((item) => item !== id));
+    if (side === "A")
+      setSideA((current) => current.filter((item) => item !== id));
     else setSideB((current) => current.filter((item) => item !== id));
   };
 
-  const idsA = new Set(Object.values(rosterA).map((player) => String(player.id)));
-  const idsB = new Set(Object.values(rosterB).map((player) => String(player.id)));
+  const idsA = new Set(
+    Object.values(rosterA).map((player) => String(player.id)),
+  );
+  const idsB = new Set(
+    Object.values(rosterB).map((player) => String(player.id)),
+  );
   const draftTeamCount = Math.max(1, Number(teamCount) || 12);
   const currentTeamPicks = draftTeams[selectedDraftTeam] ?? [];
 
@@ -550,7 +574,8 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
           <span className="fantasy-badge">NBA Fantasy · Points</span>
           <h2>NBA Fantasy</h2>
           <p className="helper-note">
-            ESPN points-league projections, player values, trades, and roster analysis.
+            ESPN points-league projections, player values, trades, and roster
+            analysis.
           </p>
         </div>
         <p className="nba-fantasy-season">
@@ -575,7 +600,9 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
       </nav>
 
       {error ? <p className="error-note">{error}</p> : null}
-      {loading && !draftBoard ? <p className="empty-note">Loading NBA fantasy data...</p> : null}
+      {loading && !draftBoard ? (
+        <p className="empty-note">Loading NBA fantasy data...</p>
+      ) : null}
 
       {activeTool === "draft-board" ? (
         <>
@@ -589,19 +616,38 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
             <select
               id="nbaFantasyPosition"
               value={position}
-              onChange={(event) => setPosition(event.target.value as NbaFantasyPosition | "ALL")}
+              onChange={(event) =>
+                setPosition(event.target.value as NbaFantasyPosition | "ALL")
+              }
             >
               {NBA_POSITIONS.map((item) => (
-                <option key={item} value={item}>{item === "ALL" ? "All Positions" : item}</option>
+                <option key={item} value={item}>
+                  {item === "ALL" ? "All Positions" : item}
+                </option>
               ))}
             </select>
             <label htmlFor="nbaFantasySeason">Season</label>
-            <input id="nbaFantasySeason" value={season} placeholder="Current season" onChange={(event) => setSeason(event.target.value)} />
+            <input
+              id="nbaFantasySeason"
+              value={season}
+              placeholder="Current season"
+              onChange={(event) => setSeason(event.target.value)}
+            />
             <label htmlFor="nbaFantasyTeams">Teams</label>
-            <input id="nbaFantasyTeams" value={teamCount} onChange={(event) => setTeamCount(event.target.value)} />
+            <input
+              id="nbaFantasyTeams"
+              value={teamCount}
+              onChange={(event) => setTeamCount(event.target.value)}
+            />
             <label htmlFor="nbaFantasyStarters">Starters</label>
-            <input id="nbaFantasyStarters" value={starters} onChange={(event) => setStarters(event.target.value)} />
-            <button type="submit" disabled={loading}>{loading ? "Updating..." : "Apply Filters"}</button>
+            <input
+              id="nbaFantasyStarters"
+              value={starters}
+              onChange={(event) => setStarters(event.target.value)}
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? "Updating..." : "Apply Filters"}
+            </button>
           </form>
           {draftBoard ? (
             <article className="scout-card fantasy-card">
@@ -609,14 +655,36 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
                 <span className="fantasy-badge">NBA Fantasy</span>
                 <h3>Draft Board</h3>
               </div>
-              <p className="viz-subtitle">Points scoring · Season {safeToText(draftBoard.season)} · Position {safeToText(draftBoard.position)}</p>
-              {draftBoard.decisionInsights ? <p className="callout-note">{draftBoard.decisionInsights}</p> : null}
+              <p className="viz-subtitle">
+                Points scoring · Season {safeToText(draftBoard.season)} ·
+                Position {safeToText(draftBoard.position)}
+              </p>
+              {draftBoard.decisionInsights ? (
+                <p className="callout-note">{draftBoard.decisionInsights}</p>
+              ) : null}
               <div className="impact-summary-grid">
-                <div className="overview-pill"><p className="overview-pill-label">Available</p><p className="overview-pill-value">{safeToText(draftBoard.availableCount)}</p></div>
-                <div className="overview-pill"><p className="overview-pill-label">Drafted</p><p className="overview-pill-value">{draftedIds.length}</p></div>
-                <div className="overview-pill"><p className="overview-pill-label">Roster slots</p><p className="overview-pill-value">{safeToText(draftBoard.leagueSettings?.teamCount)} teams</p></div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Available</p>
+                  <p className="overview-pill-value">
+                    {safeToText(draftBoard.availableCount)}
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Drafted</p>
+                  <p className="overview-pill-value">{draftedIds.length}</p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Roster slots</p>
+                  <p className="overview-pill-value">
+                    {safeToText(draftBoard.leagueSettings?.teamCount)} teams
+                  </p>
+                </div>
               </div>
-              <div className="draft-roster-team-tabs" role="tablist" aria-label="NBA fantasy draft teams">
+              <div
+                className="draft-roster-team-tabs"
+                role="tablist"
+                aria-label="NBA fantasy draft teams"
+              >
                 {Array.from({ length: draftTeamCount }, (_, index) => (
                   <button
                     key={index}
@@ -627,45 +695,134 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
                     onClick={() => setSelectedDraftTeam(index)}
                   >
                     {index === 0 ? "My Team" : `Team ${index + 1}`}
-                    {draftTeams[index]?.length ? <span className="draft-roster-team-tab__badge">{draftTeams[index].length}</span> : null}
+                    {draftTeams[index]?.length ? (
+                      <span className="draft-roster-team-tab__badge">
+                        {draftTeams[index].length}
+                      </span>
+                    ) : null}
                   </button>
                 ))}
               </div>
               <div className="nba-draft-picks">
                 <div className="nba-draft-picks__heading">
-                  <strong>{selectedDraftTeam === 0 ? "My Team" : `Team ${selectedDraftTeam + 1}`} picks</strong>
-                  {draftedIds.length ? <button type="button" className="draft-roster-board__reset" onClick={resetNbaDraft}>Reset Draft</button> : null}
+                  <strong>
+                    {selectedDraftTeam === 0
+                      ? "My Team"
+                      : `Team ${selectedDraftTeam + 1}`}{" "}
+                    picks
+                  </strong>
+                  {draftedIds.length ? (
+                    <button
+                      type="button"
+                      className="draft-roster-board__reset"
+                      onClick={resetNbaDraft}
+                    >
+                      Reset Draft
+                    </button>
+                  ) : null}
                 </div>
                 {currentTeamPicks.length ? (
                   <div className="chip-grid">
                     {currentTeamPicks.map((id) => {
-                      const player = candidatePool.find((candidate) => String(candidate.id) === id);
+                      const player = candidatePool.find(
+                        (candidate) => String(candidate.id) === id,
+                      );
                       return (
                         <span className="chip" key={id}>
-                          {player ? `${player.name} (${player.position})` : `Player #${id}`}
-                          <button type="button" className="chip-remove" aria-label={`Undraft ${player?.name ?? id}`} onClick={() => removeDraftedPlayer(id)}>×</button>
+                          {player
+                            ? `${player.name} (${player.position})`
+                            : `Player #${id}`}
+                          <button
+                            type="button"
+                            className="chip-remove"
+                            aria-label={`Undraft ${player?.name ?? id}`}
+                            onClick={() => removeDraftedPlayer(id)}
+                          >
+                            ×
+                          </button>
                         </span>
                       );
                     })}
                   </div>
-                ) : <p className="empty-note">No picks assigned to this team yet.</p>}
+                ) : (
+                  <p className="empty-note">
+                    No picks assigned to this team yet.
+                  </p>
+                )}
               </div>
-              <PlayerTable players={(draftBoard.candidates ?? []).slice(0, 75)} onDraft={draftPlayer} />
+              <PlayerTable
+                players={(draftBoard.candidates ?? []).slice(0, 75)}
+                onDraft={draftPlayer}
+              />
             </article>
-          ) : <p className="empty-note">The NBA fantasy draft board is loading.</p>}
+          ) : (
+            <p className="empty-note">
+              The NBA fantasy draft board is loading.
+            </p>
+          )}
         </>
+      ) : null}
+
+      {activeTool === "draft-simulator" ? (
+        <DraftSimulatorPortal
+          sport="nba"
+          pickIds={orderedPickIds}
+          pickLabels={Object.fromEntries(
+            candidatePool.map((player) => [
+              String(player.id),
+              `${player.name} (${player.position})`,
+            ]),
+          )}
+          teamCount={teamCount}
+          starters={starters}
+          season={season}
+          forceRefresh={forceRefresh}
+        />
       ) : null}
 
       {activeTool === "draft-values" ? (
         <article className="scout-card fantasy-card">
-          <div className="fantasy-header-row"><span className="fantasy-badge">NBA Fantasy</span><h3>Draft Values</h3></div>
-          <p className="fantasy-tip">Draft values compare each player's projected value with their average draft position.</p>
-          {sleepers?.decisionInsights ? <p className="callout-note">{sleepers.decisionInsights}</p> : null}
+          <div className="fantasy-header-row">
+            <span className="fantasy-badge">NBA Fantasy</span>
+            <h3>Draft Values</h3>
+          </div>
+          <p className="fantasy-tip">
+            Draft values compare each player's projected value with their
+            average draft position.
+          </p>
+          {sleepers?.decisionInsights ? (
+            <p className="callout-note">{sleepers.decisionInsights}</p>
+          ) : null}
           {sleepers ? (
-            <div className="compare-table-wrap"><table className="compare-table"><thead><tr><th>Player</th><th>Pos</th><th>ADP</th><th>ADP Delta</th><th>Value score</th><th>Status</th></tr></thead><tbody>
-              {sleepers.sleepers.map((player) => <tr key={String(player.id)}><td>{safeToText(player.name)}</td><td>{safeToText(player.position)}</td><td>{formatMetricValue(player.adp)}</td><td>{formatMetricValue(player.adpDelta)}</td><td>{formatMetricValue(player.sleeperScore)}</td><td>{safeToText(player.status)}</td></tr>)}
-            </tbody></table></div>
-          ) : <p className="empty-note">Loading draft values...</p>}
+            <div className="compare-table-wrap">
+              <table className="compare-table">
+                <thead>
+                  <tr>
+                    <th>Player</th>
+                    <th>Pos</th>
+                    <th>ADP</th>
+                    <th>ADP Delta</th>
+                    <th>Value score</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sleepers.sleepers.map((player) => (
+                    <tr key={String(player.id)}>
+                      <td>{safeToText(player.name)}</td>
+                      <td>{safeToText(player.position)}</td>
+                      <td>{formatMetricValue(player.adp)}</td>
+                      <td>{formatMetricValue(player.adpDelta)}</td>
+                      <td>{formatMetricValue(player.sleeperScore)}</td>
+                      <td>{safeToText(player.status)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="empty-note">Loading draft values...</p>
+          )}
         </article>
       ) : null}
 
@@ -678,45 +835,267 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
               return (
                 <section className="context-wrap" key={side}>
                   <h3>{side === "A" ? "You Give" : "You Receive"}</h3>
-                  <SearchableEntitySelect id={`nbaTrade${side}`} label="Add player" value={pick} onChange={side === "A" ? setSideAPick : setSideBPick} options={playerOptions} placeholder="Search NBA player" fallbackPrefix="Player" />
-                  <button type="button" onClick={() => addTradePlayer(side)} disabled={!pick}>Add player</button>
-                  <div className="chip-grid">{selected.map((id) => <span className="chip" key={id}>{playerById(id)?.name ?? id}<button type="button" className="chip-remove" aria-label={`Remove ${id}`} onClick={() => removeTradePlayer(side, id)}>×</button></span>)}</div>
+                  <SearchableEntitySelect
+                    id={`nbaTrade${side}`}
+                    label="Add player"
+                    value={pick}
+                    onChange={side === "A" ? setSideAPick : setSideBPick}
+                    options={playerOptions}
+                    placeholder="Search NBA player"
+                    fallbackPrefix="Player"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addTradePlayer(side)}
+                    disabled={!pick}
+                  >
+                    Add player
+                  </button>
+                  <div className="chip-grid">
+                    {selected.map((id) => (
+                      <span className="chip" key={id}>
+                        {playerById(id)?.name ?? id}
+                        <button
+                          type="button"
+                          className="chip-remove"
+                          aria-label={`Remove ${id}`}
+                          onClick={() => removeTradePlayer(side, id)}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </section>
               );
             })}
           </div>
-          <button type="button" disabled={loading || !sideA.length || !sideB.length} onClick={() => void runTradeAnalysis()}>{loading ? "Analyzing..." : "Analyze Trade"}</button>
-          {tradeAnalysis ? <article className="scout-card fantasy-card"><h3>Trade Readout</h3><p className="callout-note">{tradeAnalysis.decisionInsights ?? `Verdict: ${tradeAnalysis.verdict}`}</p><div className="impact-summary-grid"><div className="overview-pill"><p className="overview-pill-label">You Give</p><p className="overview-pill-value">{formatMetricValue(tradeAnalysis.sideA.totalVorp)} VORP</p></div><div className="overview-pill"><p className="overview-pill-label">You Receive</p><p className="overview-pill-value">{formatMetricValue(tradeAnalysis.sideB.totalVorp)} VORP</p></div><div className="overview-pill"><p className="overview-pill-label">Net</p><p className="overview-pill-value">{formatMetricValue(tradeAnalysis.netVorpToA)}</p></div></div></article> : null}
+          <button
+            type="button"
+            disabled={loading || !sideA.length || !sideB.length}
+            onClick={() => void runTradeAnalysis()}
+          >
+            {loading ? "Analyzing..." : "Analyze Trade"}
+          </button>
+          {tradeAnalysis ? (
+            <article className="scout-card fantasy-card">
+              <h3>Trade Readout</h3>
+              <p className="callout-note">
+                {tradeAnalysis.decisionInsights ??
+                  `Verdict: ${tradeAnalysis.verdict}`}
+              </p>
+              <div className="impact-summary-grid">
+                <div className="overview-pill">
+                  <p className="overview-pill-label">You Give</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(tradeAnalysis.sideA.totalVorp)} VORP
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">You Receive</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(tradeAnalysis.sideB.totalVorp)} VORP
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Net</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(tradeAnalysis.netVorpToA)}
+                  </p>
+                </div>
+              </div>
+            </article>
+          ) : null}
         </>
       ) : null}
 
       {activeTool === "player-compare" ? (
         <>
           <div className="nba-fantasy-compare-picks">
-            <SearchableEntitySelect id="nbaPlayerCompareA" label="Player A" value={playerA} onChange={setPlayerA} options={playerOptions} placeholder="Search player" fallbackPrefix="Player" />
-            <SearchableEntitySelect id="nbaPlayerCompareB" label="Player B" value={playerB} onChange={setPlayerB} options={playerOptions} placeholder="Search player" fallbackPrefix="Player" />
+            <SearchableEntitySelect
+              id="nbaPlayerCompareA"
+              label="Player A"
+              value={playerA}
+              onChange={setPlayerA}
+              options={playerOptions}
+              placeholder="Search player"
+              fallbackPrefix="Player"
+            />
+            <SearchableEntitySelect
+              id="nbaPlayerCompareB"
+              label="Player B"
+              value={playerB}
+              onChange={setPlayerB}
+              options={playerOptions}
+              placeholder="Search player"
+              fallbackPrefix="Player"
+            />
           </div>
-          <button type="button" disabled={loading || !playerA || !playerB} onClick={() => void runPlayerCompare()}>{loading ? "Comparing..." : "Compare Players"}</button>
-          {playerCompare ? <article className="scout-card fantasy-card"><h3>{playerCompare.playerA.name} vs. {playerCompare.playerB.name}</h3><p className="callout-note">{playerCompare.decisionInsights ?? `Advantage: ${playerCompare.advantage}`}</p><div className="compare-table-wrap"><table className="compare-table"><thead><tr><th>Metric</th><th>{playerCompare.playerA.name}</th><th>{playerCompare.playerB.name}</th><th>Difference</th></tr></thead><tbody>{playerCompare.metrics.map((metric) => <tr key={metric.label}><td>{safeToText(metric.label)}</td><td>{formatMetricValue(metric.playerA)}</td><td>{formatMetricValue(metric.playerB)}</td><td>{formatMetricValue(metric.difference)}</td></tr>)}</tbody></table></div></article> : null}
+          <button
+            type="button"
+            disabled={loading || !playerA || !playerB}
+            onClick={() => void runPlayerCompare()}
+          >
+            {loading ? "Comparing..." : "Compare Players"}
+          </button>
+          {playerCompare ? (
+            <article className="scout-card fantasy-card">
+              <h3>
+                {playerCompare.playerA.name} vs. {playerCompare.playerB.name}
+              </h3>
+              <p className="callout-note">
+                {playerCompare.decisionInsights ??
+                  `Advantage: ${playerCompare.advantage}`}
+              </p>
+              <div className="compare-table-wrap">
+                <table className="compare-table">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th>{playerCompare.playerA.name}</th>
+                      <th>{playerCompare.playerB.name}</th>
+                      <th>Difference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {playerCompare.metrics.map((metric) => (
+                      <tr key={metric.label}>
+                        <td>{safeToText(metric.label)}</td>
+                        <td>{formatMetricValue(metric.playerA)}</td>
+                        <td>{formatMetricValue(metric.playerB)}</td>
+                        <td>{formatMetricValue(metric.difference)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          ) : null}
         </>
       ) : null}
 
       {activeTool === "roster-compare" ? (
         <>
           <div className="nba-fantasy-rosters">
-            <FantasyRosterBuilder title="Roster A" starters={starters} candidates={candidatePool} assignments={rosterA} unavailableIds={idsB} onChange={setRosterA} />
-            <FantasyRosterBuilder title="Roster B" starters={starters} candidates={candidatePool} assignments={rosterB} unavailableIds={idsA} onChange={setRosterB} />
+            <FantasyRosterBuilder
+              title="Roster A"
+              starters={starters}
+              candidates={candidatePool}
+              assignments={rosterA}
+              unavailableIds={idsB}
+              onChange={setRosterA}
+            />
+            <FantasyRosterBuilder
+              title="Roster B"
+              starters={starters}
+              candidates={candidatePool}
+              assignments={rosterB}
+              unavailableIds={idsA}
+              onChange={setRosterB}
+            />
           </div>
-          <button type="button" disabled={loading || !idsA.size || !idsB.size} onClick={() => void runRosterCompare()}>{loading ? "Comparing..." : "Compare Rosters"}</button>
-          {rosterCompare ? <article className="scout-card fantasy-card"><h3>Roster Head-to-Head</h3><p className="callout-note">{rosterCompare.comparison.decisionInsights ?? `Advantage: ${rosterCompare.comparison.advantage}`}</p><div className="impact-summary-grid"><div className="overview-pill"><p className="overview-pill-label">Roster A starter VORP</p><p className="overview-pill-value">{formatMetricValue(rosterCompare.rosterA.starterVorp)}</p></div><div className="overview-pill"><p className="overview-pill-label">Roster B starter VORP</p><p className="overview-pill-value">{formatMetricValue(rosterCompare.rosterB.starterVorp)}</p></div></div><div className="nba-fantasy-rosters"><RosterSummary title="Roster A Starters" players={rosterCompare.rosterA.suggestedStarters} /><RosterSummary title="Roster B Starters" players={rosterCompare.rosterB.suggestedStarters} /></div></article> : null}
+          <button
+            type="button"
+            disabled={loading || !idsA.size || !idsB.size}
+            onClick={() => void runRosterCompare()}
+          >
+            {loading ? "Comparing..." : "Compare Rosters"}
+          </button>
+          {rosterCompare ? (
+            <article className="scout-card fantasy-card">
+              <h3>Roster Head-to-Head</h3>
+              <p className="callout-note">
+                {rosterCompare.comparison.decisionInsights ??
+                  `Advantage: ${rosterCompare.comparison.advantage}`}
+              </p>
+              <div className="impact-summary-grid">
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Roster A starter VORP</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(rosterCompare.rosterA.starterVorp)}
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Roster B starter VORP</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(rosterCompare.rosterB.starterVorp)}
+                  </p>
+                </div>
+              </div>
+              <div className="nba-fantasy-rosters">
+                <RosterSummary
+                  title="Roster A Starters"
+                  players={rosterCompare.rosterA.suggestedStarters}
+                />
+                <RosterSummary
+                  title="Roster B Starters"
+                  players={rosterCompare.rosterB.suggestedStarters}
+                />
+              </div>
+            </article>
+          ) : null}
         </>
       ) : null}
 
       {activeTool === "team-grade" ? (
         <>
-          <FantasyRosterBuilder title="Your NBA Roster" hint="Fill your lineup slots; the bench holds remaining players." starters={starters} candidates={candidatePool} assignments={gradeRoster} onChange={setGradeRoster} />
-          <button type="button" disabled={loading || !Object.keys(gradeRoster).length} onClick={() => void runTeamGrade()}>{loading ? "Grading..." : "Grade Roster"}</button>
-          {teamGrade ? <article className="scout-card fantasy-card"><h3>NBA Team Grade: {safeToText(teamGrade.grade)}</h3><p className="callout-note">{teamGrade.decisionInsights}</p><div className="impact-summary-grid"><div className="overview-pill"><p className="overview-pill-label">Overall</p><p className="overview-pill-value">{formatMetricValue(teamGrade.score)}</p></div><div className="overview-pill"><p className="overview-pill-label">Starter value</p><p className="overview-pill-value">{formatMetricValue(teamGrade.valueScore)}</p></div><div className="overview-pill"><p className="overview-pill-label">Market value</p><p className="overview-pill-value">{formatMetricValue(teamGrade.marketScore)}</p></div><div className="overview-pill"><p className="overview-pill-label">Coverage</p><p className="overview-pill-value">{formatMetricValue(teamGrade.coverageScore)}</p></div></div><RosterSummary title="Suggested Starters" players={teamGrade.suggestedStarters} /><p className="selector-note">Missing slots: {Object.entries(teamGrade.missingStarterSlots ?? {}).map(([slot, count]) => `${slot} ${count}`).join(" · ") || "None"}</p></article> : null}
+          <FantasyRosterBuilder
+            title="Your NBA Roster"
+            hint="Fill your lineup slots; the bench holds remaining players."
+            starters={starters}
+            candidates={candidatePool}
+            assignments={gradeRoster}
+            onChange={setGradeRoster}
+          />
+          <button
+            type="button"
+            disabled={loading || !Object.keys(gradeRoster).length}
+            onClick={() => void runTeamGrade()}
+          >
+            {loading ? "Grading..." : "Grade Roster"}
+          </button>
+          {teamGrade ? (
+            <article className="scout-card fantasy-card">
+              <h3>NBA Team Grade: {safeToText(teamGrade.grade)}</h3>
+              <p className="callout-note">{teamGrade.decisionInsights}</p>
+              <div className="impact-summary-grid">
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Overall</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(teamGrade.score)}
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Starter value</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(teamGrade.valueScore)}
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Market value</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(teamGrade.marketScore)}
+                  </p>
+                </div>
+                <div className="overview-pill">
+                  <p className="overview-pill-label">Coverage</p>
+                  <p className="overview-pill-value">
+                    {formatMetricValue(teamGrade.coverageScore)}
+                  </p>
+                </div>
+              </div>
+              <RosterSummary
+                title="Suggested Starters"
+                players={teamGrade.suggestedStarters}
+              />
+              <p className="selector-note">
+                Missing slots:{" "}
+                {Object.entries(teamGrade.missingStarterSlots ?? {})
+                  .map(([slot, count]) => `${slot} ${count}`)
+                  .join(" · ") || "None"}
+              </p>
+            </article>
+          ) : null}
         </>
       ) : null}
     </section>

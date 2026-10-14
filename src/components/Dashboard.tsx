@@ -65,6 +65,7 @@ import ComparePortal from "./features/ComparePortal";
 import CompsPortal from "./features/CompsPortal";
 import ConsistencyPortal from "./features/ConsistencyPortal";
 import DraftBoardPortal from "./features/DraftBoardPortal";
+import DraftSimulatorPortal from "./features/DraftSimulatorPortal";
 import FantasyRosterComparePortal from "./features/FantasyRosterComparePortal";
 import FantasyTeamGradePortal from "./features/FantasyTeamGradePortal";
 import ImpactPortal from "./features/ImpactPortal";
@@ -90,6 +91,7 @@ type FeatureKey =
   | "team-compare"
   | "nba-fantasy"
   | "draft-board"
+  | "draft-simulator"
   | "sleepers"
   | "trade"
   | "waivers"
@@ -116,7 +118,8 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "profile",
         label: "Single Player Profile",
-        title: "Single player profile with summary splits and core production chart.",
+        title:
+          "Single player profile with summary splits and core production chart.",
       },
       {
         key: "compare",
@@ -136,7 +139,8 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "usage-value",
         label: "Usage vs. Production",
-        title: "Usage-adjusted value benchmark against peers in the same usage bucket.",
+        title:
+          "Usage-adjusted value benchmark against peers in the same usage bucket.",
       },
       {
         key: "trajectory",
@@ -151,12 +155,14 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "team",
         label: "Team Efficiency & Needs",
-        title: "Team efficiencies plus need-gap analysis against league benchmark.",
+        title:
+          "Team efficiencies plus need-gap analysis against league benchmark.",
       },
       {
         key: "team-compare",
         label: "Team Head-to-Head",
-        title: "Compares two teams' recent efficiency metrics and grades head-to-head.",
+        title:
+          "Compares two teams' recent efficiency metrics and grades head-to-head.",
       },
     ],
   },
@@ -166,7 +172,8 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "nba-fantasy",
         label: "NBA Fantasy Tools",
-        title: "NBA points-league draft values, trades, player and roster comparisons, and team grades.",
+        title:
+          "NBA points-league draft values, trades, player and roster comparisons, and team grades.",
       },
     ],
   },
@@ -176,12 +183,20 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "draft-board",
         label: "Draft Board",
-        title: "Tiered draft board with ADP, ownership, and roster-aware availability.",
+        title:
+          "Tiered draft board with ADP, ownership, and roster-aware availability.",
+      },
+      {
+        key: "draft-simulator",
+        label: "Draft Simulator",
+        title:
+          "Plays your draft out many times from your slot to compare draft directions and next-pick options.",
       },
       {
         key: "sleepers",
         label: "Draft Values",
-        title: "Draft-day value gaps ranked by ADP delta against position peers.",
+        title:
+          "Draft-day value gaps ranked by ADP delta against position peers.",
       },
       {
         key: "trade",
@@ -201,17 +216,20 @@ const NAV_GROUPS: NavGroup[] = [
       {
         key: "start-sit",
         label: "Start / Sit",
-        title: "Next-week projection plus recent actual performance per player.",
+        title:
+          "Next-week projection plus recent actual performance per player.",
       },
       {
         key: "fantasy-compare",
         label: "Roster Head-to-Head",
-        title: "Compares two full rosters' best starting lineups on projected VORP.",
+        title:
+          "Compares two full rosters' best starting lineups on projected VORP.",
       },
       {
         key: "fantasy-team-grade",
         label: "Team Grade",
-        title: "Grades your roster's starter value, market value, and lineup coverage.",
+        title:
+          "Grades your roster's starter value, market value, and lineup coverage.",
       },
     ],
   },
@@ -219,6 +237,7 @@ const NAV_GROUPS: NavGroup[] = [
 
 const FANTASY_FEATURE_KEYS = new Set<FeatureKey>([
   "draft-board",
+  "draft-simulator",
   "sleepers",
   "trade",
   "waivers",
@@ -418,8 +437,7 @@ const Dashboard = () => {
   const [loadingStartSit, setLoadingStartSit] = useState(false);
   const [loadingTeamCompare, setLoadingTeamCompare] = useState(false);
   const [loadingFantasyCompare, setLoadingFantasyCompare] = useState(false);
-  const [loadingFantasyTeamGrade, setLoadingFantasyTeamGrade] =
-    useState(false);
+  const [loadingFantasyTeamGrade, setLoadingFantasyTeamGrade] = useState(false);
 
   const draftBoardCandidateOptions = useMemo<PlayerOption[]>(
     () =>
@@ -1286,272 +1304,285 @@ const Dashboard = () => {
         </header>
 
         <div className="feature-transition" key={activeFeature}>
-        {activeFeature === "profile" ? (
-        <ProfilePortal
-          playerId={playerId}
-          playerOptions={playerOptions}
-          player={player}
-          loadingOptions={loadingOptions}
-          loadingSingle={loadingSingle}
-          onPlayerIdChange={setPlayerId}
-          onSubmit={fetchPlayer}
-        />
-      ) : activeFeature === "compare" ? (
-        <ComparePortal
-          playerId={playerId}
-          playerBId={playerBId}
-          playerOptions={playerOptions}
-          comparison={comparison}
-          compareSplitGroups={compareSplitGroups}
-          loadingOptions={loadingOptions}
-          loadingCompare={loadingCompare}
-          onPlayerIdChange={setPlayerId}
-          onPlayerBIdChange={setPlayerBId}
-          onSubmit={comparePlayers}
-        />
-      ) : activeFeature === "impact" ? (
-        <ImpactPortal
-          impactPlayerId={impactPlayerId}
-          impactGames={impactGames}
-          impactSeasonType={impactSeasonType}
-          playerOptions={playerOptions}
-          impact={impact}
-          loadingOptions={loadingOptions}
-          loadingImpact={loadingImpact}
-          onImpactPlayerIdChange={setImpactPlayerId}
-          onImpactGamesChange={setImpactGames}
-          onImpactSeasonTypeChange={setImpactSeasonType}
-          onSubmit={loadPlayerImpact}
-        />
-      ) : activeFeature === "comps" ? (
-        <CompsPortal
-          compsPlayerId={compsPlayerId}
-          compLimit={compLimit}
-          compSampleSize={compSampleSize}
-          compSplit={compSplit}
-          playerOptions={playerOptions}
-          playerComps={playerComps}
-          loadingOptions={loadingOptions}
-          loadingComps={loadingComps}
-          onCompsPlayerIdChange={setCompsPlayerId}
-          onCompLimitChange={setCompLimit}
-          onCompSampleSizeChange={setCompSampleSize}
-          onCompSplitChange={setCompSplit}
-          onSubmit={loadPlayerComps}
-        />
-      ) : activeFeature === "trajectory" ? (
-        <TrajectoryPortal
-          trajectoryPlayerId={trajectoryPlayerId}
-          trajectoryGames={trajectoryGames}
-          trajectoryWindow={trajectoryWindow}
-          trajectorySeasonType={trajectorySeasonType}
-          playerOptions={playerOptions}
-          playerTrajectory={playerTrajectory}
-          loadingOptions={loadingOptions}
-          loadingTrajectory={loadingTrajectory}
-          onTrajectoryPlayerIdChange={setTrajectoryPlayerId}
-          onTrajectoryGamesChange={setTrajectoryGames}
-          onTrajectoryWindowChange={setTrajectoryWindow}
-          onTrajectorySeasonTypeChange={setTrajectorySeasonType}
-          onSubmit={loadPlayerTrajectory}
-        />
-      ) : activeFeature === "usage-value" ? (
-        <UsageValuePortal
-          usageValuePlayerId={usageValuePlayerId}
-          playerOptions={playerOptions}
-          playerUsageValue={playerUsageValue}
-          loadingOptions={loadingOptions}
-          loadingUsageValue={loadingUsageValue}
-          onUsageValuePlayerIdChange={setUsageValuePlayerId}
-          onSubmit={loadPlayerUsageValue}
-        />
-      ) : activeFeature === "team" ? (
-        <TeamPortal
-          teamId={teamId}
-          teamGames={teamGames}
-          teamSeasonType={teamSeasonType}
-          teamOptions={teamOptions}
-          teamEfficiency={teamEfficiency}
-          teamNeedGap={teamNeedGap}
-          teamGrade={teamGrade}
-          loadingTeam={loadingTeam}
-          loadingTeamOptions={loadingTeamOptions}
-          onTeamIdChange={(nextId) => {
-            setTeamId(nextId);
-            setTeamQuery("");
-          }}
-          onTeamGamesChange={setTeamGames}
-          onTeamSeasonTypeChange={setTeamSeasonType}
-          onTeamQueryChange={setTeamQuery}
-          onSubmit={loadTeamEfficiency}
-        />
-      ) : activeFeature === "team-compare" ? (
-        <TeamComparePortal
-          teamAId={teamId}
-          teamBId={teamBId}
-          teamGames={teamGames}
-          teamSeasonType={teamSeasonType}
-          teamOptions={teamOptions}
-          teamCompare={teamCompare}
-          loadingTeamCompare={loadingTeamCompare}
-          loadingTeamOptions={loadingTeamOptions}
-          onTeamAIdChange={setTeamId}
-          onTeamBIdChange={setTeamBId}
-          onTeamGamesChange={setTeamGames}
-          onTeamSeasonTypeChange={setTeamSeasonType}
-          onSubmit={loadTeamCompare}
-        />
-      ) : activeFeature === "nba-fantasy" ? (
-        <NbaFantasyPortal forceRefresh={forceRefresh} />
-      ) : activeFeature === "draft-board" ? (
-        <DraftBoardPortal
-          draftBoardPosition={draftBoardPosition}
-          draftBoardScoringId={draftBoardScoringId}
-          draftBoardSeason={draftBoardSeason}
-          draftBoardTeamCount={draftBoardTeamCount}
-          draftBoardStarters={draftBoardStarters}
-          draftBoardRoster={draftBoardRoster}
-          draftBoardRosterPick={draftBoardRosterPick}
-          draftBoardCandidateOptions={draftBoardCandidateOptions}
-          draftBoard={draftBoard}
-          draftState={draftState}
-          loadingDraftBoard={loadingDraftBoard}
-          onDraftBoardPositionChange={setDraftBoardPosition}
-          onDraftBoardScoringIdChange={setDraftBoardScoringId}
-          onDraftBoardSeasonChange={setDraftBoardSeason}
-          onDraftBoardTeamCountChange={setDraftBoardTeamCount}
-          onDraftBoardStartersChange={setDraftBoardStarters}
-          onDraftBoardRosterPickChange={setDraftBoardRosterPick}
-          onAddToRoster={addToDraftBoardRoster}
-          onRemoveFromRoster={removeFromDraftBoardRoster}
-          onMarkDrafted={markDraftBoardPlayerDrafted}
-          onDraftCandidate={draftCandidateToSelectedTeam}
-          onSubmit={loadDraftBoard}
-        />
-      ) : activeFeature === "sleepers" ? (
-        <SleepersPortal
-          sleepersScoringId={sleepersScoringId}
-          sleepersSeason={sleepersSeason}
-          sleepersPositionFilter={sleepersPositionFilter}
-          sleepers={sleepers}
-          loadingSleepers={loadingSleepers}
-          onSleepersScoringIdChange={setSleepersScoringId}
-          onSleepersSeasonChange={setSleepersSeason}
-          onSleepersPositionFilterChange={setSleepersPositionFilter}
-          onSubmit={loadSleepers}
-        />
-      ) : activeFeature === "trade" ? (
-        <TradeAnalyzerPortal
-          fantasyPlayerOptions={fantasyPlayerOptions}
-          sideA={tradeSideA}
-          sideB={tradeSideB}
-          sideAPick={tradeSideAPick}
-          sideBPick={tradeSideBPick}
-          scoringId={tradeScoringId}
-          season={tradeSeason}
-          teamCount={tradeTeamCount}
-          starters={tradeStarters}
-          tradeAnalysis={tradeAnalysis}
-          loadingTrade={loadingTrade}
-          loadingPlayerOptions={loadingFantasyPlayerOptions}
-          onSideAPickChange={setTradeSideAPick}
-          onSideBPickChange={setTradeSideBPick}
-          onAddSideA={() =>
-            addToTradeSide(tradeSideAPick, setTradeSideA, setTradeSideAPick)
-          }
-          onAddSideB={() =>
-            addToTradeSide(tradeSideBPick, setTradeSideB, setTradeSideBPick)
-          }
-          onRemoveSideA={(id) => removeFromTradeSide(id, setTradeSideA)}
-          onRemoveSideB={(id) => removeFromTradeSide(id, setTradeSideB)}
-          onScoringIdChange={setTradeScoringId}
-          onSeasonChange={setTradeSeason}
-          onTeamCountChange={setTradeTeamCount}
-          onStartersChange={setTradeStarters}
-          onSubmit={loadTradeAnalysis}
-        />
-      ) : activeFeature === "waivers" ? (
-        <WaiverWirePortal
-          scoringId={waiverScoringId}
-          season={waiverSeason}
-          ownershipMax={waiverOwnershipMax}
-          window={waiverWindow}
-          waivers={waivers}
-          loadingWaivers={loadingWaivers}
-          onScoringIdChange={setWaiverScoringId}
-          onSeasonChange={setWaiverSeason}
-          onOwnershipMaxChange={setWaiverOwnershipMax}
-          onWindowChange={setWaiverWindow}
-          onSubmit={loadWaiverWire}
-        />
-      ) : activeFeature === "consistency" ? (
-        <ConsistencyPortal
-          scoringId={consistencyScoringId}
-          season={consistencySeason}
-          window={consistencyWindow}
-          consistency={consistency}
-          loadingConsistency={loadingConsistency}
-          onScoringIdChange={setConsistencyScoringId}
-          onSeasonChange={setConsistencySeason}
-          onWindowChange={setConsistencyWindow}
-          onSubmit={loadConsistencyLeaders}
-        />
-      ) : activeFeature === "start-sit" ? (
-        <StartSitPortal
-          fantasyPlayerOptions={fantasyPlayerOptions}
-          roster={startSitRoster}
-          rosterPick={startSitPick}
-          scoringId={startSitScoringId}
-          season={startSitSeason}
-          window={startSitWindow}
-          startSit={startSit}
-          loadingStartSit={loadingStartSit}
-          loadingPlayerOptions={loadingFantasyPlayerOptions}
-          onRosterPickChange={setStartSitPick}
-          onAddToRoster={addToStartSitRoster}
-          onRemoveFromRoster={removeFromStartSitRoster}
-          onScoringIdChange={setStartSitScoringId}
-          onSeasonChange={setStartSitSeason}
-          onWindowChange={setStartSitWindow}
-          onSubmit={loadStartSit}
-        />
-      ) : activeFeature === "fantasy-compare" ? (
-        <FantasyRosterComparePortal
-          candidatePool={fantasyCandidatePool}
-          rosterA={fantasyCompareRosterA}
-          rosterB={fantasyCompareRosterB}
-          scoringId={fantasyCompareScoringId}
-          season={fantasyCompareSeason}
-          teamCount={fantasyCompareTeamCount}
-          starters={fantasyCompareStarters}
-          rosterCompare={fantasyRosterCompare}
-          loadingCompare={loadingFantasyCompare}
-          onRosterAChange={setFantasyCompareRosterA}
-          onRosterBChange={setFantasyCompareRosterB}
-          onScoringIdChange={setFantasyCompareScoringId}
-          onSeasonChange={setFantasyCompareSeason}
-          onTeamCountChange={setFantasyCompareTeamCount}
-          onStartersChange={setFantasyCompareStarters}
-          onSubmit={loadFantasyRosterCompare}
-        />
-      ) : (
-        <FantasyTeamGradePortal
-          candidatePool={fantasyCandidatePool}
-          roster={fantasyGradeRoster}
-          scoringId={fantasyGradeScoringId}
-          season={fantasyGradeSeason}
-          teamCount={fantasyGradeTeamCount}
-          starters={fantasyGradeStarters}
-          teamGrade={fantasyTeamGrade}
-          loadingTeamGrade={loadingFantasyTeamGrade}
-          onRosterChange={setFantasyGradeRoster}
-          onScoringIdChange={setFantasyGradeScoringId}
-          onSeasonChange={setFantasyGradeSeason}
-          onTeamCountChange={setFantasyGradeTeamCount}
-          onStartersChange={setFantasyGradeStarters}
-          onSubmit={loadFantasyTeamGrade}
-        />
-      )}
+          {activeFeature === "profile" ? (
+            <ProfilePortal
+              playerId={playerId}
+              playerOptions={playerOptions}
+              player={player}
+              loadingOptions={loadingOptions}
+              loadingSingle={loadingSingle}
+              onPlayerIdChange={setPlayerId}
+              onSubmit={fetchPlayer}
+            />
+          ) : activeFeature === "compare" ? (
+            <ComparePortal
+              playerId={playerId}
+              playerBId={playerBId}
+              playerOptions={playerOptions}
+              comparison={comparison}
+              compareSplitGroups={compareSplitGroups}
+              loadingOptions={loadingOptions}
+              loadingCompare={loadingCompare}
+              onPlayerIdChange={setPlayerId}
+              onPlayerBIdChange={setPlayerBId}
+              onSubmit={comparePlayers}
+            />
+          ) : activeFeature === "impact" ? (
+            <ImpactPortal
+              impactPlayerId={impactPlayerId}
+              impactGames={impactGames}
+              impactSeasonType={impactSeasonType}
+              playerOptions={playerOptions}
+              impact={impact}
+              loadingOptions={loadingOptions}
+              loadingImpact={loadingImpact}
+              onImpactPlayerIdChange={setImpactPlayerId}
+              onImpactGamesChange={setImpactGames}
+              onImpactSeasonTypeChange={setImpactSeasonType}
+              onSubmit={loadPlayerImpact}
+            />
+          ) : activeFeature === "comps" ? (
+            <CompsPortal
+              compsPlayerId={compsPlayerId}
+              compLimit={compLimit}
+              compSampleSize={compSampleSize}
+              compSplit={compSplit}
+              playerOptions={playerOptions}
+              playerComps={playerComps}
+              loadingOptions={loadingOptions}
+              loadingComps={loadingComps}
+              onCompsPlayerIdChange={setCompsPlayerId}
+              onCompLimitChange={setCompLimit}
+              onCompSampleSizeChange={setCompSampleSize}
+              onCompSplitChange={setCompSplit}
+              onSubmit={loadPlayerComps}
+            />
+          ) : activeFeature === "trajectory" ? (
+            <TrajectoryPortal
+              trajectoryPlayerId={trajectoryPlayerId}
+              trajectoryGames={trajectoryGames}
+              trajectoryWindow={trajectoryWindow}
+              trajectorySeasonType={trajectorySeasonType}
+              playerOptions={playerOptions}
+              playerTrajectory={playerTrajectory}
+              loadingOptions={loadingOptions}
+              loadingTrajectory={loadingTrajectory}
+              onTrajectoryPlayerIdChange={setTrajectoryPlayerId}
+              onTrajectoryGamesChange={setTrajectoryGames}
+              onTrajectoryWindowChange={setTrajectoryWindow}
+              onTrajectorySeasonTypeChange={setTrajectorySeasonType}
+              onSubmit={loadPlayerTrajectory}
+            />
+          ) : activeFeature === "usage-value" ? (
+            <UsageValuePortal
+              usageValuePlayerId={usageValuePlayerId}
+              playerOptions={playerOptions}
+              playerUsageValue={playerUsageValue}
+              loadingOptions={loadingOptions}
+              loadingUsageValue={loadingUsageValue}
+              onUsageValuePlayerIdChange={setUsageValuePlayerId}
+              onSubmit={loadPlayerUsageValue}
+            />
+          ) : activeFeature === "team" ? (
+            <TeamPortal
+              teamId={teamId}
+              teamGames={teamGames}
+              teamSeasonType={teamSeasonType}
+              teamOptions={teamOptions}
+              teamEfficiency={teamEfficiency}
+              teamNeedGap={teamNeedGap}
+              teamGrade={teamGrade}
+              loadingTeam={loadingTeam}
+              loadingTeamOptions={loadingTeamOptions}
+              onTeamIdChange={(nextId) => {
+                setTeamId(nextId);
+                setTeamQuery("");
+              }}
+              onTeamGamesChange={setTeamGames}
+              onTeamSeasonTypeChange={setTeamSeasonType}
+              onTeamQueryChange={setTeamQuery}
+              onSubmit={loadTeamEfficiency}
+            />
+          ) : activeFeature === "team-compare" ? (
+            <TeamComparePortal
+              teamAId={teamId}
+              teamBId={teamBId}
+              teamGames={teamGames}
+              teamSeasonType={teamSeasonType}
+              teamOptions={teamOptions}
+              teamCompare={teamCompare}
+              loadingTeamCompare={loadingTeamCompare}
+              loadingTeamOptions={loadingTeamOptions}
+              onTeamAIdChange={setTeamId}
+              onTeamBIdChange={setTeamBId}
+              onTeamGamesChange={setTeamGames}
+              onTeamSeasonTypeChange={setTeamSeasonType}
+              onSubmit={loadTeamCompare}
+            />
+          ) : activeFeature === "nba-fantasy" ? (
+            <NbaFantasyPortal forceRefresh={forceRefresh} />
+          ) : activeFeature === "draft-board" ? (
+            <DraftBoardPortal
+              draftBoardPosition={draftBoardPosition}
+              draftBoardScoringId={draftBoardScoringId}
+              draftBoardSeason={draftBoardSeason}
+              draftBoardTeamCount={draftBoardTeamCount}
+              draftBoardStarters={draftBoardStarters}
+              draftBoardRoster={draftBoardRoster}
+              draftBoardRosterPick={draftBoardRosterPick}
+              draftBoardCandidateOptions={draftBoardCandidateOptions}
+              draftBoard={draftBoard}
+              draftState={draftState}
+              loadingDraftBoard={loadingDraftBoard}
+              onDraftBoardPositionChange={setDraftBoardPosition}
+              onDraftBoardScoringIdChange={setDraftBoardScoringId}
+              onDraftBoardSeasonChange={setDraftBoardSeason}
+              onDraftBoardTeamCountChange={setDraftBoardTeamCount}
+              onDraftBoardStartersChange={setDraftBoardStarters}
+              onDraftBoardRosterPickChange={setDraftBoardRosterPick}
+              onAddToRoster={addToDraftBoardRoster}
+              onRemoveFromRoster={removeFromDraftBoardRoster}
+              onMarkDrafted={markDraftBoardPlayerDrafted}
+              onDraftCandidate={draftCandidateToSelectedTeam}
+              onSubmit={loadDraftBoard}
+            />
+          ) : activeFeature === "draft-simulator" ? (
+            <DraftSimulatorPortal
+              sport="nfl"
+              pickIds={draftBoardRoster.map((entry) => entry.id)}
+              pickLabels={Object.fromEntries(
+                draftBoardRoster.map((entry) => [entry.id, entry.label]),
+              )}
+              teamCount={draftBoardTeamCount}
+              starters={draftBoardStarters}
+              season={draftBoardSeason}
+              scoringId={draftBoardScoringId}
+              forceRefresh={forceRefresh}
+            />
+          ) : activeFeature === "sleepers" ? (
+            <SleepersPortal
+              sleepersScoringId={sleepersScoringId}
+              sleepersSeason={sleepersSeason}
+              sleepersPositionFilter={sleepersPositionFilter}
+              sleepers={sleepers}
+              loadingSleepers={loadingSleepers}
+              onSleepersScoringIdChange={setSleepersScoringId}
+              onSleepersSeasonChange={setSleepersSeason}
+              onSleepersPositionFilterChange={setSleepersPositionFilter}
+              onSubmit={loadSleepers}
+            />
+          ) : activeFeature === "trade" ? (
+            <TradeAnalyzerPortal
+              fantasyPlayerOptions={fantasyPlayerOptions}
+              sideA={tradeSideA}
+              sideB={tradeSideB}
+              sideAPick={tradeSideAPick}
+              sideBPick={tradeSideBPick}
+              scoringId={tradeScoringId}
+              season={tradeSeason}
+              teamCount={tradeTeamCount}
+              starters={tradeStarters}
+              tradeAnalysis={tradeAnalysis}
+              loadingTrade={loadingTrade}
+              loadingPlayerOptions={loadingFantasyPlayerOptions}
+              onSideAPickChange={setTradeSideAPick}
+              onSideBPickChange={setTradeSideBPick}
+              onAddSideA={() =>
+                addToTradeSide(tradeSideAPick, setTradeSideA, setTradeSideAPick)
+              }
+              onAddSideB={() =>
+                addToTradeSide(tradeSideBPick, setTradeSideB, setTradeSideBPick)
+              }
+              onRemoveSideA={(id) => removeFromTradeSide(id, setTradeSideA)}
+              onRemoveSideB={(id) => removeFromTradeSide(id, setTradeSideB)}
+              onScoringIdChange={setTradeScoringId}
+              onSeasonChange={setTradeSeason}
+              onTeamCountChange={setTradeTeamCount}
+              onStartersChange={setTradeStarters}
+              onSubmit={loadTradeAnalysis}
+            />
+          ) : activeFeature === "waivers" ? (
+            <WaiverWirePortal
+              scoringId={waiverScoringId}
+              season={waiverSeason}
+              ownershipMax={waiverOwnershipMax}
+              window={waiverWindow}
+              waivers={waivers}
+              loadingWaivers={loadingWaivers}
+              onScoringIdChange={setWaiverScoringId}
+              onSeasonChange={setWaiverSeason}
+              onOwnershipMaxChange={setWaiverOwnershipMax}
+              onWindowChange={setWaiverWindow}
+              onSubmit={loadWaiverWire}
+            />
+          ) : activeFeature === "consistency" ? (
+            <ConsistencyPortal
+              scoringId={consistencyScoringId}
+              season={consistencySeason}
+              window={consistencyWindow}
+              consistency={consistency}
+              loadingConsistency={loadingConsistency}
+              onScoringIdChange={setConsistencyScoringId}
+              onSeasonChange={setConsistencySeason}
+              onWindowChange={setConsistencyWindow}
+              onSubmit={loadConsistencyLeaders}
+            />
+          ) : activeFeature === "start-sit" ? (
+            <StartSitPortal
+              fantasyPlayerOptions={fantasyPlayerOptions}
+              roster={startSitRoster}
+              rosterPick={startSitPick}
+              scoringId={startSitScoringId}
+              season={startSitSeason}
+              window={startSitWindow}
+              startSit={startSit}
+              loadingStartSit={loadingStartSit}
+              loadingPlayerOptions={loadingFantasyPlayerOptions}
+              onRosterPickChange={setStartSitPick}
+              onAddToRoster={addToStartSitRoster}
+              onRemoveFromRoster={removeFromStartSitRoster}
+              onScoringIdChange={setStartSitScoringId}
+              onSeasonChange={setStartSitSeason}
+              onWindowChange={setStartSitWindow}
+              onSubmit={loadStartSit}
+            />
+          ) : activeFeature === "fantasy-compare" ? (
+            <FantasyRosterComparePortal
+              candidatePool={fantasyCandidatePool}
+              rosterA={fantasyCompareRosterA}
+              rosterB={fantasyCompareRosterB}
+              scoringId={fantasyCompareScoringId}
+              season={fantasyCompareSeason}
+              teamCount={fantasyCompareTeamCount}
+              starters={fantasyCompareStarters}
+              rosterCompare={fantasyRosterCompare}
+              loadingCompare={loadingFantasyCompare}
+              onRosterAChange={setFantasyCompareRosterA}
+              onRosterBChange={setFantasyCompareRosterB}
+              onScoringIdChange={setFantasyCompareScoringId}
+              onSeasonChange={setFantasyCompareSeason}
+              onTeamCountChange={setFantasyCompareTeamCount}
+              onStartersChange={setFantasyCompareStarters}
+              onSubmit={loadFantasyRosterCompare}
+            />
+          ) : (
+            <FantasyTeamGradePortal
+              candidatePool={fantasyCandidatePool}
+              roster={fantasyGradeRoster}
+              scoringId={fantasyGradeScoringId}
+              season={fantasyGradeSeason}
+              teamCount={fantasyGradeTeamCount}
+              starters={fantasyGradeStarters}
+              teamGrade={fantasyTeamGrade}
+              loadingTeamGrade={loadingFantasyTeamGrade}
+              onRosterChange={setFantasyGradeRoster}
+              onScoringIdChange={setFantasyGradeScoringId}
+              onSeasonChange={setFantasyGradeSeason}
+              onTeamCountChange={setFantasyGradeTeamCount}
+              onStartersChange={setFantasyGradeStarters}
+              onSubmit={loadFantasyTeamGrade}
+            />
+          )}
         </div>
       </div>
     </main>

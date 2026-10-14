@@ -712,6 +712,39 @@ select:focus-visible {
   --stage-h: 168;
 }
 
+.feature-stage--draft-sim {
+  --stage-h: 262;
+}
+
+.feature-stage .feature-stage--draft-sim {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.sim-strategies {
+  display: grid;
+  gap: 6px;
+}
+
+.sim-strategies .helper-note {
+  margin: 0;
+}
+
+.sim-strategy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.sim-strategy-chip input {
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+
 .nba-fantasy-header {
   display: flex;
   align-items: center;

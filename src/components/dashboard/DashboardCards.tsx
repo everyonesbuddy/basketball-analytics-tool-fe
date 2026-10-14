@@ -1978,8 +1978,8 @@ export const TeamGradeCard = ({
       </div>
       <p className="fantasy-plain-summary">
         This is a recent-form snapshot, not a permanent label — it's based on
-        the last {safeToText(data.gamesRequested)} games only. Change the
-        games or season type and the grade will change too.
+        the last {safeToText(data.gamesRequested)} games only. Change the games
+        or season type and the grade will change too.
       </p>
       <div className="impact-summary-grid">
         <div className="overview-pill overview-pill--highlight">
@@ -2030,7 +2030,9 @@ export const TeamGradeCard = ({
                   <td>
                     <span className="label-with-info">
                       {metric.label}
-                      <InlineInfo label={getTeamGradeMetricTooltip(metric.key)} />
+                      <InlineInfo
+                        label={getTeamGradeMetricTooltip(metric.key)}
+                      />
                     </span>
                   </td>
                   <td>{formatMetricValue(metric.value)}</td>
@@ -2089,8 +2091,8 @@ export const TeamCompareCard = ({ data }: { data: TeamCompareResponse }) => {
         Team Head-to-Head
       </h3>
       <p className="fantasy-plain-summary">
-        Compares both teams' last {safeToText(data.gamesRequested)} games
-        side by side — a recent-form snapshot, not a permanent power ranking.
+        Compares both teams' last {safeToText(data.gamesRequested)} games side
+        by side — a recent-form snapshot, not a permanent power ranking.
       </p>
       <p className="callout-note">{advantageLabel}</p>
 
@@ -2589,7 +2591,9 @@ const DEFAULT_STARTERS: Record<string, number> = {
 };
 
 // Parses the "QB:1,RB:2,..." text input the fantasy forms accept.
-export const parseStartersConfig = (starters: string): Record<string, number> => {
+export const parseStartersConfig = (
+  starters: string,
+): Record<string, number> => {
   const parsed: Record<string, number> = {};
 
   for (const part of starters.split(",")) {
@@ -2895,32 +2899,28 @@ const DraftRosterBoard = ({
       </div>
 
       <div className="draft-roster-team-tabs" role="tablist" aria-label="Teams">
-        {Array.from({ length: teamCount }, (_, index) => index).map(
-          (index) => {
-            const filled = Object.keys(teamRosters[index] ?? {}).length;
-            return (
-              <button
-                key={index}
-                type="button"
-                role="tab"
-                aria-selected={selectedTeamIndex === index}
-                className={`draft-roster-team-tab ${
-                  selectedTeamIndex === index ? "active" : ""
-                }`}
-                onClick={() => {
-                  draftState.onSelectTeam(index);
-                }}
-              >
-                {getDraftTeamLabel(index)}
-                {filled ? (
-                  <span className="draft-roster-team-tab__badge">
-                    {filled}
-                  </span>
-                ) : null}
-              </button>
-            );
-          },
-        )}
+        {Array.from({ length: teamCount }, (_, index) => index).map((index) => {
+          const filled = Object.keys(teamRosters[index] ?? {}).length;
+          return (
+            <button
+              key={index}
+              type="button"
+              role="tab"
+              aria-selected={selectedTeamIndex === index}
+              className={`draft-roster-team-tab ${
+                selectedTeamIndex === index ? "active" : ""
+              }`}
+              onClick={() => {
+                draftState.onSelectTeam(index);
+              }}
+            >
+              {getDraftTeamLabel(index)}
+              {filled ? (
+                <span className="draft-roster-team-tab__badge">{filled}</span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       <RosterSlotGrid
@@ -3091,9 +3091,9 @@ const PositionScarcityPanel = ({ data }: { data: DraftBoardResponse }) => {
       <summary>Why this rank?</summary>
       <p className="derive-note">
         The "replacement player" is roughly the last player the league would
-        need to fill every starting slot at that position. A bigger gap
-        between the best available player and that baseline means the
-        position is scarce right now; a small gap means it's safe to wait.
+        need to fill every starting slot at that position. A bigger gap between
+        the best available player and that baseline means the position is scarce
+        right now; a small gap means it's safe to wait.
       </p>
       <div className="scarcity-board">
         {rows.map((row) => {
@@ -3206,8 +3206,8 @@ export const DraftBoardCard = ({
         Position {safeToText(data.position)}
       </p>
       <p className="fantasy-tip">
-        VORP = value over a replacement-level player at that position, higher
-        is better.
+        VORP = value over a replacement-level player at that position, higher is
+        better.
       </p>
       <FantasyStatusLegend />
       {data.decisionInsights ? (
@@ -3216,7 +3216,9 @@ export const DraftBoardCard = ({
 
       {bestOverall && onDraftCandidate ? (
         <section className="fantasy-next-up">
-          <p className="fantasy-next-up__label">Next Best Available (Overall)</p>
+          <p className="fantasy-next-up__label">
+            Next Best Available (Overall)
+          </p>
           <div className="fantasy-next-up__row">
             <p className="fantasy-next-up__name">
               {safeToText(bestOverall.name)}{" "}
@@ -4272,9 +4274,9 @@ export const FantasyPlayerCompareCard = ({
         {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
       </p>
       <FantasyPlainSummary>
-        Add two players to see who's actually worth more in your league —
-        VORP already accounts for position scarcity, so it's a fairer
-        comparison than raw projected points.
+        Add two players to see who's actually worth more in your league — VORP
+        already accounts for position scarcity, so it's a fairer comparison than
+        raw projected points.
       </FantasyPlainSummary>
       <p className="selector-note">
         League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
@@ -4447,9 +4449,9 @@ export const FantasyRosterCompareCard = ({
         {safeToText(data.scoring)} scoring | Season {safeToText(data.season)}
       </p>
       <FantasyPlainSummary>
-        Add both full rosters and see which one has the stronger starting
-        lineup right now — this compares best-starters-vs-best-starters, not
-        just adding up every player on the bench.
+        Add both full rosters and see which one has the stronger starting lineup
+        right now — this compares best-starters-vs-best-starters, not just
+        adding up every player on the bench.
       </FantasyPlainSummary>
       <p className="selector-note">
         League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
@@ -4470,43 +4472,44 @@ export const FantasyRosterCompareCard = ({
   );
 };
 
-const FANTASY_TEAM_GRADE_GLOSSARY: Array<{ term: string; definition: string }> = [
-  {
-    term: "Grade / Score",
-    definition:
-      "Combines Starter Value, Market Value, and Lineup Coverage into one letter grade using the Score Weights shown below — A is excellent, F means the roster is missing real value, is being drafted like a weak team, or is missing real starters for your league settings.",
-  },
-  {
-    term: "Starter Value Score",
-    definition:
-      "League-relative, not \"percent of a perfect lineup\" — an impossible perfect lineup would make an A unreachable in any real league. Instead, each starter is scored against the replacement range for their position in your exact league size: replacement-level starters sit around 50, strong starters land around 80-90, and elite starters approach 100. A realistic top-half roster can genuinely earn an A or B here.",
-  },
-  {
-    term: "Market Value Score",
-    definition:
-      "How your roster stacks up against what real drafters actually value these players at (ADP/ownership), not just the model's projections — this is what accounts for league size and what other players are being drafted. A roster full of proven, widely-owned players scores higher here than one leaning on deep sleepers, even at similar VORP.",
-  },
-  {
-    term: "Lineup Coverage Score",
-    definition:
-      "Whether your roster actually has enough players to fill every starting slot (including FLEX). Below 100 means you have open or thin starting slots.",
-  },
-  {
-    term: "Score Weights",
-    definition:
-      "How much each component above counts toward the final Score — these come straight from the backend, so if the mix ever changes, this panel reflects it automatically.",
-  },
-  {
-    term: "Why this can differ from ESPN's own grade",
-    definition:
-      "This grade only knows your final roster — not your actual draft picks, private league draft history, or ESPN's proprietary rankings. It's a measure of roster strength for your league settings, not a recreation of ESPN's draft grade.",
-  },
-  {
-    term: "Missing Starter Slots",
-    definition:
-      "Positions where your roster doesn't have enough players to fill every starting slot your league requires — a direct waiver/trade target list.",
-  },
-];
+const FANTASY_TEAM_GRADE_GLOSSARY: Array<{ term: string; definition: string }> =
+  [
+    {
+      term: "Grade / Score",
+      definition:
+        "Combines Starter Value, Market Value, and Lineup Coverage into one letter grade using the Score Weights shown below — A is excellent, F means the roster is missing real value, is being drafted like a weak team, or is missing real starters for your league settings.",
+    },
+    {
+      term: "Starter Value Score",
+      definition:
+        'League-relative, not "percent of a perfect lineup" — an impossible perfect lineup would make an A unreachable in any real league. Instead, each starter is scored against the replacement range for their position in your exact league size: replacement-level starters sit around 50, strong starters land around 80-90, and elite starters approach 100. A realistic top-half roster can genuinely earn an A or B here.',
+    },
+    {
+      term: "Market Value Score",
+      definition:
+        "How your roster stacks up against what real drafters actually value these players at (ADP/ownership), not just the model's projections — this is what accounts for league size and what other players are being drafted. A roster full of proven, widely-owned players scores higher here than one leaning on deep sleepers, even at similar VORP.",
+    },
+    {
+      term: "Lineup Coverage Score",
+      definition:
+        "Whether your roster actually has enough players to fill every starting slot (including FLEX). Below 100 means you have open or thin starting slots.",
+    },
+    {
+      term: "Score Weights",
+      definition:
+        "How much each component above counts toward the final Score — these come straight from the backend, so if the mix ever changes, this panel reflects it automatically.",
+    },
+    {
+      term: "Why this can differ from ESPN's own grade",
+      definition:
+        "This grade only knows your final roster — not your actual draft picks, private league draft history, or ESPN's proprietary rankings. It's a measure of roster strength for your league settings, not a recreation of ESPN's draft grade.",
+    },
+    {
+      term: "Missing Starter Slots",
+      definition:
+        "Positions where your roster doesn't have enough players to fill every starting slot your league requires — a direct waiver/trade target list.",
+    },
+  ];
 
 const formatWeightPercent = (value: number | null | undefined): string => {
   if (value === null || value === undefined || !Number.isFinite(value)) {
@@ -4536,9 +4539,9 @@ export const FantasyTeamGradeCard = ({
       </p>
       <FantasyPlainSummary>
         Add your whole roster and see a letter grade for how strong your
-        starting lineup is relative to your league size and starter
-        settings — not against some impossible perfect lineup, and factoring
-        in what other drafters actually value these players at.
+        starting lineup is relative to your league size and starter settings —
+        not against some impossible perfect lineup, and factoring in what other
+        drafters actually value these players at.
       </FantasyPlainSummary>
       <p className="selector-note">
         League Settings: {safeToText(data.leagueSettings?.teamCount)} teams |{" "}
@@ -4549,7 +4552,8 @@ export const FantasyTeamGradeCard = ({
       ) : null}
       {data.missingPlayerIds.length ? (
         <p className="empty-note">
-          Missing player IDs (not found in pool): {data.missingPlayerIds.join(", ")}
+          Missing player IDs (not found in pool):{" "}
+          {data.missingPlayerIds.join(", ")}
         </p>
       ) : null}
 
