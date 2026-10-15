@@ -921,74 +921,82 @@ export type NbaFantasyTeamGradeResponse = Omit<
 
 export type DraftSimulatorSport = "nfl" | "nba";
 
-export type DraftSimulatorPickOption = {
-  id: string | number;
+export type DraftSimulatorPlayer = {
+  id?: string | number;
   name: string;
   position: string;
   team?: FantasyTeamValue;
+  vorp?: number | null;
+  projectedTotal?: number | null;
+  adp?: number | null;
+  // 0-100.
   availabilityPct: number | null;
+};
+
+export type DraftSimulatorPickOption = DraftSimulatorPlayer & {
   expectedLineupVorp: number | null;
   sampleSize?: number | null;
   isDefaultPick?: boolean;
-  vsBestValue?: { meanDifference: number | null } | null;
+  vsBestValue?: {
+    meanDifference: number | null;
+    beatsBestValuePct?: number | null;
+  } | null;
 };
 
-export type DraftSimulatorAvailability = {
-  id: string | number;
-  name: string;
-  position: string;
-  vorp?: number | null;
-  availabilityPct: number | null;
+export type DraftSimulatorPickGroup<T> = {
+  overallPick: number | null;
+  round: number | null;
+  players: T[];
 };
 
 export type DraftSimulatorPlanEntry = {
-  round?: number | null;
-  name?: string | null;
-  playerName?: string | null;
-  position?: string | null;
-  pct?: number | null;
-  sharePct?: number | null;
+  round: number | null;
+  overallPick?: number | null;
+  status?: string | null;
+  topChoices?: Array<{ name: string; pct: number | null }>;
 };
 
 export type DraftSimulatorStrategy = {
-  key?: string;
-  id?: string;
-  strategy?: string;
-  name?: string;
-  label?: string;
-  rank?: number | null;
+  key: string;
+  label: string;
+  rank: number | null;
   starterVorp: {
     mean: number | null;
+    stdDev?: number | null;
     p10: number | null;
     p50: number | null;
     p90: number | null;
   } | null;
-  vsBestValue?: {
-    meanDifference?: number | null;
-    beatsPct?: number | null;
-    winPct?: number | null;
-  } | null;
   lineupCompletePct?: number | null;
+  vsBestValue?: {
+    meanDifference: number | null;
+    beatsBestValuePct?: number | null;
+  } | null;
   positionMix?: Record<string, number> | null;
   pickPlan?: DraftSimulatorPlanEntry[] | null;
 };
 
 export type DraftSimulatorResponse = {
+  sport?: DraftSimulatorSport;
   season?: number | string;
   simulations?: number;
   situation?: {
+    draftPosition?: number;
+    teamCount?: number;
+    rounds?: number;
     picksMade?: number;
-    yourPickNumbers?: number[];
+    totalPicks?: number;
     yourNextPick?: {
-      pickNumber?: number | null;
-      round?: number | null;
-      picksUntilYou?: number | null;
+      round: number | null;
+      overallPick: number | null;
+      picksUntilYou: number | null;
     } | null;
+    yourPicks?: number[];
   } | null;
-  pickOptions?: DraftSimulatorPickOption[];
-  nextPickAvailability?: DraftSimulatorAvailability[];
+  nextPickAvailability?: DraftSimulatorPickGroup<DraftSimulatorPlayer> | null;
+  pickOptions?: DraftSimulatorPickGroup<DraftSimulatorPickOption> | null;
   strategies?: DraftSimulatorStrategy[];
-  decisionInsights?: string | null;
+  decisionInsights?: string[] | null;
   assumptions?: string[] | null;
   lastUpdatedAt?: string;
   _cache?: "HIT" | "MISS";

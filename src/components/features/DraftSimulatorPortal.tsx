@@ -46,13 +46,7 @@ const readSettings = (sport: DraftSimulatorSport): SimSettings => {
 };
 
 const strategyLabel = (strategy: DraftSimulatorStrategy) =>
-  safeToText(
-    strategy.label ??
-      strategy.name ??
-      strategy.strategy ??
-      strategy.key ??
-      strategy.id,
-  ).replace(/_/g, " ");
+  strategy.label || strategy.key.replace(/_/g, " ");
 
 const formatMix = (mix: Record<string, number> | null | undefined) =>
   mix
@@ -158,8 +152,9 @@ const DraftSimulatorPortal = ({
   };
 
   const nextPick = result?.situation?.yourNextPick;
-  const options = result?.pickOptions ?? [];
-  const availability = result?.nextPickAvailability ?? [];
+  const options = result?.pickOptions?.players ?? [];
+  const availability = result?.nextPickAvailability?.players ?? [];
+  const insights = result?.decisionInsights ?? [];
 
   return (
     <section className="feature-stage feature-stage--draft-sim">
@@ -236,8 +231,12 @@ const DraftSimulatorPortal = ({
                   The draft has changed since this run — re-run to update.
                 </p>
               ) : null}
-              {result.decisionInsights ? (
-                <p className="callout-note">{result.decisionInsights}</p>
+              {insights.length ? (
+                <ul className="callout-note plain-list">
+                  {insights.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
               ) : null}
 
               <div className="impact-summary-grid">
@@ -252,7 +251,7 @@ const DraftSimulatorPortal = ({
                 <div className="overview-pill">
                   <p className="overview-pill-label">Your next pick</p>
                   <p className="overview-pill-value">
-                    {formatMetricValue(nextPick?.pickNumber)}
+                    {formatMetricValue(nextPick?.overallPick)}
                   </p>
                 </div>
                 <div className="overview-pill">
@@ -272,11 +271,15 @@ const DraftSimulatorPortal = ({
               {options.length ? (
                 <section className="context-wrap">
                   <h4 className="fantasy-section-heading">
-                    Your next pick — options
+                    Your next pick — options (round{" "}
+                    {safeToText(result.pickOptions?.round)}, pick{" "}
+                    {safeToText(result.pickOptions?.overallPick)})
                   </h4>
                   <p className="fantasy-tip">
                     "vs default" is how taking this player instead of the
-                    default pick changes your final lineup VORP.
+                    default pick changes your final lineup VORP. Differences of
+                    a few points are ties — the default is the most common
+                    pick, not the only good one.
                   </p>
                   <div className="compare-table-wrap">
                     <table className="compare-table">
@@ -286,12 +289,13 @@ const DraftSimulatorPortal = ({
                           <th>Pos</th>
                           <th>Lineup VORP</th>
                           <th>vs default</th>
+                          <th>Beats default</th>
                           <th>Available</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {options.map((option) => (
-                          <tr key={String(option.id)}>
+                        {options.map((option, index) => (
+                          <tr key={`${option.name}-${index}`}>
                             <td>
                               {safeToText(option.name)}
                               {option.isDefaultPick ? (
@@ -306,6 +310,9 @@ const DraftSimulatorPortal = ({
                               {formatMetricValue(
                                 option.vsBestValue?.meanDifference,
                               )}
+                            </td>
+                            <td>
+                              {formatPct(option.vsBestValue?.beatsBestValuePct)}
                             </td>
                             <td
                               title={
@@ -340,8 +347,8 @@ const DraftSimulatorPortal = ({
                         </tr>
                       </thead>
                       <tbody>
-                        {availability.map((entry) => (
-                          <tr key={String(entry.id)}>
+                        {availability.map((entry, index) => (
+                          <tr key={`${entry.name}-${index}`}>
                             <td>{safeToText(entry.name)}</td>
                             <td>{safeToText(entry.position)}</td>
                             <td>{formatMetricValue(entry.vorp)}</td>
@@ -362,7 +369,7 @@ const DraftSimulatorPortal = ({
                   <p className="fantasy-tip">
                     Best value usually ranks first because it adapts to the
                     draft. A trailing strategy isn't wrong — the gap is what the
-                    plan costs. Treat close ones as ties.
+                    plan costs. Compare the differences, not the raw totals.
                   </p>
                   <div className="compare-table-wrap">
                     <table className="compare-table">
@@ -372,6 +379,7 @@ const DraftSimulatorPortal = ({
                           <th>Avg lineup VORP</th>
                           <th>P10 – P90</th>
                           <th>vs best value</th>
+                          <th>Beats best value</th>
                           <th>Lineup filled</th>
                           <th>Builds</th>
                         </tr>
@@ -391,6 +399,9 @@ const DraftSimulatorPortal = ({
                               {formatMetricValue(
                                 strategy.vsBestValue?.meanDifference,
                               )}
+                            </td>
+                            <td>
+                              {formatPct(strategy.vsBestValue?.beatsBestValuePct)}
                             </td>
                             <td>{formatPct(strategy.lineupCompletePct)}</td>
                             <td>{formatMix(strategy.positionMix)}</td>
@@ -412,11 +423,19 @@ const DraftSimulatorPortal = ({
                         <ol className="plain-list">
                           {strategy.pickPlan.map((entry, planIndex) => (
                             <li key={planIndex}>
-                              Round {safeToText(entry.round ?? planIndex + 1)}:{" "}
-                              {safeToText(entry.name ?? entry.playerName)}
-                              {entry.position
-                                ? ` (${safeToText(entry.position)})`
+                              Round {safeToText(entry.round ?? planIndex + 1)}
+                              {entry.overallPick
+                                ? ` (pick ${safeToText(entry.overallPick)})`
                                 : ""}
+                              :{" "}
+                              {entry.topChoices?.length
+                                ? entry.topChoices
+                                    .map(
+                                      (choice) =>
+                                        `${choice.name} ${formatPct(choice.pct)}`,
+                                    )
+                                    .join(" · ")
+                                : "-"}
                             </li>
                           ))}
                         </ol>
