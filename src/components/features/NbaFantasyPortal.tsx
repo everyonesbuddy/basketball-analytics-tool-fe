@@ -288,16 +288,14 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Pick order is the source of truth; team-attributed picks saved before
+  // order tracking existed are appended after it.
   const draftedIds = [
-    ...new Set(Object.values(draftTeams).flatMap((ids) => ids)),
+    ...new Set([...pickOrder, ...Object.values(draftTeams).flat()]),
   ];
   const draftedIdsRef = useRef(draftedIds);
   draftedIdsRef.current = draftedIds;
-  // Picks saved before order tracking existed fall back to team grouping.
-  const orderedPickIds = [
-    ...pickOrder.filter((id) => draftedIds.includes(id)),
-    ...draftedIds.filter((id) => !pickOrder.includes(id)),
-  ];
+  const orderedPickIds = draftedIds;
   const playerOptions = toPlayerOptions(candidatePool);
   const seasonParam = season.trim() || undefined;
   const leagueSettings = {
@@ -426,9 +424,18 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
     if (draftedIds.includes(id)) return;
     const nextTeamIds = [...(draftTeams[selectedDraftTeam] ?? []), id];
     const nextTeams = { ...draftTeams, [selectedDraftTeam]: nextTeamIds };
-    const nextIds = [...new Set(Object.values(nextTeams).flat())];
+    const nextIds = [...orderedPickIds, id];
     setDraftTeams(nextTeams);
-    setPickOrder([...orderedPickIds, id]);
+    setPickOrder(nextIds);
+    void loadBoard(nextIds);
+  };
+
+  // Logs a pick in sequence without assigning it to a team (the simulator only
+  // needs the order).
+  const logPick = (id: string) => {
+    if (draftedIds.includes(id)) return;
+    const nextIds = [...orderedPickIds, id];
+    setPickOrder(nextIds);
     void loadBoard(nextIds);
   };
 
@@ -439,9 +446,9 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
         ids.filter((playerId) => playerId !== id),
       ]),
     ) as Record<number, string[]>;
-    const nextIds = [...new Set(Object.values(nextTeams).flat())];
+    const nextIds = orderedPickIds.filter((playerId) => playerId !== id);
     setDraftTeams(nextTeams);
-    setPickOrder(orderedPickIds.filter((playerId) => playerId !== id));
+    setPickOrder(nextIds);
     void loadBoard(nextIds);
   };
 
@@ -777,6 +784,11 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
           starters={starters}
           season={season}
           forceRefresh={forceRefresh}
+          playerOptions={playerOptions.filter(
+            (option) => !draftedIds.includes(option.id),
+          )}
+          onLogPick={logPick}
+          onRemovePick={removeDraftedPlayer}
         />
       ) : null}
 

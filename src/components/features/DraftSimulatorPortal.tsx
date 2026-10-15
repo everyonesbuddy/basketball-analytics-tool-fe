@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import SearchableEntitySelect from "../common/SearchableEntitySelect";
 import { fetchFantasyDraftSimulator } from "../../utils/dashboardApi";
 import { safeToText } from "../../utils/dashboardFormatters";
 import { formatMetricValue } from "../dashboard/DashboardCards";
@@ -8,6 +9,7 @@ import type {
   DraftSimulatorSport,
   DraftSimulatorStrategy,
   FantasyScoringId,
+  PlayerOption,
 } from "../../utils/dashboardTypes";
 
 const STRATEGY_OPTIONS: Record<
@@ -68,6 +70,10 @@ type DraftSimulatorPortalProps = {
   season: string;
   scoringId?: FantasyScoringId;
   forceRefresh: boolean;
+  // Players still on the board, for logging picks without leaving this page.
+  playerOptions?: PlayerOption[];
+  onLogPick?: (id: string) => void;
+  onRemovePick?: (id: string) => void;
 };
 
 const DraftSimulatorPortal = ({
@@ -79,7 +85,11 @@ const DraftSimulatorPortal = ({
   season,
   scoringId,
   forceRefresh,
+  playerOptions,
+  onLogPick,
+  onRemovePick,
 }: DraftSimulatorPortalProps) => {
+  const [pickChoice, setPickChoice] = useState("");
   const [saved] = useState(() => readSettings(sport));
   const [draftPosition, setDraftPosition] = useState(saved.draftPosition);
   const [simulations, setSimulations] = useState(saved.simulations);
@@ -164,9 +174,10 @@ const DraftSimulatorPortal = ({
         </span>
         <h3>Draft Simulator</h3>
         <p className="helper-note">
-          Plays your draft out many times from your slot. Picks made so far (
-          {pickIds.length}) are included automatically — mark players drafted on
-          the Draft Board first.
+          The simulator only knows the picks logged below. Log{" "}
+          <strong>every</strong> pick made so far — yours and everyone else's —
+          in the order they happened, or it will advise you as if the draft
+          hasn't started.
         </p>
         <label htmlFor={`${sport}SimSlot`}>Your pick (1-{teams})</label>
         <input
@@ -180,6 +191,29 @@ const DraftSimulatorPortal = ({
           value={simulations}
           onChange={(event) => setSimulations(event.target.value)}
         />
+        {onLogPick && playerOptions ? (
+          <>
+            <SearchableEntitySelect
+              id={`${sport}SimLogPick`}
+              label={`Log pick #${pickIds.length + 1}`}
+              value={pickChoice}
+              onChange={setPickChoice}
+              options={playerOptions}
+              placeholder="Search the player who was just taken"
+              fallbackPrefix="Player"
+            />
+            <button
+              type="button"
+              disabled={!pickChoice}
+              onClick={() => {
+                onLogPick(pickChoice);
+                setPickChoice("");
+              }}
+            >
+              Log pick
+            </button>
+          </>
+        ) : null}
         <div className="sim-strategies">
           <span className="helper-note">
             Strategies to compare (none selected = all):
@@ -215,10 +249,25 @@ const DraftSimulatorPortal = ({
               {pickIds.map((id, index) => (
                 <span className="chip" key={id}>
                   {index + 1}. {pickLabels[id] ?? `Player #${id}`}
+                  {onRemovePick ? (
+                    <button
+                      type="button"
+                      className="chip-remove"
+                      aria-label={`Remove pick ${index + 1}`}
+                      onClick={() => onRemovePick(id)}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                 </span>
               ))}
             </div>
-          ) : null}
+          ) : (
+            <p className="callout-note">
+              No picks logged yet, so results describe the very start of the
+              draft. If you're further along, log the picks first.
+            </p>
+          )}
           {!result ? (
             <p className="empty-note">
               Set your draft slot and run the simulation to see which direction
@@ -268,6 +317,12 @@ const DraftSimulatorPortal = ({
                 </div>
               </div>
 
+              <p className="fantasy-tip">
+                "Your next pick" is the overall pick number you're on the clock
+                for. With {pickIds.length} picks logged, your next turn is pick{" "}
+                {pickIds.length + 1} or later.
+              </p>
+
               {options.length ? (
                 <section className="context-wrap">
                   <h4 className="fantasy-section-heading">
@@ -278,8 +333,8 @@ const DraftSimulatorPortal = ({
                   <p className="fantasy-tip">
                     "vs default" is how taking this player instead of the
                     default pick changes your final lineup VORP. Differences of
-                    a few points are ties — the default is the most common
-                    pick, not the only good one.
+                    a few points are ties — the default is the most common pick,
+                    not the only good one.
                   </p>
                   <div className="compare-table-wrap">
                     <table className="compare-table">
@@ -401,7 +456,9 @@ const DraftSimulatorPortal = ({
                               )}
                             </td>
                             <td>
-                              {formatPct(strategy.vsBestValue?.beatsBestValuePct)}
+                              {formatPct(
+                                strategy.vsBestValue?.beatsBestValuePct,
+                              )}
                             </td>
                             <td>{formatPct(strategy.lineupCompletePct)}</td>
                             <td>{formatMix(strategy.positionMix)}</td>
