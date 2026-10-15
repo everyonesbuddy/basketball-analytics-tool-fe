@@ -728,6 +728,56 @@ select:focus-visible {
   gap: 6px;
 }
 
+.sim-move {
+  margin: 8px 0 12px;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #c9b6ff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5f1ff, #fffdf5);
+}
+
+.sim-move__label {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #4c2fa8;
+}
+
+.sim-move__row {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0.3rem 0;
+}
+
+.sim-move__row + .sim-move__row {
+  border-top: 1px solid #ece4ff;
+}
+
+.sim-move__pct {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6b5a99;
+}
+
+.sim-move__row--top .sim-move__player {
+  font-size: 1.05rem;
+  color: #1f2d44;
+}
+
+.sim-move__row--top .sim-move__pct {
+  color: #4c2fa8;
+  font-size: 0.95rem;
+}
+
+.sim-move .meta-line {
+  margin: 6px 0 0;
+}
+
 .sim-strategies .helper-note {
   margin: 0;
 }

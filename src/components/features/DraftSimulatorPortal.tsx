@@ -111,8 +111,8 @@ const DraftSimulatorPortal = ({
         : [...current, key],
     );
 
-  const run = async (event: FormEvent) => {
-    event.preventDefault();
+  const run = async (event?: FormEvent) => {
+    event?.preventDefault();
     setError("");
 
     const slot = Number(draftPosition);
@@ -165,6 +165,27 @@ const DraftSimulatorPortal = ({
   const options = result?.pickOptions?.players ?? [];
   const availability = result?.nextPickAvailability?.players ?? [];
   const insights = result?.decisionInsights ?? [];
+
+  // The plan of the top-ranked direction is what "Your move" follows.
+  const bestStrategy = [...strategies].sort(
+    (a, b) => (a.rank ?? 99) - (b.rank ?? 99),
+  )[0];
+  const planEntries = bestStrategy?.pickPlan ?? [];
+  const planNow =
+    planEntries.find((entry) => entry.overallPick === nextPick?.overallPick) ??
+    planEntries.find((entry) => entry.topChoices?.length);
+  const planChoices = [...(planNow?.topChoices ?? [])].sort(
+    (a, b) => (b.pct ?? 0) - (a.pct ?? 0),
+  );
+  const planAhead = planEntries
+    .filter(
+      (entry) =>
+        (entry.overallPick ?? 0) > (planNow?.overallPick ?? 0) &&
+        entry.topChoices?.length,
+    )
+    .slice(0, 3);
+  const findPlayerId = (name: string) =>
+    playerOptions?.find((option) => option.label.startsWith(`${name} (`))?.id;
 
   return (
     <section className="feature-stage feature-stage--draft-sim">
@@ -277,8 +298,68 @@ const DraftSimulatorPortal = ({
             <article className="scout-card fantasy-card">
               {stale ? (
                 <p className="callout-note">
-                  The draft has changed since this run — re-run to update.
+                  The draft has changed since this run.{" "}
+                  <button
+                    type="button"
+                    className="fantasy-draft-button"
+                    disabled={loading}
+                    onClick={() => void run()}
+                  >
+                    {loading ? "Updating..." : "Update plan"}
+                  </button>
                 </p>
+              ) : null}
+
+              {planChoices.length && bestStrategy ? (
+                <section className="sim-move">
+                  <p className="sim-move__label">
+                    Your move — pick {safeToText(planNow?.overallPick)} (round{" "}
+                    {safeToText(planNow?.round)})
+                  </p>
+                  {planChoices.map((choice, index) => {
+                    const id = findPlayerId(choice.name);
+                    return (
+                      <div
+                        className={`sim-move__row ${index === 0 ? "sim-move__row--top" : ""}`}
+                        key={choice.name}
+                      >
+                        <span className="sim-move__pct">
+                          {formatPct(choice.pct)}
+                        </span>
+                        <strong className="sim-move__player">
+                          {choice.name}
+                        </strong>
+                        {id && onLogPick ? (
+                          <button
+                            type="button"
+                            className="fantasy-draft-button"
+                            onClick={() => onLogPick(id)}
+                          >
+                            Take
+                          </button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  <p className="meta-line">
+                    Highest percentage first, from the{" "}
+                    {strategyLabel(bestStrategy)} plan (the top-ranked direction). If
+                    your first choice is gone, take the next one down.
+                  </p>
+                  {planAhead.length ? (
+                    <p className="meta-line">
+                      Then:{" "}
+                      {planAhead
+                        .map((entry) => {
+                          const top = [...(entry.topChoices ?? [])].sort(
+                            (a, b) => (b.pct ?? 0) - (a.pct ?? 0),
+                          )[0];
+                          return `R${safeToText(entry.round)} ${top.name} ${formatPct(top.pct)}`;
+                        })
+                        .join(" → ")}
+                    </p>
+                  ) : null}
+                </section>
               ) : null}
               {insights.length ? (
                 <ul className="callout-note plain-list">
@@ -391,6 +472,10 @@ const DraftSimulatorPortal = ({
                   <h4 className="fantasy-section-heading">
                     Will they last until your pick?
                   </h4>
+                  <p className="fantasy-tip">
+                    Seen a player go off the board? Click Taken to log it fast,
+                    then Update plan.
+                  </p>
                   <div className="compare-table-wrap">
                     <table className="compare-table">
                       <thead>
@@ -399,17 +484,33 @@ const DraftSimulatorPortal = ({
                           <th>Pos</th>
                           <th>VORP</th>
                           <th>Still available</th>
+                          {onLogPick ? <th /> : null}
                         </tr>
                       </thead>
                       <tbody>
-                        {availability.map((entry, index) => (
-                          <tr key={`${entry.name}-${index}`}>
-                            <td>{safeToText(entry.name)}</td>
-                            <td>{safeToText(entry.position)}</td>
-                            <td>{formatMetricValue(entry.vorp)}</td>
-                            <td>{formatPct(entry.availabilityPct)}</td>
-                          </tr>
-                        ))}
+                        {availability.map((entry, index) => {
+                          const id = findPlayerId(entry.name);
+                          return (
+                            <tr key={`${entry.name}-${index}`}>
+                              <td>{safeToText(entry.name)}</td>
+                              <td>{safeToText(entry.position)}</td>
+                              <td>{formatMetricValue(entry.vorp)}</td>
+                              <td>{formatPct(entry.availabilityPct)}</td>
+                              {onLogPick ? (
+                                <td>
+                                  {id ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => onLogPick(id)}
+                                    >
+                                      Taken
+                                    </button>
+                                  ) : null}
+                                </td>
+                              ) : null}
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
