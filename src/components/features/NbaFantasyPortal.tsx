@@ -430,15 +430,6 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
     void loadBoard(nextIds);
   };
 
-  // Logs a pick in sequence without assigning it to a team (the simulator only
-  // needs the order).
-  const logPick = (id: string) => {
-    if (draftedIds.includes(id)) return;
-    const nextIds = [...orderedPickIds, id];
-    setPickOrder(nextIds);
-    void loadBoard(nextIds);
-  };
-
   const removeDraftedPlayer = (id: string) => {
     const nextTeams = Object.fromEntries(
       Object.entries(draftTeams).map(([team, ids]) => [
@@ -774,21 +765,10 @@ const NbaFantasyPortal = ({ forceRefresh }: { forceRefresh: boolean }) => {
         <DraftSimulatorPortal
           sport="nba"
           pickIds={orderedPickIds}
-          pickLabels={Object.fromEntries(
-            candidatePool.map((player) => [
-              String(player.id),
-              `${player.name} (${player.position})`,
-            ]),
-          )}
           teamCount={teamCount}
           starters={starters}
           season={season}
           forceRefresh={forceRefresh}
-          playerOptions={playerOptions.filter(
-            (option) => !draftedIds.includes(option.id),
-          )}
-          onLogPick={logPick}
-          onRemovePick={removeDraftedPlayer}
         />
       ) : null}
 

@@ -1033,23 +1033,6 @@ const Dashboard = () => {
     markDraftBoardPlayerDrafted(id);
   };
 
-  // Undo from the simulator must also free any team slot the player held.
-  const undraftPlayerEverywhere = (id: string) => {
-    setDraftTeamRosters((current) =>
-      Object.fromEntries(
-        Object.entries(current).map(([team, roster]) => [
-          team,
-          Object.fromEntries(
-            Object.entries(roster).filter(
-              ([, player]) => String(player.id) !== id,
-            ),
-          ),
-        ]),
-      ),
-    );
-    removeFromDraftBoardRoster(id);
-  };
-
   const draftState = {
     teamRosters: draftTeamRosters,
     selectedTeamIndex: draftSelectedTeam,
@@ -1467,17 +1450,11 @@ const Dashboard = () => {
             <DraftSimulatorPortal
               sport="nfl"
               pickIds={draftBoardRoster.map((entry) => entry.id)}
-              pickLabels={Object.fromEntries(
-                draftBoardRoster.map((entry) => [entry.id, entry.label]),
-              )}
               teamCount={draftBoardTeamCount}
               starters={draftBoardStarters}
               season={draftBoardSeason}
               scoringId={draftBoardScoringId}
               forceRefresh={forceRefresh}
-              playerOptions={draftBoardCandidateOptions}
-              onLogPick={markDraftBoardPlayerDrafted}
-              onRemovePick={undraftPlayerEverywhere}
             />
           ) : activeFeature === "sleepers" ? (
             <SleepersPortal
