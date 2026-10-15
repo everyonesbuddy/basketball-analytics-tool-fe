@@ -2425,6 +2425,27 @@ const ROSTER_SLOT_ORDER = [
 
 const NBA_POSITIONS = ["PG", "SG", "SF", "PF", "C"];
 
+// The backend lists one position per player. Real NBA eligibility overlaps with
+// the neighbouring positions (PG/SG, SG/SF, SF/PF, PF/C), so until the backend
+// sends eligiblePositions, a player may also fill an adjacent position's slot.
+const getPlayablePositions = (candidate: FantasyPlayerCandidate): string[] => {
+  if (candidate.eligiblePositions?.length) {
+    return candidate.eligiblePositions;
+  }
+
+  const index = NBA_POSITIONS.indexOf(candidate.position);
+  if (index === -1) {
+    return [candidate.position];
+  }
+
+  return NBA_POSITIONS.slice(Math.max(0, index - 1), index + 2);
+};
+
+const canFillSlot = (slot: RosterSlot, candidate: FantasyPlayerCandidate) =>
+  getPlayablePositions(candidate).some((position) =>
+    slot.eligiblePositions.includes(position),
+  );
+
 const buildRosterSlots = (
   starters: Record<string, number | undefined> | undefined,
 ): RosterSlot[] => {
@@ -2512,7 +2533,7 @@ const buildRosterNeeds = (
     const best = candidates
       .filter(
         (candidate) =>
-          slot.eligiblePositions.includes(candidate.position) &&
+          canFillSlot(slot, candidate) &&
           !rosteredIds.has(String(candidate.id)) &&
           !alreadySuggested.has(String(candidate.id)),
       )
@@ -2546,7 +2567,7 @@ export const assignCandidateToOpenSlot = (
   const openSlot = buildRosterSlots(starters).find(
     (slot) =>
       !assignments[slot.key] &&
-      slot.eligiblePositions.includes(candidate.position),
+      canFillSlot(slot, candidate),
   );
 
   if (!openSlot) {
@@ -2578,7 +2599,15 @@ const buildDraftLog = (teamRosters: DraftTeamRosters): DraftLogEntry[] =>
 
 export type RosterSlotAssignments = Record<string, FantasyPlayerCandidate>;
 
-const ALL_FANTASY_POSITIONS = ["QB", "RB", "WR", "TE", "K", "DST"];
+const ALL_FANTASY_POSITIONS = [
+  "QB",
+  "RB",
+  "WR",
+  "TE",
+  "K",
+  "DST",
+  ...NBA_POSITIONS,
+];
 
 const DEFAULT_STARTERS: Record<string, number> = {
   QB: 1,
@@ -2657,9 +2686,7 @@ const RosterSlotGrid = ({
         const assigned = assignments[slot.key];
         const isOpen = openSlotKey === slot.key;
         const eligibleCandidates = candidates
-          .filter((candidate) =>
-            slot.eligiblePositions.includes(candidate.position),
-          )
+          .filter((candidate) => canFillSlot(slot, candidate))
           .filter(
             (candidate) =>
               !unavailableIds.has(String(candidate.id)) ||

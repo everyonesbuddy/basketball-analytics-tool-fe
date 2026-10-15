@@ -477,6 +477,8 @@ export type FantasyPlayerCandidate = {
   id: string | number;
   name: string;
   position: string;
+  // Not sent by the backend yet; when present it overrides the adjacent-position fallback.
+  eligiblePositions?: string[];
   team: FantasyTeamValue;
   injuryStatus: FantasyInjuryValue;
   tier: number | null;
