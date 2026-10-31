@@ -1,8 +1,8 @@
 import "./App.css";
-import Dashboard from "./components/Dashboard";
+import OsApp from "./os/OsApp";
 
 function App() {
-  return <Dashboard />;
+  return <OsApp />;
 }
 
 export default App;

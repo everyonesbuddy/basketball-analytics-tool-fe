@@ -1,3 +1,27 @@
+# Personal OS (Frontend)
+
+A personal dashboard for guidance and decisions: goals and the daily schedule first, with gifting, style, events, travel and money widgets to come. The original basketball analytics tool lives on under **Sports**.
+
+## Widgets
+
+| Widget | Status |
+| --- | --- |
+| Today | Built: the block you're in, its goal and mode and why, what needs a decision, the full day, your six goals, a quote |
+| Goals & schedule | Built: one goal per category, obstacle classification, tool check, session logging, end of window (completed, expand, roll over) |
+| Weekly review | Built: sessions and % this week, the ceiling check and a next action per goal |
+| Framework | Built: the cheat sheet, printable |
+| Sports | Built: the existing analytics tools, unchanged |
+| Gifting, Style, Events & concerts, Travel, Money | Coming next |
+
+## Setup
+
+- The API is the same backend (`/api/os`), which needs `MONGODB_URI` and `JWT_SECRET` set. See the backend README.
+- Sign-in uses the login made with the backend's `scripts/create-user.js`.
+- `public/_redirects` sends every path to the app, so links like `/goals` work on Netlify.
+- Code for the OS is in `src/os/`; the sports code is unchanged in `src/components/`.
+
+---
+
 # Basketball Analytics Tool (Frontend)
 
 React + TypeScript + Vite frontend for player and team analytics powered by the backend ESPN aggregation service.
