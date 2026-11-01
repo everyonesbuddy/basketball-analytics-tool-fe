@@ -12,7 +12,11 @@ type Data = {
 };
 
 function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
-  const [next, setNext] = useState<Record<string, string>>(() => Object.fromEntries((data.saved?.entries || []).map((e) => [String(e.goal), e.nextAction])));
+  const [next, setNext] = useState<Record<string, string>>(() => ({
+    // Start from each goal's current next step; a saved review's answers win.
+    ...Object.fromEntries(data.goals.map((g) => [g.goalId, g.nextStep || ""])),
+    ...Object.fromEntries((data.saved?.entries || []).filter((e) => e.nextAction).map((e) => [String(e.goal), e.nextAction])),
+  }));
   const [notes, setNotes] = useState(data.saved?.notes || "");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -64,7 +68,7 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
           <p className="os-reason">{g.reason}</p>
           {g.window.next && <div className="os-note">{g.window.next.text}</div>}
           <label className="os-form">
-            Next action for the coming week
+            Next step (shows at this goal's next block)
             <input value={next[g.goalId] || ""} onChange={(e) => setNext({ ...next, [g.goalId]: e.target.value })} placeholder="The next concrete step" />
           </label>
         </Card>

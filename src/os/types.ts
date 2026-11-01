@@ -12,6 +12,7 @@ export interface Goal {
   obstacle: { text: string; kind: "single" | "tiered"; bounded: boolean | null; parallel: boolean | null };
   toolReady: boolean | null;
   toolNeeded: string;
+  nextStep?: string;
   percent: number;
   notes: string;
   completedAt?: string | null;
@@ -51,7 +52,31 @@ export interface Block {
   mode: Mode | null;
   modeName: string | null;
   reason: string | null;
+  nextStep: string;
+  tiered: boolean;
   loggedToday: boolean;
+}
+
+export interface Upcoming {
+  date: string;
+  day: string;
+  start: string;
+  end: string;
+  label: string;
+  review: boolean;
+  category: Category | null;
+  goalId: string | null;
+  goalTitle: string | null;
+  nextStep: string;
+  minutesAway: number;
+}
+
+export interface Focus {
+  state: "goal" | "review" | "break" | "free" | "off";
+  block: Block | null;
+  text: string;
+  until: string | null;
+  next: Upcoming | null;
 }
 
 export interface TodayGoal {
@@ -80,6 +105,7 @@ export interface ModeInfo {
 }
 
 export interface Today {
+  focus: Focus;
   date: string;
   weekday: string;
   dayType: "v1" | "v2" | "weekend";
@@ -129,6 +155,7 @@ export interface ReviewGoal {
   goalId: string;
   category: Category;
   title: string;
+  nextStep?: string;
   mode: Mode;
   modeName: string;
   reason: string;

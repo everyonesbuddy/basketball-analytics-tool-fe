@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FiBell, FiBellOff } from "react-icons/fi";
 import os from "./api";
-import { CategoryTag, ModeBadge } from "./Bits";
+import { CategoryTag } from "./Bits";
 import { clock } from "./format";
-import type { Block, Today } from "./types";
+import type { Today } from "./types";
+import { nextWhat, whenText } from "./when";
 
 const KEY = "personal_os_block_reminders";
 const readPref = () => {
@@ -25,8 +26,8 @@ const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.g
 const canNotify = () => typeof window !== "undefined" && "Notification" in window;
 
 /**
- * The strip at the top of every page: the block you should be in, its goal
- * and mode, and what's next. Refreshes every minute. Optional reminders: a
+ * The strip at the top of every page: what to work on now (and its next
+ * step), or that nothing's on, and what's next and when. Refreshes every minute. Optional reminders: a
  * browser notification when each goal block starts (while the app is open).
  */
 export default function NowBar() {
@@ -59,7 +60,7 @@ export default function NowBar() {
       const key = `${today.date}:${now}`;
       if (!b || notified.current.has(key)) return;
       notified.current.add(key);
-      const body = b.review ? "Weekly goal review: mode, %, ceiling check and next action." : `${b.goalTitle || b.label}${b.modeName ? ` · ${b.modeName}` : ""}${b.reason ? `\n${b.reason}` : ""}`;
+      const body = b.review ? "Weekly review: where each goal stands and the next step for each." : `${b.goalTitle || b.label}${b.nextStep ? `\nNext step: ${b.nextStep}` : ""}`;
       try {
         new Notification(`${clock(b.start)}: ${b.category || "Review"}`, { body, tag: key });
       } catch {
@@ -83,38 +84,37 @@ export default function NowBar() {
   };
 
   if (!today || pathname === "/") return null;
-  const now: Block | null = today.now;
-  const next = today.nextGoalBlock;
-  const focus = now?.category ? now : null;
+  const f = today.focus;
+  const b = f.block;
+  const n = f.next;
 
   return (
     <div className="os-nowbar no-print">
       <div className="os-nowbar__main">
         <span className="os-kicker">Now</span>
-        {focus ? (
+        {f.state === "goal" && b ? (
           <>
-            <CategoryTag category={focus.category!} />
-            <strong>{focus.goalTitle || focus.label}</strong>
-            <ModeBadge mode={focus.mode} long />
-            <span className="os-muted os-small">until {clock(focus.end)}</span>
+            {b.category && <CategoryTag category={b.category} />}
+            <strong>{b.goalTitle || `${b.label}: no goal set`}</strong>
+            {b.nextStep && <span className="os-small">→ {b.nextStep}</span>}
+            <span className="os-muted os-small">until {clock(b.end)}</span>
           </>
-        ) : now ? (
+        ) : f.state === "review" ? (
           <>
-            <strong>{now.label}</strong>
-            <span className="os-muted os-small">until {clock(now.end)}</span>
-            {now.review && <Link to="/review">Open the review</Link>}
+            <strong>Weekly review</strong>
+            <Link to="/review">Open it</Link>
           </>
         ) : (
-          <strong>Off schedule</strong>
+          <strong>{f.state === "break" && b ? b.label : f.state === "free" ? "Nothing scheduled" : "Off schedule"}</strong>
         )}
-        {next && (
+        {n && (
           <span className="os-muted os-small os-nowbar__next">
-            Next {clock(next.start)}: {next.category} {next.goalTitle || next.label}
+            Next {whenText(n)}: {nextWhat(n)}
           </span>
         )}
       </div>
       <div className="os-nowbar__side">
-        {focus && !focus.loggedToday && <Link to="/">Log it</Link>}
+        {f.state === "goal" && b?.goalId && !b.loggedToday && <Link to="/">Done? Check in</Link>}
         {canNotify() && (
           <button type="button" className="os-link" onClick={toggle} title={reminders ? "Turn off block reminders" : "Get a notification when each block starts (while this app is open)"}>
             {reminders ? <FiBell /> : <FiBellOff />} {reminders ? "Reminders on" : "Remind me"}
