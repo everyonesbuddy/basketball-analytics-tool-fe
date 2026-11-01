@@ -1,8 +1,23 @@
 import { useState } from "react";
+import { FiCheck } from "react-icons/fi";
 import os, { errorText } from "./api";
-import type { Mode } from "./types";
+import type { Mode, Outcome } from "./types";
 
-type Outcome = "progress" | "cleared" | "blocked";
+/** What you tapped, said back the same way. */
+const OUTCOME_DONE: Record<Outcome, string> = {
+  progress: "Moved it forward today",
+  cleared: "Cleared for this period",
+  blocked: "Stuck: noted what's missing (Mode 1)",
+};
+
+export function CheckedIn({ outcome }: { outcome: Outcome | null | undefined }) {
+  if (!outcome) return null;
+  return (
+    <span className="os-ok os-checkedin">
+      <FiCheck /> {OUTCOME_DONE[outcome]}
+    </span>
+  );
+}
 
 /** The framework in three lines, with the mode you're in marked. */
 export function ModeReminders({ mode }: { mode: Mode | null }) {
@@ -23,9 +38,11 @@ export function ModeReminders({ mode }: { mode: Mode | null }) {
 }
 
 /**
- * The daily check-in, one tap: moved it forward today, or cleared the goal
- * for this period. Optional: the % earned and the next step (shown at the
- * goal's next block). "Stuck" records what's missing (Mode 1).
+ * The daily check-in: two buttons, moved it forward today or cleared the goal
+ * for this period. Optional % cleared and next step (shown at the goal's next
+ * block). "Stuck" records what's missing (Mode 1).
+ *
+ * `links`: just the two buttons as small links (for the timeline).
  */
 export default function QuickLog({
   goalId,
@@ -34,8 +51,9 @@ export default function QuickLog({
   mode = null,
   date,
   onSaved,
-  onCancel,
-  compact = false,
+  extrasOpen = false,
+  reminders = true,
+  links = false,
 }: {
   goalId: string;
   nextStep?: string;
@@ -43,9 +61,11 @@ export default function QuickLog({
   mode?: Mode | null;
   date?: string;
   onSaved: (outcome: Outcome) => void;
-  onCancel?: () => void;
-  compact?: boolean;
+  extrasOpen?: boolean;
+  reminders?: boolean;
+  links?: boolean;
 }) {
+  const [extras, setExtras] = useState(extrasOpen);
   const [next, setNext] = useState(nextStep);
   const [percent, setPercent] = useState("");
   const [stuck, setStuck] = useState(false);
@@ -74,19 +94,31 @@ export default function QuickLog({
     }
   };
 
+  if (links) {
+    return (
+      <span className="os-row os-small">
+        <button className="os-link" disabled={busy} onClick={() => send("progress")}>Moved it forward today</button>
+        <button className="os-link" disabled={busy} onClick={() => send("cleared")}>Cleared for this period</button>
+        {error && <span className="os-bad">{error}</span>}
+      </span>
+    );
+  }
+
   return (
-    <div className={`os-quicklog${compact ? " os-quicklog--compact" : ""}`}>
-      <ModeReminders mode={mode} />
-      <div className="os-quicklog__fields">
-        <label>
-          Next step for next time <span className="os-muted">(optional)</span>
-          <input value={next} onChange={(e) => setNext(e.target.value)} placeholder="e.g. Draft the pricing page" maxLength={500} />
-        </label>
-        <label className="os-narrow">
-          % cleared <span className="os-muted">(optional)</span>
-          <input type="number" min={0} max={100} step={0.5} value={percent} onChange={(e) => setPercent(e.target.value)} placeholder="e.g. 5" />
-        </label>
-      </div>
+    <div className="os-quicklog">
+      {reminders && <ModeReminders mode={mode} />}
+      {extras && (
+        <div className="os-quicklog__fields">
+          <label>
+            Next step for next time <span className="os-muted">(optional)</span>
+            <input value={next} onChange={(e) => setNext(e.target.value)} placeholder="e.g. Draft the pricing page" maxLength={500} />
+          </label>
+          <label className="os-narrow">
+            % cleared <span className="os-muted">(optional)</span>
+            <input type="number" min={0} max={100} step={0.5} value={percent} onChange={(e) => setPercent(e.target.value)} placeholder="e.g. 5" />
+          </label>
+        </div>
+      )}
       {stuck ? (
         <div className="os-row">
           <input value={missing} onChange={(e) => setMissing(e.target.value)} placeholder="What tool or resource is missing?" autoFocus style={{ flex: 1, minWidth: 200 }} />
@@ -97,8 +129,8 @@ export default function QuickLog({
         <div className="os-actions">
           <button className="os-btn os-btn--primary" disabled={busy} onClick={() => send("progress")}>Moved it forward today</button>
           <button className="os-btn" disabled={busy} onClick={() => send("cleared")}>Cleared the goal for this period</button>
+          {!extras && <button className="os-link os-small" onClick={() => setExtras(true)}>+ % or next step</button>}
           <button className="os-link os-small" disabled={busy} onClick={() => setStuck(true)}>Stuck: missing a tool or resource</button>
-          {onCancel && <button className="os-btn os-btn--ghost" onClick={onCancel}>Cancel</button>}
         </div>
       )}
       {error && <div className="os-error">{error}</div>}

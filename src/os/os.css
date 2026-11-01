@@ -300,3 +300,4 @@
 .os-modehints li strong { color: #334155; margin-right: 4px; }
 .os-modehints li.on { background: #e0ecff; color: #1e3a8a; }
 .os-modehints li.on strong { color: #1e3a8a; }
+.os-checkedin { display: inline-flex; align-items: center; gap: 4px; }

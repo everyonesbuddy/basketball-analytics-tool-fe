@@ -1,5 +1,6 @@
 export type Category = "P1" | "P2" | "PF1" | "PF2" | "PC1" | "PC2";
 export type Mode = "m1" | "m2single" | "m2tiered";
+export type Outcome = "progress" | "cleared" | "blocked";
 
 export interface Goal {
   _id: string;
@@ -57,6 +58,7 @@ export interface Block {
   nextStep: string;
   tiered: boolean;
   loggedToday: boolean;
+  outcomeToday: Outcome | null;
 }
 
 export interface Upcoming {
@@ -91,6 +93,7 @@ export interface TodayGoal {
   ceiling: { hit: boolean; recent?: number; before?: number } | null;
   window: WindowStatus | null;
   loggedToday: boolean;
+  outcomeToday: Outcome | null;
 }
 
 export interface Attention {

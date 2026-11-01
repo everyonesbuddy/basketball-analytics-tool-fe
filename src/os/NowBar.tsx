@@ -114,7 +114,7 @@ export default function NowBar() {
         )}
       </div>
       <div className="os-nowbar__side">
-        {f.state === "goal" && b?.goalId && !b.loggedToday && <Link to="/">Done? Check in</Link>}
+        {f.state === "goal" && b?.goalId && !b.loggedToday && <Link to="/">Moved it forward today?</Link>}
         {canNotify() && (
           <button type="button" className="os-link" onClick={toggle} title={reminders ? "Turn off block reminders" : "Get a notification when each block starts (while this app is open)"}>
             {reminders ? <FiBell /> : <FiBellOff />} {reminders ? "Reminders on" : "Remind me"}

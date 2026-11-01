@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import os from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
 import NowCard from "../NowCard";
-import QuickLog from "../QuickLog";
+import QuickLog, { CheckedIn } from "../QuickLog";
 import { CATEGORY_COLOR, clock, shortDate } from "../format";
 import type { Today } from "../types";
 import { useLoad } from "../useLoad";
@@ -23,7 +23,6 @@ const ATTENTION_LABEL: Record<string, string> = {
 /** Today: what to do now (or what's next and when), what needs a decision, and the full day. */
 export default function TodayPage() {
   const { data, error, reload } = useLoad<Today>(() => os.get("/today").then((r) => r.data));
-  const [logFor, setLogFor] = useState<string | null>(null);
   // Keep "now" current while the page stays open.
   useEffect(() => {
     const t = window.setInterval(reload, 60000);
@@ -61,28 +60,12 @@ export default function TodayPage() {
                   {b.category && <CategoryTag category={b.category} />}
                   <strong>{b.goalTitle || b.label}</strong>
                   <ModeBadge mode={b.mode} />
-                  {b.loggedToday && <span className="os-ok">✓ logged</span>}
-                  {b.goalId && !b.loggedToday && (b.past || b.now) && logFor !== b.start && !(b.now && data.focus.state === "goal") && (
-                    <button className="os-link" onClick={() => setLogFor(b.start)}>
-                      Check in
-                    </button>
+                  {b.loggedToday && <CheckedIn outcome={b.outcomeToday} />}
+                  {b.goalId && !b.loggedToday && (b.past || b.now) && !(b.now && data.focus.state === "goal") && (
+                    <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} links onSaved={reload} />
                   )}
                 </div>
                 {b.goalTitle && <div className="os-muted os-small">{b.label}{b.nextStep && !b.past ? ` · next step: ${b.nextStep}` : ""}</div>}
-                {logFor === b.start && (
-                  <QuickLog
-                    goalId={b.goalId!}
-                    nextStep={b.nextStep}
-                    block={b.start}
-                    mode={b.mode}
-                    compact
-                    onSaved={() => {
-                      setLogFor(null);
-                      reload();
-                    }}
-                    onCancel={() => setLogFor(null)}
-                  />
-                )}
               </div>
             </li>
           ))}

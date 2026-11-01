@@ -1,18 +1,16 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiCheck } from "react-icons/fi";
+import { FiArrowRight } from "react-icons/fi";
 import { CategoryTag } from "./Bits";
-import QuickLog from "./QuickLog";
+import QuickLog, { CheckedIn } from "./QuickLog";
 import { CATEGORY_COLOR, clock } from "./format";
 import type { Focus } from "./types";
 import { whenText } from "./when";
 
 /**
  * The one thing to know: what to work on now (and its next step), or that
- * nothing's on and what's next and when. Logging is one tap at the end.
+ * nothing's on and what's next and when. The check-in is one tap.
  */
 export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged: () => void }) {
-  const [logging, setLogging] = useState(false);
   const b = focus.block;
   const n = focus.next;
   const isGoal = focus.state === "goal" && b;
@@ -44,14 +42,9 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
                 <FiArrowRight /> {b.nextStep ? <><strong>Next step:</strong> {b.nextStep}</> : <span className="os-muted">No next step written yet. Pick the smallest thing that moves it, and start.</span>}
               </p>
               {b.loggedToday ? (
-                <p className="os-ok"><FiCheck /> Checked in for this block.</p>
-              ) : logging ? (
-                <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} onSaved={() => { setLogging(false); onChanged(); }} onCancel={() => setLogging(false)} />
+                <CheckedIn outcome={b.outcomeToday} />
               ) : (
-                <div className="os-actions">
-                  <button className="os-btn os-btn--primary" onClick={() => setLogging(true)}>Done with this block</button>
-                  <span className="os-small os-muted">One tap when you finish. Nothing to fill in before you start.</span>
-                </div>
+                <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} extrasOpen onSaved={onChanged} />
               )}
             </>
           ) : (

@@ -2,7 +2,7 @@ import { useState } from "react";
 import os, { errorText } from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
 import GoalForm from "../GoalForm";
-import QuickLog from "../QuickLog";
+import QuickLog, { CheckedIn, ModeReminders } from "../QuickLog";
 import { CATEGORY_COLOR, MODE_SHORT, shortDate } from "../format";
 import type { CategoryInfo, Framework, Goal, GoalLog, Today, TodayGoal } from "../types";
 import { useLoad } from "../useLoad";
@@ -37,7 +37,7 @@ function Logs({ goalId, n }: { goalId: string; n: number }) {
 }
 
 function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal; onChanged: () => void }) {
-  const [view, setView] = useState<"" | "edit" | "log" | "close" | "new">("");
+  const [view, setView] = useState<"" | "edit" | "close" | "new">("");
   const [error, setError] = useState("");
   const [n, setN] = useState(0);
   const g = row.goal;
@@ -111,20 +111,22 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           {(g.obstacle.kind === "tiered" || g.percent > 0) && <Progress value={g.percent} color={CATEGORY_COLOR[info.key]} label={`${g.percent}% of the goal`} />}
           {row.window?.next && <div className="os-note">{row.window.next.text}</div>}
 
-          {view === "log" && (
+          {view === "" && (row.loggedToday ? (
+            <p className="os-flat"><CheckedIn outcome={row.outcomeToday} /></p>
+          ) : (
             <QuickLog
               goalId={g._id}
               nextStep={g.nextStep || ""}
               mode={row.mode}
+              reminders={false}
               onSaved={(outcome) => {
                 setN((x) => x + 1);
                 onChanged();
                 // Cleared for the period: go straight to how the window ends.
-                setView(outcome === "cleared" ? "close" : "");
+                if (outcome === "cleared") setView("close");
               }}
-              onCancel={() => setView("")}
             />
-          )}
+          ))}
           {view === "close" && (
             <div className="os-close">
               <p className="os-small">{g.percent >= 100 ? "Cleared for this period. Mark it complete, or expand the scope to use the rest of the window?" : "How did this window end?"}</p>
@@ -139,7 +141,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           {error && <ErrorNote text={error} />}
           {view === "" && (
             <div className="os-actions">
-              <button className="os-btn os-btn--primary" onClick={() => setView("log")}>Check in for today</button>
               <button className="os-btn" onClick={() => setView("edit")}>Edit</button>
               <button className="os-btn" onClick={() => setView("close")}>End window</button>
             </div>
@@ -165,6 +166,9 @@ export default function GoalsPage() {
   return (
     <div className="os-page">
       <PageHead title="Goals & schedule" sub="One active goal per category. Set the goal and its next step. Check in once a day: moved it forward, or cleared it for the period." />
+      <Card title="Before you check in" sub="Which mode are you in today?">
+        <ModeReminders mode={null} />
+      </Card>
       {groups.map((group) => (
         <div key={group} className="os-group">
           <h2 className="os-group__title">{group}</h2>
