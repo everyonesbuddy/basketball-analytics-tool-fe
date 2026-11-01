@@ -262,3 +262,8 @@
 .os-table th.os-num { text-align: right; }
 .os-steps summary { font-size: 0.85rem; color: var(--muted); cursor: pointer; }
 .os-steps ul { margin: 6px 0 0; font-size: 0.85rem; color: var(--muted); }
+.os-pics { display: inline-flex; align-items: center; gap: 3px; font-size: 0.75rem; font-weight: 600; color: #be185d; text-decoration: none; white-space: nowrap; }
+.os-pics:hover { text-decoration: underline; }
+.os-itemlist li { margin-bottom: 2px; }
+.os-service { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.os-service .os-tag { color: #15803d; background: #dcfce7; }

@@ -1,6 +1,16 @@
+import { FiImage } from "react-icons/fi";
 import { Card } from "../Bits";
-import type { GroupResult, HamperOption, HamperResult } from "./types";
+import type { GroupResult, HamperOption, HamperResult, ServiceIdea } from "./types";
 import { ideasLink, usd } from "./util";
+
+/** A small link to a Pinterest search for pictures of this exact thing. */
+function Pics({ q, label }: { q: string; label?: string }) {
+  return (
+    <a className="os-pics" href={ideasLink(q)} target="_blank" rel="noreferrer" title={`Pictures: ${q}`}>
+      <FiImage /> {label || "pictures"}
+    </a>
+  );
+}
 
 /** A group plan: totals, packages per group, the shopping list by store, packaging and cautions. */
 export function GroupPlanView({ r }: { r: GroupResult }) {
@@ -33,14 +43,14 @@ export function GroupPlanView({ r }: { r: GroupResult }) {
       <div className="os-grid2">
         {r.packages.map((p) => (
           <Card key={p.group} title={`${p.groupName} · ${p.count}`} sub={`${p.name} · target ${p.target} · ${usd(p.perPerson)} each`}>
-            <ul>
-              {p.items.map((i) => (
-                <li key={i}>{i}</li>
+            <ul className="os-itemlist">
+              {(p.details || p.items.map((name) => ({ name, search: undefined as string | undefined }))).map((d) => (
+                <li key={d.name}>
+                  {d.name} <Pics q={d.search || d.name} />
+                </li>
               ))}
             </ul>
-            <a className="os-small" href={ideasLink(`${p.name} gift bag ideas`)} target="_blank" rel="noreferrer">
-              See picture ideas
-            </a>
+            <Pics q={p.search || `${p.name} gift bag ideas`} label={`See ${p.name.toLowerCase()} ideas`} />
           </Card>
         ))}
       </div>
@@ -56,7 +66,7 @@ export function GroupPlanView({ r }: { r: GroupResult }) {
                   .map((s) => (
                     <tr key={s.key}>
                       <td>
-                        {s.name}
+                        {s.name} <Pics q={s.search || s.name} />
                         {brandOf(s.store) && <span className="os-muted"> · {brandOf(s.store)}</span>}
                         {s.caution && <div className="os-small os-muted">{s.caution}</div>}
                       </td>
@@ -85,7 +95,7 @@ export function GroupPlanView({ r }: { r: GroupResult }) {
           <p>{r.packaging.theme}</p>
           <p className="os-small">Card note: <em>"{r.packaging.note}"</em></p>
           <p className="os-small os-muted">Assembly line: fold all the shirts, sort by person and size, pair socks with clothing, add the extras, bag them, tag with names.</p>
-          <a className="os-small" href={ideasLink("kraft paper gift bag black ribbon")} target="_blank" rel="noreferrer">See packaging ideas</a>
+          <Pics q="kraft paper gift bag black ribbon" label="See packaging ideas" />
         </Card>
         <Card title="Before you fly">
           <ul>
@@ -104,17 +114,15 @@ function HamperCard({ h, best }: { h: HamperOption; best?: boolean }) {
     <Card title={h.name} sub={`${usd(h.total)} with tax · ${h.left >= 0 ? `${usd(h.left)} left` : `${usd(-h.left)} over`}`} accent={best ? "#db2777" : undefined}>
       <table className="os-table os-table--wide">
         <tbody>
-          <tr><td>{h.container.name}</td><td className="os-num">{usd(h.container.price)}</td></tr>
+          <tr><td>{h.container.name} <Pics q={h.container.search || h.container.name} /></td><td className="os-num">{usd(h.container.price)}</td></tr>
           {h.items.map((i) => (
-            <tr key={i.name}><td>{i.name}</td><td className="os-num">{usd(i.price)}</td></tr>
+            <tr key={i.name}><td>{i.name} <Pics q={i.search || i.name} /></td><td className="os-num">{usd(i.price)}</td></tr>
           ))}
           <tr><td>{h.card.name}</td><td className="os-num">{usd(h.card.price)}</td></tr>
         </tbody>
       </table>
       {h.skipped.length > 0 && <p className="os-small os-muted">With more budget: {h.skipped.join(", ")}.</p>}
-      <a className="os-small" href={ideasLink(`${h.name} gift basket`)} target="_blank" rel="noreferrer">
-        See picture ideas
-      </a>
+      <Pics q={h.search || `${h.name} gift basket`} label={`See ${h.name.toLowerCase()} ideas`} />
     </Card>
   );
 }
@@ -124,6 +132,24 @@ export function HamperView({ r }: { r: HamperResult }) {
   return (
     <div className="os-page">
       <HamperCard h={r.best} best />
+      {r.services && r.services.length > 0 && (
+        <Card title="Or give a service or experience" sub="For someone who'd rather have the time, the treat or the help than another thing.">
+          <div className="os-grid2">
+            {r.services.map((sv: ServiceIdea) => (
+              <div key={sv.key} className="os-service">
+                <div className="os-row">
+                  <strong>{sv.name}</strong>
+                  {sv.where === "ng" && <span className="os-tag">Back home</span>}
+                  {sv.where === "us" && <span className="os-tag">US</span>}
+                </div>
+                <span className={`os-small ${sv.fits ? "" : "os-muted"}`}>From about {usd(sv.price)}{sv.fits ? "" : ", over this budget"}</span>
+                <span className="os-small">{sv.how}</span>
+                <Pics q={sv.search} />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       <Card title="Make it theirs">
         <ul>
           {r.tips.map((t) => (

@@ -37,6 +37,7 @@ function PersonForm({ data, person, onSaved, onCancel }: { data: Overview; perso
     shirt: person?.sizes?.shirt || "",
     shoe: person?.sizes?.shoe || "",
     likes: person?.likes || "",
+    servicesOk: Boolean(person?.servicesOk),
     notes: person?.notes || "",
   });
   const [error, setError] = useState("");
@@ -53,6 +54,7 @@ function PersonForm({ data, person, onSaved, onCancel }: { data: Overview; perso
       dates: f.other.md ? [{ label: f.other.label || "anniversary", md: f.other.md }] : [],
       sizes: { shirt: f.shirt, shoe: f.shoe },
       likes: f.likes,
+      servicesOk: f.servicesOk,
       notes: f.notes,
     };
     try {
@@ -106,6 +108,9 @@ function PersonForm({ data, person, onSaved, onCancel }: { data: Overview; perso
         <label>Shoe size<input value={f.shoe} onChange={(e) => setF({ ...f, shoe: e.target.value })} /></label>
         <label style={{ gridColumn: "span 2" }}>What they love<input value={f.likes} onChange={(e) => setF({ ...f, likes: e.target.value })} placeholder="e.g. tea, gospel music, Arsenal" /></label>
       </div>
+      <label className="os-check">
+        <input type="checkbox" checked={f.servicesOk} onChange={(e) => setF({ ...f, servicesOk: e.target.checked })} /> Open to a service or experience instead of a thing (spa day, dinner, a class, data top-up)
+      </label>
       {error && <ErrorNote text={error} />}
       <div className="os-actions">
         <button className="os-btn os-btn--primary" type="submit">{person ? "Save" : "Add person"}</button>
@@ -170,6 +175,7 @@ export default function PeopleTab({ data, onChanged, onPlan }: { data: Overview;
                     )}
                     {(p.sizes?.shirt || p.sizes?.shoe) && <div><dt>Sizes</dt><dd>{[p.sizes.shirt && `Shirt ${p.sizes.shirt}`, p.sizes.shoe && `Shoe ${p.sizes.shoe}`].filter(Boolean).join(" · ")}</dd></div>}
                     {p.likes && <div><dt>Loves</dt><dd>{p.likes}</dd></div>}
+                    {p.servicesOk && <div><dt>Gift style</dt><dd>Open to services and experiences</dd></div>}
                     <div><dt>Last gift</dt><dd>{last ? `${last.what || "A gift"} · ${shortDate(last.date.slice(0, 10))}` : "None logged yet"}</dd></div>
                   </dl>
                   {view === `log:${p._id}` && <LogGift person={p} onSaved={done} onCancel={() => setView("")} />}

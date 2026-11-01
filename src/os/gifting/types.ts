@@ -11,6 +11,7 @@ export interface Person {
   dates: { label: string; md: string }[];
   sizes: { shirt: string; shoe: string };
   likes: string;
+  servicesOk?: boolean;
   notes: string;
   gifts: { _id?: string; date: string; what: string; cost: number | null }[];
 }
@@ -18,6 +19,7 @@ export interface Person {
 export interface ShoppingRow {
   key: string;
   name: string;
+  search?: string;
   category: string;
   store: string;
   qty: number;
@@ -31,7 +33,7 @@ export interface ShoppingRow {
 
 export interface GroupResult {
   people: number;
-  packages: { group: string; groupName: string; count: number; package: string; name: string; target: string; items: string[]; perPerson: number; trimmed: boolean }[];
+  packages: { group: string; groupName: string; count: number; package: string; name: string; search?: string; target: string; items: string[]; details?: { name: string; search?: string }[]; perPerson: number; trimmed: boolean }[];
   shopping: ShoppingRow[];
   totals: { items: number; packaging: number; tax: number; total: number; budget: number; left: number };
   steps: string[];
@@ -45,17 +47,30 @@ export interface GroupResult {
 export interface HamperOption {
   key: string;
   name: string;
-  container: { name: string; price: number };
-  items: { name: string; price: number }[];
+  search?: string;
+  container: { name: string; price: number; search?: string };
+  items: { name: string; price: number; search?: string }[];
   skipped: string[];
   card: { name: string; price: number };
   total: number;
   left: number;
 }
 
+export interface ServiceIdea {
+  key: string;
+  name: string;
+  price: number;
+  where: "us" | "ng" | "any";
+  search: string;
+  how: string;
+  fits: boolean;
+}
+
 export interface HamperResult {
   relationship: string;
   budget: number;
+  search?: string;
+  services?: ServiceIdea[];
   best: HamperOption;
   alternatives: HamperOption[];
   tips: string[];
@@ -73,6 +88,8 @@ export interface OneInputs {
   budget: number;
   relationship: string;
   likes: string;
+  services: boolean;
+  where: "any" | "us" | "ng";
 }
 
 export interface Plan {

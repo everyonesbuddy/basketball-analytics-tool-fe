@@ -16,7 +16,7 @@ export default function PlanForm({ data, personId, onSaved }: { data: Overview; 
   const [title, setTitle] = useState(person ? `Gift for ${person.name}` : "December in Nigeria");
   const [date, setDate] = useState("");
   const [group, setGroup] = useState<GroupInputs>({ budget: 150, counts: { child: 10, young: 5, adult: 10, elder: 3 }, special: 2, womenShare: 0.5, suitcases: 1 });
-  const [one, setOne] = useState<OneInputs>({ budget: 50, relationship: person?.relationship || "mother", likes: person?.likes || "" });
+  const [one, setOne] = useState<OneInputs>({ budget: 50, relationship: person?.relationship || "mother", likes: person?.likes || "", services: person ? Boolean(person.servicesOk) : true, where: "any" });
   const [who, setWho] = useState(personId || "");
   const [result, setResult] = useState<GroupResult | HamperResult | null>(null);
   const [error, setError] = useState("");
@@ -43,7 +43,7 @@ export default function PlanForm({ data, personId, onSaved }: { data: Overview; 
     setWho(id);
     const p = data.people.find((x) => x._id === id);
     if (p) {
-      setOne({ ...one, relationship: data.config.relationships.some((r) => r.key === p.relationship) ? p.relationship : one.relationship, likes: p.likes || one.likes });
+      setOne({ ...one, relationship: data.config.relationships.some((r) => r.key === p.relationship) ? p.relationship : one.relationship, likes: p.likes || one.likes, services: Boolean(p.servicesOk) });
       setTitle(`Gift for ${p.name}`);
     }
   };
@@ -143,6 +143,19 @@ export default function PlanForm({ data, personId, onSaved }: { data: Overview; 
                 What they love (optional)
                 <input value={one.likes} onChange={(e) => setOne({ ...one, likes: e.target.value })} placeholder="e.g. gospel music, tea, Arsenal" />
               </label>
+              <label className="os-check" style={{ gridColumn: "span 2" }}>
+                <input type="checkbox" checked={one.services} onChange={(e) => setOne({ ...one, services: e.target.checked })} /> Suggest services and experiences too (a spa day, dinner, a class)
+              </label>
+              {one.services && (
+                <label>
+                  Where they are
+                  <select value={one.where} onChange={(e) => setOne({ ...one, where: e.target.value as OneInputs["where"] })}>
+                    <option value="any">Either</option>
+                    <option value="us">In the US</option>
+                    <option value="ng">Back home in Nigeria</option>
+                  </select>
+                </label>
+              )}
             </div>
           )}
           {error && <ErrorNote text={error} />}
