@@ -13,6 +13,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SoonPage from "./pages/SoonPage";
 import GiftingPage from "./pages/GiftingPage";
 import StylePage from "./pages/StylePage";
+import EventsPage from "./pages/EventsPage";
 import NowBar from "./NowBar";
 import "./os.css";
 
@@ -38,7 +39,7 @@ const NAV: { title: string; items: Item[] }[] = [
   {
     title: "Entertainment",
     items: [
-      { to: "/events", label: "Events & concerts", icon: <FiMusic />, soon: true },
+      { to: "/events", label: "Events & concerts", icon: <FiMusic /> },
       { to: "/sports", label: "Sports", icon: <FiActivity /> },
     ],
   },
@@ -47,11 +48,6 @@ const NAV: { title: string; items: Item[] }[] = [
 ];
 
 const SOON: Record<string, { title: string; what: string[]; inputs: string }> = {
-  events: {
-    title: "Events & concerts",
-    what: ["Artists and teams you follow", "Upcoming shows near you from Ticketmaster's free API"],
-    inputs: "who you follow and your city, once",
-  },
   travel: {
     title: "Travel",
     what: ["Places you want to go, with the best months and typical fares", "When to book, with ready-made Google Flights searches"],
@@ -87,6 +83,7 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
         <Routes>
           <Route path="/gifting/*" element={<GiftingPage />} />
           <Route path="/style/*" element={<StylePage />} />
+          <Route path="/events/*" element={<EventsPage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />
