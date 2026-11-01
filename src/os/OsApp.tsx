@@ -11,6 +11,8 @@ import FrameworkPage from "./pages/FrameworkPage";
 import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import SoonPage from "./pages/SoonPage";
+import GiftingPage from "./pages/GiftingPage";
+import NowBar from "./NowBar";
 import "./os.css";
 
 type Item = { to: string; label: string; icon: ReactNode; soon?: boolean };
@@ -28,7 +30,7 @@ const NAV: { title: string; items: Item[] }[] = [
   {
     title: "Creative & curation",
     items: [
-      { to: "/gifting", label: "Gifting", icon: <FiGift />, soon: true },
+      { to: "/gifting", label: "Gifting", icon: <FiGift /> },
       { to: "/style", label: "Style", icon: <FiCalendar />, soon: true },
     ],
   },
@@ -44,11 +46,6 @@ const NAV: { title: string; items: Item[] }[] = [
 ];
 
 const SOON: Record<string, { title: string; what: string[]; inputs: string }> = {
-  gifting: {
-    title: "Gifting",
-    what: ["People you give to, with relationship, sizes and a gift level", "Trips and occasions (like December in Nigeria) with a budget and suitcase space", "Gift packages by level, a shopping list with quantities and costs, and money left", "One packaging theme and an assembly checklist"],
-    inputs: "the trip's budget and people once, then tick things off",
-  },
   style: {
     title: "Style",
     what: ["Your style guide as rules: color structure, silhouette, occasion", "A daily outfit from your wardrobe that fits the rules and today's weather"],
@@ -90,7 +87,9 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
         ))}
       </nav>
       <main className="os-main">
+        <NowBar />
         <Routes>
+          <Route path="/gifting/*" element={<GiftingPage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />
