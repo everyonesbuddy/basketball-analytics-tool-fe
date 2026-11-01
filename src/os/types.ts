@@ -10,7 +10,7 @@ export interface Goal {
   windowStart: string;
   windowEnd: string;
   obstacle: { text: string; kind: "single" | "tiered"; bounded: boolean | null; parallel: boolean | null };
-  toolReady: boolean;
+  toolReady: boolean | null;
   toolNeeded: string;
   percent: number;
   notes: string;
@@ -25,6 +25,7 @@ export interface GoalLog {
   percentGained: number;
   cleared: boolean;
   toolAcquired: boolean;
+  missing?: string;
   note: string;
 }
 

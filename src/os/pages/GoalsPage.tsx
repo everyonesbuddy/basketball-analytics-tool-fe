@@ -88,21 +88,20 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
                 {shortDate(g.windowStart)} to {shortDate(g.windowEnd)} · {row.window?.ended ? "ended" : `${row.window?.daysLeft} days left`}
               </dd>
             </div>
-            <div>
-              <dt>Obstacle</dt>
-              <dd>
-                {g.obstacle.text || "Not described"} ·{" "}
-                {g.obstacle.kind === "tiered"
-                  ? `tiered${g.obstacle.bounded === true ? ", bounded" : g.obstacle.bounded === false ? ", unbounded" : ""}${g.obstacle.parallel === true ? ", parallel" : g.obstacle.parallel === false ? ", sequential" : ""}`
-                  : "single"}
-              </dd>
-            </div>
-            <div>
-              <dt>Tool</dt>
-              <dd>{g.toolReady ? "In hand" : `Missing: ${g.toolNeeded || "not named yet"}`}</dd>
-            </div>
+            {g.obstacle.text && (
+              <div>
+                <dt>Obstacle</dt>
+                <dd>{g.obstacle.text}</dd>
+              </div>
+            )}
+            {row.mode === "m1" && g.toolNeeded && (
+              <div>
+                <dt>Missing</dt>
+                <dd>{g.toolNeeded}</dd>
+              </div>
+            )}
           </dl>
-          {g.obstacle.kind === "tiered" && <Progress value={g.percent} color={CATEGORY_COLOR[info.key]} label={`${g.percent}% of the goal`} />}
+          {(g.obstacle.kind === "tiered" || g.percent > 0) && <Progress value={g.percent} color={CATEGORY_COLOR[info.key]} label={`${g.percent}% of the goal`} />}
           {row.window?.next && <div className="os-note">{row.window.next.text}</div>}
 
           {view === "log" && <LogForm goal={g} mode={row.mode} onSaved={done} onCancel={() => setView("")} />}
@@ -145,7 +144,7 @@ export default function GoalsPage() {
 
   return (
     <div className="os-page">
-      <PageHead title="Goals & schedule" sub="One active goal per category. Classify the obstacle, check the tool, and the mode follows." />
+      <PageHead title="Goals & schedule" sub="One active goal per category. Set the goal; the mode is decided each block: do you have what you need today?" />
       {groups.map((group) => (
         <div key={group} className="os-group">
           <h2 className="os-group__title">{group}</h2>
