@@ -267,3 +267,20 @@
 .os-itemlist li { margin-bottom: 2px; }
 .os-service { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
 .os-service .os-tag { color: #15803d; background: #dcfce7; }
+
+/* Style */
+.os-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.18); vertical-align: middle; flex: none; margin-right: 2px; }
+.os-outfit { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.os-outfit li { display: grid; grid-template-columns: 18px 64px 1fr; align-items: start; gap: 6px; font-size: 0.88rem; }
+.os-outfit li .os-swatch { margin-top: 3px; }
+.os-outfit__slot { color: var(--muted); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 2px; }
+.os-outfit--tight li { font-size: 0.8rem; }
+.os-outfit__line { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--line); }
+.os-outfit__band { flex: 1; }
+.os-notes { margin: 0 0 6px; padding-left: 18px; color: var(--muted); }
+.os-label { font-size: 0.8rem; font-weight: 700; margin: 0 0 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.os-colorpick { display: flex; flex-wrap: wrap; gap: 6px; }
+.os-colorpick button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 4px 10px 4px 6px; font-size: 0.8rem; cursor: pointer; }
+.os-colorpick button.on { border-color: #1d5fd4; box-shadow: 0 0 0 2px #1d5fd433; font-weight: 700; }
+.os-idea--done { opacity: 0.6; }
+.os-bad { color: #b91c1c; }

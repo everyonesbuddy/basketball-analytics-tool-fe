@@ -1,16 +1,7 @@
-import { FiImage } from "react-icons/fi";
 import { Card } from "../Bits";
+import { Pics } from "../Pics";
 import type { GroupResult, HamperOption, HamperResult, ServiceIdea } from "./types";
-import { ideasLink, usd } from "./util";
-
-/** A small link to a Pinterest search for pictures of this exact thing. */
-function Pics({ q, label }: { q: string; label?: string }) {
-  return (
-    <a className="os-pics" href={ideasLink(q)} target="_blank" rel="noreferrer" title={`Pictures: ${q}`}>
-      <FiImage /> {label || "pictures"}
-    </a>
-  );
-}
+import { usd } from "./util";
 
 /** A group plan: totals, packages per group, the shopping list by store, packaging and cautions. */
 export function GroupPlanView({ r }: { r: GroupResult }) {

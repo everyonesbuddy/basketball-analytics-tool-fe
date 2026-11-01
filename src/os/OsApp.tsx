@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { FiActivity, FiBookOpen, FiCalendar, FiCheckSquare, FiDollarSign, FiGift, FiMusic, FiNavigation, FiSettings, FiSun, FiTarget } from "react-icons/fi";
+import { FiActivity, FiBookOpen, FiCheckSquare, FiDollarSign, FiFeather, FiGift, FiMusic, FiNavigation, FiSettings, FiSun, FiTarget } from "react-icons/fi";
 import type { ReactNode } from "react";
 import os, { SIGNED_OUT, getToken } from "./api";
 import Dashboard from "../components/Dashboard";
@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import SoonPage from "./pages/SoonPage";
 import GiftingPage from "./pages/GiftingPage";
+import StylePage from "./pages/StylePage";
 import NowBar from "./NowBar";
 import "./os.css";
 
@@ -31,7 +32,7 @@ const NAV: { title: string; items: Item[] }[] = [
     title: "Creative & curation",
     items: [
       { to: "/gifting", label: "Gifting", icon: <FiGift /> },
-      { to: "/style", label: "Style", icon: <FiCalendar />, soon: true },
+      { to: "/style", label: "Style", icon: <FiFeather /> },
     ],
   },
   {
@@ -46,11 +47,6 @@ const NAV: { title: string; items: Item[] }[] = [
 ];
 
 const SOON: Record<string, { title: string; what: string[]; inputs: string }> = {
-  style: {
-    title: "Style",
-    what: ["Your style guide as rules: color structure, silhouette, occasion", "A daily outfit from your wardrobe that fits the rules and today's weather"],
-    inputs: "your wardrobe once, then the occasion",
-  },
   events: {
     title: "Events & concerts",
     what: ["Artists and teams you follow", "Upcoming shows near you from Ticketmaster's free API"],
@@ -90,6 +86,7 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
         <NowBar />
         <Routes>
           <Route path="/gifting/*" element={<GiftingPage />} />
+          <Route path="/style/*" element={<StylePage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />
