@@ -2,7 +2,7 @@ import { useState } from "react";
 import os, { errorText } from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
 import GoalForm from "../GoalForm";
-import LogForm from "../LogForm";
+import QuickLog from "../QuickLog";
 import { CATEGORY_COLOR, MODE_SHORT, shortDate } from "../format";
 import type { CategoryInfo, Framework, Goal, GoalLog, Today, TodayGoal } from "../types";
 import { useLoad } from "../useLoad";
@@ -24,9 +24,10 @@ function Logs({ goalId, n }: { goalId: string; n: number }) {
     <ul className="os-loglist">
       {data.slice(0, 8).map((l) => (
         <li key={l._id}>
-          <span className="os-muted">{shortDate(l.date, true)}</span> {MODE_SHORT[l.mode].split(" · ")[0]}
+          <span className="os-muted">{shortDate(l.date, true)}</span>{" "}
+          {l.outcome === "cleared" ? "Cleared for the period" : l.outcome === "progress" ? "Moved it forward" : l.outcome === "blocked" ? `Stuck: ${l.missing || "missing a tool"}` : MODE_SHORT[l.mode].split(" · ")[0]}
           {l.mode === "m2tiered" && ` · +${l.percentGained}%`}
-          {l.cleared && " · cleared"}
+          {l.cleared && l.outcome !== "cleared" && " · cleared"}
           {l.toolAcquired && " · got the tool"}
           {l.note && <span className="os-muted"> · {l.note}</span>}
         </li>
@@ -88,6 +89,12 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
                 {shortDate(g.windowStart)} to {shortDate(g.windowEnd)} · {row.window?.ended ? "ended" : `${row.window?.daysLeft} days left`}
               </dd>
             </div>
+            {g.nextStep && (
+              <div>
+                <dt>Next step</dt>
+                <dd>{g.nextStep}</dd>
+              </div>
+            )}
             {g.obstacle.text && (
               <div>
                 <dt>Obstacle</dt>
@@ -104,10 +111,23 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           {(g.obstacle.kind === "tiered" || g.percent > 0) && <Progress value={g.percent} color={CATEGORY_COLOR[info.key]} label={`${g.percent}% of the goal`} />}
           {row.window?.next && <div className="os-note">{row.window.next.text}</div>}
 
-          {view === "log" && <LogForm goal={g} mode={row.mode} onSaved={done} onCancel={() => setView("")} />}
+          {view === "log" && (
+            <QuickLog
+              goalId={g._id}
+              nextStep={g.nextStep || ""}
+              mode={row.mode}
+              onSaved={(outcome) => {
+                setN((x) => x + 1);
+                onChanged();
+                // Cleared for the period: go straight to how the window ends.
+                setView(outcome === "cleared" ? "close" : "");
+              }}
+              onCancel={() => setView("")}
+            />
+          )}
           {view === "close" && (
             <div className="os-close">
-              <p className="os-small">How did this window end?</p>
+              <p className="os-small">{g.percent >= 100 ? "Cleared for this period. Mark it complete, or expand the scope to use the rest of the window?" : "How did this window end?"}</p>
               <div className="os-actions">
                 <button className="os-btn os-btn--primary" onClick={() => close("completed")}>Completed</button>
                 <button className="os-btn" onClick={() => close("expand")} title="Done early: keep going with a wider scope until the window ends">Done early: expand it</button>
@@ -119,7 +139,7 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           {error && <ErrorNote text={error} />}
           {view === "" && (
             <div className="os-actions">
-              <button className="os-btn os-btn--primary" onClick={() => setView("log")}>Log a session</button>
+              <button className="os-btn os-btn--primary" onClick={() => setView("log")}>Check in for today</button>
               <button className="os-btn" onClick={() => setView("edit")}>Edit</button>
               <button className="os-btn" onClick={() => setView("close")}>End window</button>
             </div>
@@ -144,7 +164,7 @@ export default function GoalsPage() {
 
   return (
     <div className="os-page">
-      <PageHead title="Goals & schedule" sub="One active goal per category. Set the goal; the mode is decided each block: do you have what you need today?" />
+      <PageHead title="Goals & schedule" sub="One active goal per category. Set the goal and its next step. Check in once a day: moved it forward, or cleared it for the period." />
       {groups.map((group) => (
         <div key={group} className="os-group">
           <h2 className="os-group__title">{group}</h2>

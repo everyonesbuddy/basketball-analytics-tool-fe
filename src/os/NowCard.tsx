@@ -46,7 +46,7 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
               {b.loggedToday ? (
                 <p className="os-ok"><FiCheck /> Checked in for this block.</p>
               ) : logging ? (
-                <QuickLog block={b} onSaved={() => { setLogging(false); onChanged(); }} />
+                <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} onSaved={() => { setLogging(false); onChanged(); }} onCancel={() => setLogging(false)} />
               ) : (
                 <div className="os-actions">
                   <button className="os-btn os-btn--primary" onClick={() => setLogging(true)}>Done with this block</button>

@@ -8,6 +8,8 @@ import { CATEGORY_COLOR, clock, shortDate } from "../format";
 import type { Today } from "../types";
 import { useLoad } from "../useLoad";
 
+const LONG_DAY: Record<string, string> = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
+
 const ATTENTION_LABEL: Record<string, string> = {
   missing: "Set a goal",
   early: "Done early",
@@ -49,7 +51,7 @@ export default function TodayPage() {
         </Card>
       )}
 
-      <Card title="Today's blocks">
+      <Card title={`Today's schedule (${LONG_DAY[data.weekday] || data.weekday}, ${shortDate(data.date)})`}>
         <ol className="os-timeline">
           {data.blocks.map((b) => (
             <li key={b.start} className={`${b.now ? "now" : ""} ${b.past ? "past" : ""} ${b.category ? "goal" : ""}`}>
@@ -69,12 +71,16 @@ export default function TodayPage() {
                 {b.goalTitle && <div className="os-muted os-small">{b.label}{b.nextStep && !b.past ? ` · next step: ${b.nextStep}` : ""}</div>}
                 {logFor === b.start && (
                   <QuickLog
-                    block={b}
+                    goalId={b.goalId!}
+                    nextStep={b.nextStep}
+                    block={b.start}
+                    mode={b.mode}
                     compact
                     onSaved={() => {
                       setLogFor(null);
                       reload();
                     }}
+                    onCancel={() => setLogFor(null)}
                   />
                 )}
               </div>

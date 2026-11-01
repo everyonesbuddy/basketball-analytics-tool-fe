@@ -27,6 +27,8 @@ export interface GoalLog {
   cleared: boolean;
   toolAcquired: boolean;
   missing?: string;
+  outcome?: "progress" | "cleared" | "blocked" | null;
+  block?: string | null;
   note: string;
 }
 
