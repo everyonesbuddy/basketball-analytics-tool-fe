@@ -7,7 +7,6 @@ import type { Mode, Outcome } from "./types";
 const OUTCOME_DONE: Record<Outcome, string> = {
   progress: "Moved it forward today",
   cleared: "Cleared for this period",
-  blocked: "Stuck: noted what's missing (Mode 1)",
 };
 
 /** What you tapped, with Undo (deletes that check-in). */

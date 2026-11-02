@@ -1,6 +1,6 @@
 export type Category = "P1" | "P2" | "PF1" | "PF2" | "PC1" | "PC2";
 export type Mode = "m1" | "m2single" | "m2tiered";
-export type Outcome = "progress" | "cleared" | "blocked";
+export type Outcome = "progress" | "cleared";
 
 export interface Goal {
   _id: string;
@@ -11,8 +11,6 @@ export interface Goal {
   windowStart: string;
   windowEnd: string;
   obstacle: { text: string; kind: "single" | "tiered"; bounded: boolean | null; parallel: boolean | null };
-  toolReady: boolean | null;
-  toolNeeded: string;
   nextStep?: string;
   percent: number;
   notes: string;
@@ -23,13 +21,10 @@ export interface GoalLog {
   _id: string;
   goal: string;
   date: string;
-  mode: Mode;
-  percentGained: number;
-  cleared: boolean;
-  toolAcquired: boolean;
-  missing?: string;
-  outcome?: "progress" | "cleared" | "blocked" | null;
   block?: string | null;
+  outcome?: Outcome | null;
+  /** Older check-ins only. */
+  cleared?: boolean;
   note: string;
 }
 
@@ -91,7 +86,6 @@ export interface TodayGoal {
   mode: Mode | null;
   modeName: string | null;
   reason: string | null;
-  ceiling: { hit: boolean; recent?: number; before?: number } | null;
   window: WindowStatus | null;
   loggedToday: boolean;
   outcomeToday: Outcome | null;
@@ -99,7 +93,7 @@ export interface TodayGoal {
 }
 
 export interface Attention {
-  kind: "missing" | "early" | "on-time" | "rollover" | "ceiling" | "review" | "gift" | "event" | "food";
+  kind: "missing" | "early" | "on-time" | "rollover" | "review" | "gift" | "event" | "food";
   category?: Category;
   goalId?: string;
   text: string;
@@ -167,10 +161,8 @@ export interface ReviewGoal {
   modeName: string;
   reason: string;
   sessions: number;
-  percentThisWeek: number;
-  percentTotal: number;
+  daysWorked: number;
   cleared: boolean;
-  toolAcquired: boolean;
   ceiling: { hit: boolean; recent?: number; before?: number; sessions?: number };
   window: WindowStatus;
 }
