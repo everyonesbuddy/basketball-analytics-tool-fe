@@ -41,7 +41,10 @@ import type {
 } from "./dashboardTypes";
 
 const LOCAL_API_BASE_URL = "http://localhost:5000/api";
+// The backend's address. Set VITE_API_URL in Netlify (e.g. https://your-app.herokuapp.com/api)
+// to move it without a code change; the current Heroku app is the fallback.
 const LIVE_API_BASE_URL =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ||
   "https://basketball-analytics-tool-be-780d720c8c7d.herokuapp.com/api";
 
 const isLocalHost = () => {

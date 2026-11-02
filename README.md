@@ -125,3 +125,13 @@ npm run build
 - Team workflow now hydrates efficiency + need-gap analysis from backend in the same load action.
 - Season type controls are integrated for team efficiency.
 - Season/year tagging is integrated across major analytics tables and labels.
+
+## Install as an app (PWA)
+
+- `public/manifest.webmanifest`, `public/icons/` and `public/sw.js` make it installable with its own icon, full screen, and push notifications. `public/_headers` keeps the worker and manifest fresh on Netlify.
+- iPhone: open the site in Safari → Share → Add to Home Screen, then open it from the home screen and go to Settings → Turn on notifications (iOS 16.4+). Android: Chrome → Install app.
+- Notification types, quiet hours and the daily cap are in Settings. The backend needs the VAPID keys (see the backend README).
+
+## Backend address
+
+`VITE_API_URL` (Netlify → Site configuration → Environment variables), e.g. `https://your-app.herokuapp.com/api`, sets where the API lives. Without it, the current Heroku app is used.

@@ -1,41 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiBell, FiBellOff } from "react-icons/fi";
+import { FiBell } from "react-icons/fi";
 import os from "./api";
 import { CategoryTag } from "./Bits";
 import { clock } from "./format";
 import type { Today } from "./types";
 import { nextWhat, whenText } from "./when";
 
-const KEY = "personal_os_block_reminders";
-const readPref = () => {
-  try {
-    return localStorage.getItem(KEY) === "on";
-  } catch {
-    return false;
-  }
-};
-const savePref = (on: boolean) => {
-  try {
-    localStorage.setItem(KEY, on ? "on" : "off");
-  } catch {
-    // storage blocked: the choice lasts until the tab closes
-  }
-};
-const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-const canNotify = () => typeof window !== "undefined" && "Notification" in window;
-
 /**
  * The strip at the top of every page: what to work on now (and its next
- * step), or that nothing's on, and what's next and when. Refreshes every minute. Optional reminders: a
- * browser notification when each goal block starts (while the app is open).
+ * step), or that nothing's on, and what's next and when. Refreshes every minute.
+ * Notifications on your phone are set up in Settings.
  */
 export default function NowBar() {
   const { pathname } = useLocation();
   const [today, setToday] = useState<Today | null>(null);
-  const [reminders, setReminders] = useState(() => readPref() && canNotify() && Notification.permission === "granted");
-  const notified = useRef<Set<string>>(new Set());
-
   useEffect(() => {
     let off = false;
     const load = () =>
@@ -50,38 +29,6 @@ export default function NowBar() {
       window.clearInterval(t);
     };
   }, [pathname]);
-
-  // Block-start reminders, checked every 20 seconds.
-  useEffect(() => {
-    if (!reminders || !today) return;
-    const t = window.setInterval(() => {
-      const now = hhmm(new Date());
-      const b = today.blocks.find((x) => x.start === now && (x.category || x.review));
-      const key = `${today.date}:${now}`;
-      if (!b || notified.current.has(key)) return;
-      notified.current.add(key);
-      const body = b.review ? "Weekly review: where each goal stands and the next step for each." : `${b.goalTitle || b.label}${b.nextStep ? `\nNext step: ${b.nextStep}` : ""}`;
-      try {
-        new Notification(`${clock(b.start)}: ${b.category || "Review"}`, { body, tag: key });
-      } catch {
-        // notifications unavailable
-      }
-    }, 20000);
-    return () => window.clearInterval(t);
-  }, [reminders, today]);
-
-  const toggle = async () => {
-    if (reminders) {
-      setReminders(false);
-      savePref(false);
-      return;
-    }
-    if (!canNotify()) return;
-    const p = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
-    const on = p === "granted";
-    setReminders(on);
-    savePref(on);
-  };
 
   if (!today || pathname === "/") return null;
   const f = today.focus;
@@ -115,11 +62,9 @@ export default function NowBar() {
       </div>
       <div className="os-nowbar__side">
         {f.state === "goal" && b?.goalId && !b.loggedToday && <Link to="/">Moved it forward today?</Link>}
-        {canNotify() && (
-          <button type="button" className="os-link" onClick={toggle} title={reminders ? "Turn off block reminders" : "Get a notification when each block starts (while this app is open)"}>
-            {reminders ? <FiBell /> : <FiBellOff />} {reminders ? "Reminders on" : "Remind me"}
-          </button>
-        )}
+        <Link to="/settings#notifications" title="Push notifications on your phone">
+          <FiBell /> Notifications
+        </Link>
       </div>
     </div>
   );

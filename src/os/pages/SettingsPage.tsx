@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import os, { errorText, setToken } from "../api";
 import { Card, PageHead } from "../Bits";
+import NotificationsCard from "../NotificationsCard";
 
 export default function SettingsPage({ email, onSignOut }: { email: string; onSignOut: () => void }) {
   const [current, setCurrent] = useState("");
@@ -26,6 +27,8 @@ export default function SettingsPage({ email, onSignOut }: { email: string; onSi
   return (
     <div className="os-page">
       <PageHead title="Settings" sub={`Signed in as ${email}`} />
+      <div id="notifications" />
+      <NotificationsCard />
       <Card title="Change password">
         <form className="os-form" onSubmit={change}>
           <label>

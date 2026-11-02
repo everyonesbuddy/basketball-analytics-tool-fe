@@ -332,3 +332,9 @@
 .os-today-row td { background: #eff6ff; }
 .os-allergy { margin: 0 0 10px; padding: 6px 10px; border-radius: 8px; background: #fef3c7; color: #92400e; }
 .os-tip { color: #92400e; }
+
+/* Notifications settings */
+.os-notify-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; margin: 14px 0; }
+.os-notify-type { align-items: flex-start !important; }
+.os-notify-type input { margin-top: 3px; }
+.os-notify-type > span { display: grid; gap: 1px; }
