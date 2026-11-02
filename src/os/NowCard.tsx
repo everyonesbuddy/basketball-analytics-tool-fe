@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { FiArrowRight } from "react-icons/fi";
 import { CategoryTag } from "./Bits";
-import QuickLog, { CheckedIn } from "./QuickLog";
+import NextStep from "./NextStep";
+import QuickLog, { CheckedIn, ModeReminders } from "./QuickLog";
 import { CATEGORY_COLOR, clock } from "./format";
 import type { Focus } from "./types";
 import { whenText } from "./when";
@@ -38,13 +38,14 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
           </div>
           {b.goalId ? (
             <>
-              <p className="os-now__step">
-                <FiArrowRight /> {b.nextStep ? <><strong>Next step:</strong> {b.nextStep}</> : <span className="os-muted">No next step written yet. Pick the smallest thing that moves it, and start.</span>}
-              </p>
+              <NextStep goalId={b.goalId} value={b.nextStep} onSaved={onChanged} />
               {b.loggedToday ? (
                 <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={onChanged} />
               ) : (
-                <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} extrasOpen onSaved={onChanged} />
+                <>
+                  <ModeReminders mode={b.mode} />
+                  <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} reminders={false} simple onSaved={onChanged} />
+                </>
               )}
             </>
           ) : (

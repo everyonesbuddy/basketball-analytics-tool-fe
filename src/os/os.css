@@ -295,11 +295,19 @@
 .os-quicklog__fields { display: flex; gap: 10px; flex-wrap: wrap; }
 .os-quicklog__fields label { display: grid; gap: 4px; font-size: 0.8rem; font-weight: 600; flex: 1; min-width: 200px; }
 .os-quicklog__fields label.os-narrow { flex: 0 0 120px; min-width: 0; }
-.os-modehints { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 0.8rem; color: var(--muted); }
-.os-modehints li { padding: 4px 8px; border-radius: 8px; }
-.os-modehints li strong { color: #334155; margin-right: 4px; }
+.os-modehints { display: grid; gap: 4px; margin: 2px 0 10px; }
+.os-modehints ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.82rem; }
+.os-modehints li { padding: 3px 8px; border-radius: 8px; color: #334155; font-weight: 600; }
+.os-modehints li span { color: var(--muted); font-weight: 400; }
 .os-modehints li.on { background: #e0ecff; color: #1e3a8a; }
-.os-modehints li.on strong { color: #1e3a8a; }
+.os-modehints li.on span { color: #1e3a8a; }
+.os-how { display: grid; gap: 8px; font-size: 0.9rem; }
+.os-how p { margin: 0; line-height: 1.5; }
+.os-how-box { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 0.88rem; }
+.os-how-box summary { cursor: pointer; color: #334155; }
+.os-how-box summary .os-link { margin-left: 6px; font-size: 0.82rem; }
+.os-how-box[open] summary { margin-bottom: 10px; }
+.os-nextstep-form { margin: 6px 0 10px; }
 .os-checkedin { display: inline-flex; align-items: center; gap: 4px; }
 
 /* Events */

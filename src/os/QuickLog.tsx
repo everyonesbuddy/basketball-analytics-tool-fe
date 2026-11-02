@@ -32,21 +32,24 @@ export function CheckedIn({ outcome, logId, onUndone }: { outcome: Outcome | nul
   );
 }
 
-/** The framework in three lines, with the mode you're in marked. */
+/** How to attack a goal today, by where you are with it (the framework's modes). The one you were in last is marked. */
 export function ModeReminders({ mode }: { mode: Mode | null }) {
   const rows: [boolean, string, string][] = [
-    [mode === "m1", "Mode 1", "Don't have the tool or resource to achieve it? Today's work is getting it."],
-    [mode === "m2single", "Mode 2", "Have what you need? Attack the obstacle directly and clear it."],
-    [mode === "m2tiered", "Mode 2, a %", "Can't clear it in one action? Clear a % today; a % is a real win."],
+    [mode === "m1", "Missing a tool or resource?", "Today's work is getting it (Mode 1)."],
+    [mode === "m2single", "Have what you need?", "Attack the obstacle and clear it (Mode 2)."],
+    [mode === "m2tiered", "Too big for one go?", "Clear a % of it today; that's a real win (Mode 2)."],
   ];
   return (
-    <ul className="os-modehints">
-      {rows.map(([on, name, text]) => (
-        <li key={name} className={on ? "on" : ""}>
-          <strong>{name}</strong> {text}
-        </li>
-      ))}
-    </ul>
+    <div className="os-modehints">
+      <span className="os-kicker">How to attack it today</span>
+      <ul>
+        {rows.map(([on, q, a]) => (
+          <li key={q} className={on ? "on" : ""}>
+            {q} <span>{a}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
