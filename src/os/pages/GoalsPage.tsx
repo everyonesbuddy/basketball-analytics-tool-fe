@@ -28,7 +28,7 @@ function Logs({ goalId, n, onChanged }: { goalId: string; n: number; onChanged: 
         <li key={l._id}>
           <span className="os-muted">{shortDate(l.date, true)}</span>{" "}
           {l.outcome === "cleared" ? "Cleared for the period" : l.outcome === "progress" ? "Moved it forward" : l.outcome === "blocked" ? `Stuck: ${l.missing || "missing a tool"}` : MODE_SHORT[l.mode].split(" · ")[0]}
-          {l.mode === "m2tiered" && ` · +${l.percentGained}%`}
+          {l.percentGained > 0 && ` · +${l.percentGained}%`}
           {l.cleared && l.outcome !== "cleared" && " · cleared"}
           {l.toolAcquired && " · got the tool"}
           {l.note && <span className="os-muted"> · {l.note}</span>}{" "}
@@ -135,10 +135,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           ) : (
             <QuickLog
               goalId={g._id}
-              nextStep={g.nextStep || ""}
-              mode={row.mode}
-              reminders={false}
-              simple
               onSaved={(outcome) => {
                 setN((x) => x + 1);
                 onChanged();

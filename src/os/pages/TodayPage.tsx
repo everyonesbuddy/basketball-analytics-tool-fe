@@ -66,7 +66,7 @@ export default function TodayPage() {
                   <ModeBadge mode={b.mode} />
                   {b.loggedToday && <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={reload} />}
                   {b.goalId && !b.loggedToday && (b.past || b.now) && !(b.now && data.focus.state === "goal") && (
-                    <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} links onSaved={reload} />
+                    <QuickLog goalId={b.goalId} block={b.start} links onSaved={reload} />
                   )}
                 </div>
                 {b.goalTitle && <div className="os-muted os-small">{b.label}{b.nextStep && !b.past ? ` · next step: ${b.nextStep}` : ""}</div>}
