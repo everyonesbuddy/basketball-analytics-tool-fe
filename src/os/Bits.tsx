@@ -1,15 +1,6 @@
 import type { ReactNode } from "react";
-import { CATEGORY_COLOR, MODE_COLOR, MODE_SHORT } from "./format";
-import type { Category, Mode } from "./types";
-
-export function ModeBadge({ mode, long = false }: { mode: Mode | null; long?: boolean }) {
-  if (!mode) return null;
-  return (
-    <span className="os-badge" style={{ color: MODE_COLOR[mode], background: `${MODE_COLOR[mode]}14`, borderColor: `${MODE_COLOR[mode]}40` }}>
-      {long ? MODE_SHORT[mode] : MODE_SHORT[mode].split(" · ")[0]}
-    </span>
-  );
-}
+import { CATEGORY_COLOR } from "./format";
+import type { Category } from "./types";
 
 export function CategoryTag({ category }: { category: Category }) {
   return (

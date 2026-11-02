@@ -1,4 +1,4 @@
-import type { Category, Mode } from "./types";
+import type { Category } from "./types";
 
 export const CATEGORY_COLOR: Record<Category, string> = {
   P1: "#16a34a",
@@ -7,18 +7,6 @@ export const CATEGORY_COLOR: Record<Category, string> = {
   PF2: "#7c3aed",
   PC1: "#ea580c",
   PC2: "#db2777",
-};
-
-export const MODE_COLOR: Record<Mode, string> = {
-  m1: "#b45309",
-  m2single: "#2563eb",
-  m2tiered: "#16a34a",
-};
-
-export const MODE_SHORT: Record<Mode, string> = {
-  m1: "Mode 1 · get the tool",
-  m2single: "Mode 2-Single · clear it",
-  m2tiered: "Mode 2-Tiered · earn a %",
 };
 
 /** "06:15" → "6:15 AM" */

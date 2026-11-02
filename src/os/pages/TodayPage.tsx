@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import os from "../api";
-import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
+import { Card, CategoryTag, ErrorNote, Loading, PageHead, Progress } from "../Bits";
 import HowItWorks from "../HowItWorks";
 import NowCard from "../NowCard";
 import QuickLog, { CheckedIn } from "../QuickLog";
@@ -62,7 +62,6 @@ export default function TodayPage() {
                 <div className="os-row">
                   {b.category && <CategoryTag category={b.category} />}
                   <strong>{b.goalTitle || b.label}</strong>
-                  <ModeBadge mode={b.mode} />
                   {b.loggedToday && <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={reload} />}
                   {b.goalId && !b.loggedToday && (b.past || b.now) && !(b.now && data.focus.state === "goal") && (
                     <QuickLog goalId={b.goalId} block={b.start} links onSaved={reload} />
@@ -81,7 +80,6 @@ export default function TodayPage() {
             <div key={g.category} className="os-mini" style={{ borderTopColor: CATEGORY_COLOR[g.category] }}>
               <div className="os-row">
                 <CategoryTag category={g.category} />
-                <ModeBadge mode={g.mode} />
               </div>
               <strong>{g.goal?.title || <span className="os-muted">No goal set</span>}</strong>
               {g.goal && g.window && (
