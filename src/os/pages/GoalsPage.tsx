@@ -141,6 +141,7 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
               nextStep={g.nextStep || ""}
               mode={row.mode}
               reminders={false}
+              simple
               onSaved={(outcome) => {
                 setN((x) => x + 1);
                 onChanged();

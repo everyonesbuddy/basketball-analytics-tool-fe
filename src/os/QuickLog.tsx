@@ -67,6 +67,7 @@ export default function QuickLog({
   extrasOpen = false,
   reminders = true,
   links = false,
+  simple = false,
 }: {
   goalId: string;
   nextStep?: string;
@@ -77,6 +78,8 @@ export default function QuickLog({
   extrasOpen?: boolean;
   reminders?: boolean;
   links?: boolean;
+  /** Just the two buttons: no "% or next step" and no "Stuck" link. */
+  simple?: boolean;
 }) {
   const [extras, setExtras] = useState(extrasOpen);
   const [next, setNext] = useState(nextStep);
@@ -142,8 +145,8 @@ export default function QuickLog({
         <div className="os-actions">
           <button className="os-btn os-btn--primary" disabled={busy} onClick={() => send("progress")}>Moved it forward today</button>
           <button className="os-btn" disabled={busy} onClick={() => send("cleared")}>Cleared the goal for this period</button>
-          {!extras && <button className="os-link os-small" onClick={() => setExtras(true)}>+ % or next step</button>}
-          <button className="os-link os-small" disabled={busy} onClick={() => setStuck(true)}>Stuck: missing a tool or resource</button>
+          {!simple && !extras && <button className="os-link os-small" onClick={() => setExtras(true)}>+ % or next step</button>}
+          {!simple && <button className="os-link os-small" disabled={busy} onClick={() => setStuck(true)}>Stuck: missing a tool or resource</button>}
         </div>
       )}
       {error && <div className="os-error">{error}</div>}
