@@ -14,6 +14,8 @@ import SoonPage from "./pages/SoonPage";
 import GiftingPage from "./pages/GiftingPage";
 import StylePage from "./pages/StylePage";
 import EventsPage from "./pages/EventsPage";
+import FoodPage from "./pages/FoodPage";
+import { MdRestaurantMenu } from "react-icons/md";
 import NowBar from "./NowBar";
 import "./os.css";
 
@@ -34,6 +36,7 @@ const NAV: { title: string; items: Item[] }[] = [
     items: [
       { to: "/gifting", label: "Gifting", icon: <FiGift /> },
       { to: "/style", label: "Style", icon: <FiFeather /> },
+      { to: "/food", label: "Food", icon: <MdRestaurantMenu /> },
     ],
   },
   {
@@ -84,6 +87,7 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
           <Route path="/gifting/*" element={<GiftingPage />} />
           <Route path="/style/*" element={<StylePage />} />
           <Route path="/events/*" element={<EventsPage />} />
+          <Route path="/food/*" element={<FoodPage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />

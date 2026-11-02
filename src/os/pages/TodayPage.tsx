@@ -19,6 +19,7 @@ const ATTENTION_LABEL: Record<string, string> = {
   review: "Weekly review",
   gift: "Gifting",
   event: "Events",
+  food: "Food",
 };
 
 /** Today: what to do now (or what's next and when), what needs a decision, and the full day. */
@@ -44,7 +45,7 @@ export default function TodayPage() {
             {attention.map((a, i) => (
               <li key={i}>
                 <span className="os-tag os-tag--warn">{ATTENTION_LABEL[a.kind]}</span> {a.text}{" "}
-                {a.kind === "review" ? <Link to="/review">Open review</Link> : a.kind === "gift" ? <Link to="/gifting">Open gifting</Link> : a.kind === "event" ? <Link to="/events/saved">Open events</Link> : <Link to="/goals">Open goals</Link>}
+                {a.kind === "review" ? <Link to="/review">Open review</Link> : a.kind === "gift" ? <Link to="/gifting">Open gifting</Link> : a.kind === "event" ? <Link to="/events/saved">Open events</Link> : a.kind === "food" ? <Link to="/food/week">Plan meals</Link> : <Link to="/goals">Open goals</Link>}
               </li>
             ))}
           </ul>

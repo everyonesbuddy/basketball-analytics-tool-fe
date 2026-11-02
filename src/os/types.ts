@@ -97,7 +97,7 @@ export interface TodayGoal {
 }
 
 export interface Attention {
-  kind: "missing" | "early" | "on-time" | "rollover" | "ceiling" | "review" | "gift" | "event";
+  kind: "missing" | "early" | "on-time" | "rollover" | "ceiling" | "review" | "gift" | "event" | "food";
   category?: Category;
   goalId?: string;
   text: string;
