@@ -1,6 +1,7 @@
 import { useState } from "react";
 import os, { errorText } from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead } from "../Bits";
+import HowItWorks from "../HowItWorks";
 import { CATEGORY_COLOR, shortDate } from "../format";
 import type { ReviewGoal } from "../types";
 import { useLoad } from "../useLoad";
@@ -92,7 +93,8 @@ export default function ReviewPage() {
   if (!data) return <Loading />;
   return (
     <div className="os-page">
-      <PageHead title="Weekly review" sub={`Week of ${shortDate(data.week.start)} to ${shortDate(data.week.end)} · Saturday or Sunday, 2:00 to 2:30 PM`} />
+      <PageHead title="Weekly review" sub={`Week of ${shortDate(data.week.start)} to ${shortDate(data.week.end)} · Saturday or Sunday, 2:00 to 2:30 PM. Where each goal stands, and the next step for each so Monday starts itself.`} />
+      <HowItWorks />
       <ReviewForm key={data.week.start + (data.saved ? "s" : "")} data={data} onSaved={reload} />
     </div>
   );

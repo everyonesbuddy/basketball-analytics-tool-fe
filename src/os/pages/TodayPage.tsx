@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import os from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
+import HowItWorks from "../HowItWorks";
 import NowCard from "../NowCard";
 import QuickLog, { CheckedIn } from "../QuickLog";
 import { CATEGORY_COLOR, clock, shortDate } from "../format";
@@ -37,6 +38,7 @@ export default function TodayPage() {
   return (
     <div className="os-page">
       <PageHead title={shortDate(data.date, true)} sub={`${data.scheduleName} schedule`} />
+      <HowItWorks />
       <NowCard focus={data.focus} onChanged={reload} />
 
       {attention.length > 0 && (

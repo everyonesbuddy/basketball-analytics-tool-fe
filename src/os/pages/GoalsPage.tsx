@@ -2,6 +2,8 @@ import { useState } from "react";
 import os, { errorText } from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
 import GoalForm from "../GoalForm";
+import HowItWorks from "../HowItWorks";
+import NextStep from "../NextStep";
 import QuickLog, { CheckedIn, ModeReminders } from "../QuickLog";
 import { CATEGORY_COLOR, MODE_SHORT, shortDate } from "../format";
 import type { CategoryInfo, Framework, Goal, GoalLog, Today, TodayGoal } from "../types";
@@ -111,12 +113,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
                 {shortDate(g.windowStart)} to {shortDate(g.windowEnd)} · {row.window?.ended ? "ended" : `${row.window?.daysLeft} days left`}
               </dd>
             </div>
-            {g.nextStep && (
-              <div>
-                <dt>Next step</dt>
-                <dd>{g.nextStep}</dd>
-              </div>
-            )}
             {g.obstacle.text && (
               <div>
                 <dt>Obstacle</dt>
@@ -130,6 +126,7 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
               </div>
             )}
           </dl>
+          <NextStep goalId={g._id} value={g.nextStep || ""} onSaved={onChanged} />
           {(g.obstacle.kind === "tiered" || g.percent > 0) && <Progress value={g.percent} color={CATEGORY_COLOR[info.key]} label={`${g.percent}% of the goal`} />}
           {row.window?.next && <div className="os-note">{row.window.next.text}</div>}
 
@@ -188,8 +185,9 @@ export default function GoalsPage() {
 
   return (
     <div className="os-page">
-      <PageHead title="Goals & schedule" sub="One active goal per category. Set the goal and its next step. Check in once a day: moved it forward, or cleared it for the period." />
-      <Card title="Before you check in" sub="Which mode are you in today?">
+      <PageHead title="Goals & schedule" sub="Your six goals, one per category, each with its window, its next step and today's check-in." />
+      <HowItWorks open />
+      <Card>
         <ModeReminders mode={null} />
       </Card>
       {groups.map((group) => (
