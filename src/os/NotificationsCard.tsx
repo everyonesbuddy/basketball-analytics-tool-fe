@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FiBell, FiCheck, FiSmartphone } from "react-icons/fi";
 import os, { errorText } from "./api";
 import { Card, ErrorNote } from "./Bits";
-import { canPromptInstall, currentSubscription, disablePush, enablePush, isIOS, isStandalone, promptInstall, pushSupported } from "./pwa";
+import { canPromptInstall, currentSubscription, disablePush, enablePush, isIOS, isMobile, isStandalone, promptInstall, pushSupported } from "./pwa";
 import { useLoad } from "./useLoad";
 
 type Settings = { brief: boolean; blocks: boolean; checkin: boolean; review: boolean; meals: boolean; gifts: boolean; events: boolean; briefTime: string; quietStart: string; quietEnd: string; dailyCap: number };
@@ -84,13 +84,18 @@ export default function NotificationsCard() {
         <InstallHelp />
       </Card>
 
-      <Card title={<span className="os-row"><FiBell /> Notifications</span>} sub="A few useful nudges a day, never for breaks, quiet at night.">
-        {!data.configured && <div className="os-error">The server isn't set up for notifications yet: add the VAPID keys to the backend's config vars.</div>}
+      <Card
+        title={<span className="os-row"><FiBell /> Phone notifications</span>}
+        sub="Push notifications for the Personal OS app installed on your phone's home screen (not this website in a browser tab). A few useful nudges a day, never for breaks, quiet at night."
+      >
+        {!data.configured && <div className="os-error">Phone notifications aren't set up on the server yet: add the VAPID keys to the backend's config vars.</div>}
+        {data.configured && !isMobile() && <p className="os-small os-muted os-flat">You're on a computer. Turn these on from the installed app on your phone; the settings below apply to every phone you turn them on for.</p>}
+        {data.configured && isMobile() && !isStandalone() && <p className="os-small os-muted os-flat">You're in the browser. Install the app (above) and open it from your home screen to turn these on.</p>}
         <div className="os-row">
           {on ? (
             <>
-              <span className="os-tag os-tag--ok"><FiCheck /> On for this device</span>
-              <button className="os-btn" disabled={busy} onClick={() => run(async () => { const r = await os.post("/push/test"); setMsg(`Test sent to ${r.data.ok} of ${r.data.devices} device${r.data.devices === 1 ? "" : "s"}.`); })}>Send a test</button>
+              <span className="os-tag os-tag--ok"><FiCheck /> On for this phone</span>
+              <button className="os-btn" disabled={busy} onClick={() => run(async () => { const r = await os.post("/push/test"); setMsg(`Test sent to ${r.data.ok} of ${r.data.devices} phone${r.data.devices === 1 ? "" : "s"}. It should arrive in a few seconds.`); })}>Send a test</button>
               <button className="os-btn os-btn--ghost" disabled={busy} onClick={() => run(async () => { await disablePush(); setEndpoint(null); reload(); })}>Turn off here</button>
             </>
           ) : (
@@ -103,16 +108,16 @@ export default function NotificationsCard() {
                   if (!r.ok) throw new Error(r.message);
                   const sub = await currentSubscription();
                   setEndpoint(sub?.endpoint || null);
-                  setMsg("Notifications are on for this device.");
+                  setMsg("Phone notifications are on. Tap Send a test to check.");
                   reload();
                 })
               }
             >
-              Turn on notifications for this device
+              Turn on notifications on this phone
             </button>
           )}
         </div>
-        {!pushSupported() && !on && <p className="os-small os-muted os-flat">{isIOS() && !isStandalone() ? "On iPhone this works from the home-screen app (see Install above)." : "This browser can't receive notifications."}</p>}
+        {!pushSupported() && !on && <p className="os-small os-muted os-flat">{isIOS() && !isStandalone() ? "On iPhone, phone notifications only work from the installed app (see Install above)." : "This browser can't get phone notifications; use the installed app on your phone."}</p>}
         {msg && <p className="os-ok">{msg}</p>}
         {err && <ErrorNote text={err} />}
 
@@ -145,7 +150,7 @@ export default function NotificationsCard() {
 
         {data.devices.length > 0 && (
           <details className="os-details">
-            <summary>Devices getting notifications ({data.devices.length})</summary>
+            <summary>Phones getting notifications ({data.devices.length})</summary>
             <ul className="os-list">
               {data.devices.map((d) => (
                 <li key={d._id}>

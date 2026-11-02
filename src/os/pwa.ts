@@ -8,6 +8,7 @@ import { getApiBaseUrl } from "../utils/dashboardApi";
 
 export const pushSupported = () => typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+export const isMobile = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 export const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 /** "iPhone", "Android phone", "Mac", "Windows"… for the devices list. */
@@ -49,13 +50,26 @@ export async function currentSubscription() {
 
 /** Ask permission, subscribe this device, and register it with the backend. */
 export async function enablePush(): Promise<{ ok: boolean; message?: string }> {
-  if (!pushSupported()) return { ok: false, message: isIOS() && !isStandalone() ? "On iPhone, add the app to your Home Screen first, then turn notifications on from there." : "This browser can't receive notifications." };
+  if (!pushSupported())
+    return {
+      ok: false,
+      message:
+        isIOS() && !isStandalone()
+          ? "On iPhone, phone notifications only work from the installed app: add Personal OS to your Home Screen (see above), open it from there, and turn them on in its Settings."
+          : "This browser can't get phone notifications. Install the app on your phone (see above) and turn them on from there.",
+    };
   const keyRes = await os.get("/push/key");
-  if (!keyRes.data.configured) return { ok: false, message: "Notifications aren't set up on the server yet (VAPID keys)." };
+  if (!keyRes.data.configured) return { ok: false, message: "Phone notifications aren't set up on the server yet: add the VAPID keys to the backend's config vars." };
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") return { ok: false, message: "Notifications are blocked. Allow them in the phone's settings for this app, then try again." };
+  if (permission !== "granted")
+    return {
+      ok: false,
+      message: isIOS()
+        ? "Notifications are blocked for the Personal OS app. Allow them in your iPhone's Settings → Notifications → Personal OS, then try again."
+        : "Notifications are blocked for the Personal OS app. Allow them in your phone's Settings → Apps → Personal OS (or Chrome) → Notifications, then try again.",
+    };
   const reg = (await navigator.serviceWorker.getRegistration()) || (await registerServiceWorker());
-  if (!reg) return { ok: false, message: "Couldn't start the app's background worker." };
+  if (!reg) return { ok: false, message: "Couldn't start the installed app's background worker. Close the app fully, reopen it from your home screen and try again." };
   await navigator.serviceWorker.ready;
   const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(keyRes.data.publicKey) }));
   await os.post("/push/subscribe", { subscription: sub.toJSON(), label: deviceLabel() });
