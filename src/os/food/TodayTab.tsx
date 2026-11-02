@@ -33,7 +33,7 @@ export default function TodayTab({ data, reload, vote }: { data: FoodOverview; r
   return (
     <div className="os-page">
       <div className="os-row" style={{ justifyContent: "space-between" }}>
-        <p className="os-small os-muted os-flat">No bread, little to no sugar. Pick one for each meal so tomorrow's ideas rotate.</p>
+        <p className="os-small os-muted os-flat">No bread, little to no sugar{data.settings.noShellfish ? ", no shellfish" : ""}. Pick one for each meal so tomorrow's ideas rotate.</p>
         <button className="os-btn" onClick={shuffle}><FiRefreshCw /> New ideas</button>
       </div>
       {error && <ErrorNote text={error} />}
@@ -60,6 +60,9 @@ export default function TodayTab({ data, reload, vote }: { data: FoodOverview; r
                 <span className="os-kicker">On this week's plan{planned.mode === "order" ? " (order night)" : ""}</span>
                 <MealCard meal={planned} mode={planned.mode} chosen={had?.key === planned.key} liked={likes.has(planned.key)} onChoose={() => choose("dinner", planned.key, planned.mode)} onVote={(v) => vote(planned.key, v)} />
               </div>
+            )}
+            {mode === "order" && data.settings.noShellfish && (
+              <p className="os-small os-allergy">Ordering: tell them about the shellfish allergy. Nigerian soups often have crayfish or periwinkle; Thai curries often have shrimp paste.</p>
             )}
             <div className="os-grid3">
               {list.map((meal) => (

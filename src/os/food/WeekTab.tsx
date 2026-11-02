@@ -157,6 +157,7 @@ function PlanView({ data, plan, label, onEdit, onChanged }: { data: FoodOverview
             })}
           </tbody>
         </table>
+        {data.settings.noShellfish && plan.days.some((d) => d.mode === "order") && <p className="os-small os-allergy" style={{ marginTop: 10 }}>Order nights: tell them about the shellfish allergy (crayfish and periwinkle in Nigerian soups, shrimp paste in Thai curries).</p>}
       </Card>
       {plan.grocery.length > 0 && <Grocery key={plan._id} data={data} plan={plan} onChanged={onChanged} />}
     </>

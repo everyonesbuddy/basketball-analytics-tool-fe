@@ -21,6 +21,9 @@ function Settings({ data, reload }: { data: FoodOverview; reload: () => void }) 
   return (
     <Card title="What fits your kitchen">
       <div className="os-form">
+        <label className="os-check">
+          <input type="checkbox" checked={s.noShellfish} onChange={(e) => save({ noShellfish: e.target.checked })} /> Shellfish allergy: no shrimp, crab, lobster, crayfish, periwinkle and the like (fish is fine)
+        </label>
         <div className="os-grid4">
           <label>
             Sugar
@@ -65,11 +68,14 @@ function Settings({ data, reload }: { data: FoodOverview; reload: () => void }) 
 function AddMeal({ data, reload }: { data: FoodOverview; reload: () => void }) {
   const [f, setF] = useState({ name: "", cuisine: "Nigerian", mins: 30, mode: "both", ingredients: "", link: "", slots: ["lunch", "dinner"] as Slot[] });
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    setWarning("");
     try {
-      await os.post("/food/meals", f);
+      const r = await os.post("/food/meals", f);
+      setWarning(r.data.warning || "");
       setF({ ...f, name: "", ingredients: "", link: "" });
       reload();
     } catch (err) {
@@ -105,6 +111,7 @@ function AddMeal({ data, reload }: { data: FoodOverview; reload: () => void }) {
           ))}
         </div>
         {error && <ErrorNote text={error} />}
+        {warning && <div className="os-error">{warning}</div>}
         <div className="os-actions"><button className="os-btn os-btn--primary">Add meal</button></div>
       </form>
     </Card>
