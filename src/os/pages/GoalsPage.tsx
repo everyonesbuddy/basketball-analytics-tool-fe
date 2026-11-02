@@ -16,7 +16,7 @@ const load = (): Promise<Data> =>
     history: (g.data.goals as Goal[]).filter((x) => x.status !== "active"),
   }));
 
-function Logs({ goalId, n }: { goalId: string; n: number }) {
+function Logs({ goalId, n, onChanged }: { goalId: string; n: number; onChanged: () => void }) {
   const { data } = useLoad<GoalLog[]>(() => os.get("/logs", { params: { goal: goalId } }).then((r) => r.data.logs), `${goalId}:${n}`);
   if (!data) return null;
   if (!data.length) return <p className="os-muted os-small">No sessions logged yet.</p>;
@@ -29,7 +29,17 @@ function Logs({ goalId, n }: { goalId: string; n: number }) {
           {l.mode === "m2tiered" && ` · +${l.percentGained}%`}
           {l.cleared && l.outcome !== "cleared" && " · cleared"}
           {l.toolAcquired && " · got the tool"}
-          {l.note && <span className="os-muted"> · {l.note}</span>}
+          {l.note && <span className="os-muted"> · {l.note}</span>}{" "}
+          <button
+            className="os-link os-small"
+            onClick={async () => {
+              if (!window.confirm("Remove this session?")) return;
+              await os.delete(`/logs/${l._id}`);
+              onChanged();
+            }}
+          >
+            Remove
+          </button>
         </li>
       ))}
     </ul>
@@ -76,7 +86,19 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
       )}
       {!g && view === "new" && <GoalForm category={info.key} info={info} onSaved={done} onCancel={() => setView("")} />}
 
-      {g && view === "edit" && <GoalForm category={info.key} goal={g} onSaved={done} onCancel={() => setView("")} />}
+      {g && view === "edit" && (
+        <GoalForm
+          category={info.key}
+          goal={g}
+          onSaved={done}
+          onCancel={() => setView("")}
+          onDelete={async () => {
+            if (!window.confirm(`Delete "${g.title}" and its sessions? This can't be undone. (To finish it instead, use End window.)`)) return;
+            await os.delete(`/goals/${g._id}`);
+            done();
+          }}
+        />
+      )}
       {g && view !== "edit" && (
         <>
           <h3 className="os-goal-title">{g.title}</h3>
@@ -112,7 +134,7 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           {row.window?.next && <div className="os-note">{row.window.next.text}</div>}
 
           {view === "" && (row.loggedToday ? (
-            <p className="os-flat"><CheckedIn outcome={row.outcomeToday} /></p>
+            <p className="os-flat"><CheckedIn outcome={row.outcomeToday} logId={row.logIdToday} onUndone={() => { setN((x) => x + 1); onChanged(); }} /></p>
           ) : (
             <QuickLog
               goalId={g._id}
@@ -147,7 +169,7 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           )}
           <details className="os-details">
             <summary>Sessions</summary>
-            <Logs goalId={g._id} n={n} />
+            <Logs goalId={g._id} n={n} onChanged={() => { setN((x) => x + 1); onChanged(); }} />
           </details>
         </>
       )}

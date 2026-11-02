@@ -9,7 +9,7 @@ import type { Category, CategoryInfo, Goal } from "./types";
  * what "done" looks like and the obstacle are optional. The mode is decided
  * block by block, when you log.
  */
-export default function GoalForm({ category, info, goal, onSaved, onCancel }: { category: Category; info?: CategoryInfo; goal?: Goal | null; onSaved: () => void; onCancel: () => void }) {
+export default function GoalForm({ category, info, goal, onSaved, onCancel, onDelete }: { category: Category; info?: CategoryInfo; goal?: Goal | null; onSaved: () => void; onCancel: () => void; onDelete?: () => void }) {
   const [title, setTitle] = useState(goal?.title || "");
   const [outcome, setOutcome] = useState(goal?.outcome || "");
   const [obstacleText, setObstacleText] = useState(goal?.obstacle.text || "");
@@ -67,6 +67,7 @@ export default function GoalForm({ category, info, goal, onSaved, onCancel }: { 
       <div className="os-actions">
         <button type="submit" className="os-btn os-btn--primary" disabled={saving}>{goal ? "Save" : "Set goal"}</button>
         <button type="button" className="os-btn" onClick={onCancel}>Cancel</button>
+        {goal && onDelete && <button type="button" className="os-btn os-btn--ghost" onClick={onDelete} style={{ marginLeft: "auto" }}>Delete goal</button>}
       </div>
     </form>
   );

@@ -42,7 +42,7 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
                 <FiArrowRight /> {b.nextStep ? <><strong>Next step:</strong> {b.nextStep}</> : <span className="os-muted">No next step written yet. Pick the smallest thing that moves it, and start.</span>}
               </p>
               {b.loggedToday ? (
-                <CheckedIn outcome={b.outcomeToday} />
+                <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={onChanged} />
               ) : (
                 <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} extrasOpen onSaved={onChanged} />
               )}

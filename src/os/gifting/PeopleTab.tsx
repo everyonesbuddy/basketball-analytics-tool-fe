@@ -162,7 +162,7 @@ export default function PeopleTab({ data, onChanged, onPlan }: { data: Overview;
       {data.people.length === 0 && <p className="os-muted">Add the people you give to: family, friends, the ones back home. Birthdays and "close" people get reminders.</p>}
       <div className="os-grid2">
         {data.people.map((p) => {
-          const last = [...(p.gifts || [])].sort((a, b) => b.date.localeCompare(a.date))[0];
+          const given = [...(p.gifts || [])].sort((a, b) => b.date.localeCompare(a.date));
           return (
             <Card key={p._id} title={p.name} sub={`${rel(p.relationship)} · ${GROUP[p.group]} · ${TIER[p.tier]}`}>
               {view === `edit:${p._id}` ? (
@@ -176,7 +176,32 @@ export default function PeopleTab({ data, onChanged, onPlan }: { data: Overview;
                     {(p.sizes?.shirt || p.sizes?.shoe) && <div><dt>Sizes</dt><dd>{[p.sizes.shirt && `Shirt ${p.sizes.shirt}`, p.sizes.shoe && `Shoe ${p.sizes.shoe}`].filter(Boolean).join(" · ")}</dd></div>}
                     {p.likes && <div><dt>Loves</dt><dd>{p.likes}</dd></div>}
                     {p.servicesOk && <div><dt>Gift style</dt><dd>Open to services and experiences</dd></div>}
-                    <div><dt>Last gift</dt><dd>{last ? `${last.what || "A gift"} · ${shortDate(last.date.slice(0, 10))}` : "None logged yet"}</dd></div>
+                    <div>
+                      <dt>Gifts given</dt>
+                      <dd>
+                        {given.length === 0
+                          ? "None logged yet"
+                          : given.slice(0, 4).map((gift) => (
+                              <div key={gift._id || gift.date}>
+                                {gift.what || "A gift"} · {shortDate(gift.date.slice(0, 10))}
+                                {gift.cost !== null && gift.cost !== undefined ? ` · $${gift.cost}` : ""}
+                                {gift._id && (
+                                  <button
+                                    className="os-link os-small"
+                                    style={{ marginLeft: 6 }}
+                                    onClick={async () => {
+                                      if (!window.confirm("Remove this logged gift?")) return;
+                                      await os.delete(`/gifting/people/${p._id}/gifts/${gift._id}`);
+                                      onChanged();
+                                    }}
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                      </dd>
+                    </div>
                   </dl>
                   {view === `log:${p._id}` && <LogGift person={p} onSaved={done} onCancel={() => setView("")} />}
                   {view !== `log:${p._id}` && (

@@ -1,6 +1,6 @@
 export type Slot = "breakfast" | "lunch" | "dinner";
 export type Mode = "cook" | "order";
-export type Meal = { key: string; name: string; cuisine: string; mins: number; mode: "cook" | "order" | "both"; slots: Slot[]; search: string; batch?: boolean; note?: string; order?: string; link?: string; custom?: boolean; orderUrl: string };
+export type Meal = { key: string; name: string; cuisine: string; mins: number; mode: "cook" | "order" | "both"; slots: Slot[]; search: string; batch?: boolean; desc?: string; note?: string; orderNote?: string; order?: string; link?: string; custom?: boolean; orderUrl: string };
 export type Ideas = { date: string; planned: (Meal & { mode: Mode }) | null; leftovers: { key: string; name: string } | null; slots: Record<Slot, Record<Mode, Meal[]>> };
 export type PlanDay = { date: string; weekday: string; mode: Mode; key: string; lunch: string | null };
 export type GroceryItem = { name: string; aisle: string; for: string[]; staple: boolean; bought: boolean };

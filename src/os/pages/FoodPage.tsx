@@ -20,12 +20,12 @@ export default function FoodPage() {
   const left = data.plans.current?.grocery.filter((g) => !g.staple && !g.bought).length;
   return (
     <div className="os-page">
-      <PageHead title="Food" sub="What to eat today, cook or order, and one grocery run for the week." />
+      <PageHead title="Food" sub="Decide today's meals in a tap, plan the week's dinners, and shop once." />
       <SubNav
         items={[
-          ["/food", "Today", true],
-          ["/food/week", `This week${left ? ` (${left} to buy)` : ""}`],
-          ["/food/meals", `Meals (${data.meals.length})`],
+          ["/food", "Today's meals", true],
+          ["/food/week", `Meal plan & groceries${left ? ` (${left} to buy)` : ""}`],
+          ["/food/meals", "All meals & settings"],
         ]}
       />
       <Routes>

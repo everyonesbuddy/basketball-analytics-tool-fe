@@ -54,7 +54,7 @@ function CityForm({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-function OutfitCard({ o, occasion, worn, onWorn, onShop, best, trad = false }: { o: Outfit; occasion: string; worn: boolean; onWorn: () => void; onShop: (slot: string, color: string) => void; best: boolean; trad?: boolean }) {
+function OutfitCard({ o, occasion, worn, wornId, onWorn, onShop, best, trad = false }: { o: Outfit; occasion: string; worn: boolean; wornId?: string; onWorn: () => void; onShop: (slot: string, color: string) => void; best: boolean; trad?: boolean }) {
   const label = trad ? TRAD_LABEL : SLOT_LABEL;
   const [busy, setBusy] = useState(false);
   const wear = async () => {
@@ -103,7 +103,20 @@ function OutfitCard({ o, occasion, worn, onWorn, onShop, best, trad = false }: {
       </details>
       <div className="os-actions">
         {worn ? (
-          <span className="os-tag os-tag--ok"><FiCheck /> Wearing this today</span>
+          <span className="os-row">
+            <span className="os-tag os-tag--ok"><FiCheck /> Wearing this today</span>
+            {wornId && (
+              <button
+                className="os-link os-small"
+                onClick={async () => {
+                  await os.delete(`/style/worn/${wornId}`);
+                  onWorn();
+                }}
+              >
+                Undo
+              </button>
+            )}
+          </span>
         ) : (
           <button className="os-btn os-btn--primary" onClick={wear} disabled={busy}>Wear this</button>
         )}
@@ -122,6 +135,7 @@ export default function OutfitTab({ data, onChanged, onShop }: { data: StyleOver
   const [result, setResult] = useState<Suggestion | null>(null);
   const [error, setError] = useState("");
   const [n, setN] = useState(0);
+  const [changingCity, setChangingCity] = useState(false);
   const { lat, lon } = data.profile;
 
   useEffect(() => {
@@ -153,7 +167,8 @@ export default function OutfitTab({ data, onChanged, onShop }: { data: StyleOver
   }, [key]);
 
   const occasions = Object.entries(data.guide.occasions);
-  const wornKeys = new Set((result?.wornToday || []).map((x) => x.lookKey));
+  const wornIds = new Map((result?.wornToday || []).map((x) => [x.lookKey, x._id]));
+  const wornKeys = new Set(wornIds.keys());
 
   return (
     <div className="os-page">
@@ -179,7 +194,14 @@ export default function OutfitTab({ data, onChanged, onShop }: { data: StyleOver
                 "Weather"
               )}
             </p>
-            {data.profile.city ? null : <CityForm onSaved={onChanged} />}
+            {data.profile.city && !changingCity ? (
+              <button className="os-link os-small" onClick={() => setChangingCity(true)}>Change city</button>
+            ) : (
+              <span className="os-row">
+                <CityForm onSaved={() => { setChangingCity(false); onChanged(); }} />
+                {changingCity && <button className="os-link os-small" onClick={() => setChangingCity(false)}>Cancel</button>}
+              </span>
+            )}
             {weatherError && <p className="os-small os-muted os-flat">{weatherError}</p>}
             <div className="os-seg" style={{ marginTop: 6 }}>
               {Object.entries(MANUAL)
@@ -200,7 +222,7 @@ export default function OutfitTab({ data, onChanged, onShop }: { data: StyleOver
           </p>
           <div className="os-grid3">
             {result.outfits.map((o, i) => (
-              <OutfitCard key={o.key} o={o} occasion={result.occasion} trad={result.trad} best={i === 0} worn={wornKeys.has(o.key)} onWorn={() => setN((x) => x + 1)} onShop={onShop} />
+              <OutfitCard key={o.key} o={o} occasion={result.occasion} trad={result.trad} best={i === 0} worn={wornKeys.has(o.key)} wornId={wornIds.get(o.key)} onWorn={() => setN((x) => x + 1)} onShop={onShop} />
             ))}
           </div>
         </>

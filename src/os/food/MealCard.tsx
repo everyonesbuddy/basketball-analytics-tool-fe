@@ -18,7 +18,9 @@ export default function MealCard({ meal, mode, chosen, liked, onChoose, onVote }
         {mode === "cook" ? ` · ${meal.mins} min` : ""}
         {mode === "cook" && meal.batch ? " · makes leftovers" : ""}
       </span>
-      {meal.note && (mode === "order") === meal.note.startsWith("Ordering:") && <span className="os-small">{meal.note.replace(/^Ordering: /, "")}</span>}
+      {meal.desc && <span className="os-small">{meal.desc}</span>}
+      {mode === "cook" && meal.note && <span className="os-small os-tip">Tip: {meal.note}</span>}
+      {mode === "order" && meal.orderNote && <span className="os-small os-tip">When ordering: {meal.orderNote}</span>}
       <span className="os-row os-small">
         {mode === "order" ? (
           <a href={meal.orderUrl} target="_blank" rel="noreferrer"><FiMapPin /> Order nearby</a>

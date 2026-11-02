@@ -10,7 +10,7 @@ const GROUP_LABEL: Record<Group, string> = { child: "Children", young: "Young ad
  * Plan a gift: a group on a budget (like December in Nigeria) or one person's
  * hamper. The suggestion updates as you type; save it to get a checklist.
  */
-export default function PlanForm({ data, personId, onSaved }: { data: Overview; personId?: string; onSaved: (id: string) => void }) {
+export default function PlanForm({ data, personId, onSaved, onCancel }: { data: Overview; personId?: string; onSaved: (id: string) => void; onCancel?: () => void }) {
   const person = data.people.find((p) => p._id === personId);
   const [kind, setKind] = useState<"group" | "one">(person ? "one" : "group");
   const [title, setTitle] = useState(person ? `Gift for ${person.name}` : "December in Nigeria");
@@ -163,6 +163,7 @@ export default function PlanForm({ data, personId, onSaved }: { data: Overview; 
             <button className="os-btn os-btn--primary" onClick={save} disabled={saving || !result}>
               Save plan and make a checklist
             </button>
+            {onCancel && <button className="os-btn" onClick={onCancel}>Cancel</button>}
           </div>
         </div>
       </Card>

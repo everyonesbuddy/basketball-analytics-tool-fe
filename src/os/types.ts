@@ -59,6 +59,7 @@ export interface Block {
   tiered: boolean;
   loggedToday: boolean;
   outcomeToday: Outcome | null;
+  logIdToday: string | null;
 }
 
 export interface Upcoming {
@@ -94,6 +95,7 @@ export interface TodayGoal {
   window: WindowStatus | null;
   loggedToday: boolean;
   outcomeToday: Outcome | null;
+  logIdToday: string | null;
 }
 
 export interface Attention {

@@ -10,11 +10,24 @@ const OUTCOME_DONE: Record<Outcome, string> = {
   blocked: "Stuck: noted what's missing (Mode 1)",
 };
 
-export function CheckedIn({ outcome }: { outcome: Outcome | null | undefined }) {
+/** What you tapped, with Undo (deletes that check-in). */
+export function CheckedIn({ outcome, logId, onUndone }: { outcome: Outcome | null | undefined; logId?: string | null; onUndone?: () => void }) {
   if (!outcome) return null;
   return (
     <span className="os-ok os-checkedin">
       <FiCheck /> {OUTCOME_DONE[outcome]}
+      {logId && onUndone && (
+        <button
+          className="os-link os-small"
+          style={{ marginLeft: 6 }}
+          onClick={async () => {
+            await os.delete(`/logs/${logId}`);
+            onUndone();
+          }}
+        >
+          Undo
+        </button>
+      )}
     </span>
   );
 }

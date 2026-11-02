@@ -105,6 +105,7 @@ function NewPlanRoute({ data, reload }: { data: Overview; reload: () => void }) 
         reload();
         navigate(`/gifting/plan/${id}`);
       }}
+      onCancel={() => navigate(-1)}
     />
   );
 }

@@ -62,7 +62,7 @@ export default function TodayPage() {
                   {b.category && <CategoryTag category={b.category} />}
                   <strong>{b.goalTitle || b.label}</strong>
                   <ModeBadge mode={b.mode} />
-                  {b.loggedToday && <CheckedIn outcome={b.outcomeToday} />}
+                  {b.loggedToday && <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={reload} />}
                   {b.goalId && !b.loggedToday && (b.past || b.now) && !(b.now && data.focus.state === "goal") && (
                     <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} links onSaved={reload} />
                   )}
