@@ -1,6 +1,6 @@
 import { useState } from "react";
 import os, { errorText } from "../api";
-import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead, Progress } from "../Bits";
+import { Card, CategoryTag, ErrorNote, Loading, PageHead, Progress } from "../Bits";
 import GoalForm from "../GoalForm";
 import HowItWorks from "../HowItWorks";
 import NextStep from "../NextStep";
@@ -75,7 +75,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
         </span>
       }
       sub={`${info.about} · ${info.months === 1 ? "1-month" : `${info.months}-month`} window`}
-      right={g ? <ModeBadge mode={row.mode} long /> : null}
     >
       {!g && view !== "new" && (
         <div>
@@ -102,7 +101,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
         <>
           <h3 className="os-goal-title">{g.title}</h3>
           {g.outcome && <p className="os-small">Done means: {g.outcome}</p>}
-          <p className="os-reason">{row.reason}</p>
           <dl className="os-facts">
             <div>
               <dt>Window</dt>

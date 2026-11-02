@@ -1,6 +1,6 @@
 import { useState } from "react";
 import os, { errorText } from "../api";
-import { Card, CategoryTag, ErrorNote, Loading, ModeBadge, PageHead } from "../Bits";
+import { Card, CategoryTag, ErrorNote, Loading, PageHead } from "../Bits";
 import HowItWorks from "../HowItWorks";
 import { CATEGORY_COLOR, shortDate } from "../format";
 import type { ReviewGoal } from "../types";
@@ -45,7 +45,6 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
               <CategoryTag category={g.category} /> {g.title}
             </span>
           }
-          right={<ModeBadge mode={g.mode} long />}
         >
           <dl className="os-facts">
             <div>
@@ -60,7 +59,6 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
               <dd>{g.window.ended ? "Ended" : `${g.window.daysLeft} days left`}</dd>
             </div>
           </dl>
-          <p className="os-reason">{g.reason}</p>
           {g.window.next && <div className="os-note">{g.window.next.text}</div>}
           <label className="os-form">
             Next step (shows at this goal's next block)
