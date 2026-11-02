@@ -16,7 +16,6 @@ const ATTENTION_LABEL: Record<string, string> = {
   early: "Done early",
   "on-time": "Window over",
   rollover: "Roll over",
-  ceiling: "Ceiling",
   review: "Weekly review",
   gift: "Gifting",
   event: "Events",
@@ -66,7 +65,7 @@ export default function TodayPage() {
                   <ModeBadge mode={b.mode} />
                   {b.loggedToday && <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={reload} />}
                   {b.goalId && !b.loggedToday && (b.past || b.now) && !(b.now && data.focus.state === "goal") && (
-                    <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} links onSaved={reload} />
+                    <QuickLog goalId={b.goalId} block={b.start} links onSaved={reload} />
                   )}
                 </div>
                 {b.goalTitle && <div className="os-muted os-small">{b.label}{b.nextStep && !b.past ? ` · next step: ${b.nextStep}` : ""}</div>}
@@ -87,9 +86,9 @@ export default function TodayPage() {
               <strong>{g.goal?.title || <span className="os-muted">No goal set</span>}</strong>
               {g.goal && g.window && (
                 <Progress
-                  value={g.goal.obstacle.kind === "tiered" ? g.goal.percent : ((g.window.totalDays - g.window.daysLeft) / g.window.totalDays) * 100}
+                  value={g.goal.percent >= 100 ? 100 : ((g.window.totalDays - g.window.daysLeft) / g.window.totalDays) * 100}
                   color={CATEGORY_COLOR[g.category]}
-                  label={g.goal.obstacle.kind === "tiered" ? `${g.goal.percent}%` : `${g.window.daysLeft} days left`}
+                  label={g.goal.percent >= 100 ? "Cleared" : `${g.window.daysLeft} days left`}
                 />
               )}
             </div>

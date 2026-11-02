@@ -51,15 +51,9 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
             <div>
               <dt>This week</dt>
               <dd>
-                {g.sessions} session{g.sessions === 1 ? "" : "s"}
-                {g.mode === "m2tiered" || g.percentThisWeek ? ` · +${g.percentThisWeek}% (now ${g.percentTotal}%)` : ""}
-                {g.cleared ? " · obstacle cleared" : ""}
-                {g.toolAcquired ? " · got the tool" : ""}
+                {g.sessions ? `Moved it forward ${g.sessions} time${g.sessions === 1 ? "" : "s"}, on ${g.daysWorked} day${g.daysWorked === 1 ? "" : "s"}` : "No check-ins this week"}
+                {g.cleared ? " · cleared for the period" : ""}
               </dd>
-            </div>
-            <div>
-              <dt>Ceiling check</dt>
-              <dd>{g.ceiling.hit ? `Flat: last 3 sessions +${g.ceiling.recent}% vs +${g.ceiling.before}% before. Back to Mode 1.` : (g.ceiling.sessions || 0) < 6 ? "Not enough tiered sessions yet (needs 6)." : "Still climbing."}</dd>
             </div>
             <div>
               <dt>Window</dt>
@@ -86,7 +80,7 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
   );
 }
 
-/** The weekend review: mode, % this week, ceiling check and next action for each goal. */
+/** The weekend review: check-ins this week, the window, and next week's next step for each goal. */
 export default function ReviewPage() {
   const { data, error, reload } = useLoad<Data>(() => os.get("/review").then((r) => r.data));
   if (error) return <ErrorNote text={error} />;

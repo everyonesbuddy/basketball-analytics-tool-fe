@@ -44,7 +44,7 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
               ) : (
                 <>
                   <ModeReminders mode={b.mode} />
-                  <QuickLog goalId={b.goalId} nextStep={b.nextStep} block={b.start} mode={b.mode} reminders={false} simple onSaved={onChanged} />
+                  <QuickLog goalId={b.goalId} block={b.start} onSaved={onChanged} />
                 </>
               )}
             </>

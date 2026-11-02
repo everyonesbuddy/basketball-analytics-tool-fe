@@ -7,7 +7,6 @@ import type { Mode, Outcome } from "./types";
 const OUTCOME_DONE: Record<Outcome, string> = {
   progress: "Moved it forward today",
   cleared: "Cleared for this period",
-  blocked: "Stuck: noted what's missing (Mode 1)",
 };
 
 /** What you tapped, with Undo (deletes that check-in). */
@@ -54,41 +53,10 @@ export function ModeReminders({ mode }: { mode: Mode | null }) {
 }
 
 /**
- * The daily check-in: two buttons, moved it forward today or cleared the goal
- * for this period. Optional % cleared and next step (shown at the goal's next
- * block). "Stuck" records what's missing (Mode 1).
- *
- * `links`: just the two buttons as small links (for the timeline).
+ * The daily check-in: two buttons, moved it forward today or cleared the
+ * goal for this period. `links`: the same two as small links (the timeline).
  */
-export default function QuickLog({
-  goalId,
-  nextStep = "",
-  block,
-  mode = null,
-  date,
-  onSaved,
-  extrasOpen = false,
-  reminders = true,
-  links = false,
-  simple = false,
-}: {
-  goalId: string;
-  nextStep?: string;
-  block?: string;
-  mode?: Mode | null;
-  date?: string;
-  onSaved: (outcome: Outcome) => void;
-  extrasOpen?: boolean;
-  reminders?: boolean;
-  links?: boolean;
-  /** Just the two buttons: no "% or next step" and no "Stuck" link. */
-  simple?: boolean;
-}) {
-  const [extras, setExtras] = useState(extrasOpen);
-  const [next, setNext] = useState(nextStep);
-  const [percent, setPercent] = useState("");
-  const [stuck, setStuck] = useState(false);
-  const [missing, setMissing] = useState("");
+export default function QuickLog({ goalId, block, date, onSaved, links = false }: { goalId: string; block?: string; date?: string; onSaved: (outcome: Outcome) => void; links?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -96,15 +64,8 @@ export default function QuickLog({
     setBusy(true);
     setError("");
     try {
-      await os.post("/logs", {
-        goal: goalId,
-        outcome,
-        block,
-        date,
-        percentGained: outcome === "progress" ? Number(percent) || 0 : 0,
-        missing: outcome === "blocked" ? missing : undefined,
-        nextStep: outcome === "cleared" && next === nextStep ? "" : next,
-      });
+      // Cleared for the period: the goal is done, so its next step is too.
+      await os.post("/logs", { goal: goalId, outcome, block, date, ...(outcome === "cleared" ? { nextStep: "" } : {}) });
       onSaved(outcome);
     } catch (err) {
       setError(errorText(err, "Couldn't save."));
@@ -125,33 +86,10 @@ export default function QuickLog({
 
   return (
     <div className="os-quicklog">
-      {reminders && <ModeReminders mode={mode} />}
-      {extras && (
-        <div className="os-quicklog__fields">
-          <label>
-            Next step for next time <span className="os-muted">(optional)</span>
-            <input value={next} onChange={(e) => setNext(e.target.value)} placeholder="e.g. Draft the pricing page" maxLength={500} />
-          </label>
-          <label className="os-narrow">
-            % cleared <span className="os-muted">(optional)</span>
-            <input type="number" min={0} max={100} step={0.5} value={percent} onChange={(e) => setPercent(e.target.value)} placeholder="e.g. 5" />
-          </label>
-        </div>
-      )}
-      {stuck ? (
-        <div className="os-row">
-          <input value={missing} onChange={(e) => setMissing(e.target.value)} placeholder="What tool or resource is missing?" autoFocus style={{ flex: 1, minWidth: 200 }} />
-          <button className="os-btn os-btn--primary" disabled={busy} onClick={() => send("blocked")}>Save (Mode 1)</button>
-          <button className="os-btn" onClick={() => setStuck(false)}>Back</button>
-        </div>
-      ) : (
-        <div className="os-actions">
-          <button className="os-btn os-btn--primary" disabled={busy} onClick={() => send("progress")}>Moved it forward today</button>
-          <button className="os-btn" disabled={busy} onClick={() => send("cleared")}>Cleared the goal for this period</button>
-          {!simple && !extras && <button className="os-link os-small" onClick={() => setExtras(true)}>+ % or next step</button>}
-          {!simple && <button className="os-link os-small" disabled={busy} onClick={() => setStuck(true)}>Stuck: missing a tool or resource</button>}
-        </div>
-      )}
+      <div className="os-actions">
+        <button className="os-btn os-btn--primary" disabled={busy} onClick={() => send("progress")}>Moved it forward today</button>
+        <button className="os-btn" disabled={busy} onClick={() => send("cleared")}>Cleared the goal for this period</button>
+      </div>
       {error && <div className="os-error">{error}</div>}
     </div>
   );

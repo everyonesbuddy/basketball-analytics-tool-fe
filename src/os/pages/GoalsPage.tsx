@@ -5,7 +5,7 @@ import GoalForm from "../GoalForm";
 import HowItWorks from "../HowItWorks";
 import NextStep from "../NextStep";
 import QuickLog, { CheckedIn, ModeReminders } from "../QuickLog";
-import { CATEGORY_COLOR, MODE_SHORT, shortDate } from "../format";
+import { CATEGORY_COLOR, shortDate } from "../format";
 import type { CategoryInfo, Framework, Goal, GoalLog, Today, TodayGoal } from "../types";
 import { useLoad } from "../useLoad";
 
@@ -21,16 +21,13 @@ const load = (): Promise<Data> =>
 function Logs({ goalId, n, onChanged }: { goalId: string; n: number; onChanged: () => void }) {
   const { data } = useLoad<GoalLog[]>(() => os.get("/logs", { params: { goal: goalId } }).then((r) => r.data.logs), `${goalId}:${n}`);
   if (!data) return null;
-  if (!data.length) return <p className="os-muted os-small">No sessions logged yet.</p>;
+  if (!data.length) return <p className="os-muted os-small">No check-ins yet.</p>;
   return (
     <ul className="os-loglist">
       {data.slice(0, 8).map((l) => (
         <li key={l._id}>
           <span className="os-muted">{shortDate(l.date, true)}</span>{" "}
-          {l.outcome === "cleared" ? "Cleared for the period" : l.outcome === "progress" ? "Moved it forward" : l.outcome === "blocked" ? `Stuck: ${l.missing || "missing a tool"}` : MODE_SHORT[l.mode].split(" · ")[0]}
-          {l.mode === "m2tiered" && ` · +${l.percentGained}%`}
-          {l.cleared && l.outcome !== "cleared" && " · cleared"}
-          {l.toolAcquired && " · got the tool"}
+          {l.outcome === "cleared" || l.cleared ? "Cleared for the period" : "Moved it forward"}
           {l.note && <span className="os-muted"> · {l.note}</span>}{" "}
           <button
             className="os-link os-small"
@@ -119,15 +116,13 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
                 <dd>{g.obstacle.text}</dd>
               </div>
             )}
-            {row.mode === "m1" && g.toolNeeded && (
-              <div>
-                <dt>Missing</dt>
-                <dd>{g.toolNeeded}</dd>
-              </div>
-            )}
           </dl>
           <NextStep goalId={g._id} value={g.nextStep || ""} onSaved={onChanged} />
-          {(g.obstacle.kind === "tiered" || g.percent > 0) && <Progress value={g.percent} color={CATEGORY_COLOR[info.key]} label={`${g.percent}% of the goal`} />}
+          {g.percent >= 100 ? (
+            <p className="os-ok">Cleared for this period.</p>
+          ) : (
+            row.window && <Progress value={((row.window.totalDays - row.window.daysLeft) / row.window.totalDays) * 100} color={CATEGORY_COLOR[info.key]} label={`${row.window.daysLeft} days left in the window`} />
+          )}
           {row.window?.next && <div className="os-note">{row.window.next.text}</div>}
 
           {view === "" && (row.loggedToday ? (
@@ -135,10 +130,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
           ) : (
             <QuickLog
               goalId={g._id}
-              nextStep={g.nextStep || ""}
-              mode={row.mode}
-              reminders={false}
-              simple
               onSaved={(outcome) => {
                 setN((x) => x + 1);
                 onChanged();
