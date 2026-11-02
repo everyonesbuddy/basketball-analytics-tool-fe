@@ -43,7 +43,7 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
                 <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={onChanged} />
               ) : (
                 <>
-                  <ModeReminders mode={b.mode} />
+                  <ModeReminders />
                   <QuickLog goalId={b.goalId} block={b.start} onSaved={onChanged} />
                 </>
               )}
