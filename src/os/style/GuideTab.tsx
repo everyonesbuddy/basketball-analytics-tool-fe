@@ -1,7 +1,7 @@
 import { Card } from "../Bits";
 import { Pics } from "../Pics";
 import type { Guide, StructureKey } from "./types";
-import { SLOT_LABEL } from "./types";
+import { SLOT_LABEL, TRAD_LABEL } from "./types";
 import { Swatch } from "./OutfitTab";
 
 /** The style guide as a page: structures, silhouette, occasions, tonal families and example looks. */
@@ -39,6 +39,13 @@ export default function GuideTab({ guide }: { guide: Guide }) {
           </table>
         </Card>
       </div>
+      <Card title="Native wear (Yoruba)" sub="Up & down: buba and sokoto with a fila. Owambe: add the agbada.">
+        <ul>
+          {guide.tradNotes.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+      </Card>
       <Card title="Tonal families" sub="Shades of one family, head to toe.">
         <div className="os-grid4">
           {Object.entries(guide.tonal).map(([k, t]) => (
@@ -65,7 +72,7 @@ export default function GuideTab({ guide }: { guide: Guide }) {
                 {l.pieces.map(([slot, color, desc]) => (
                   <li key={slot}>
                     <Swatch hex={guide.colors[color].hex} title={guide.colors[color].name} />
-                    <span className="os-outfit__slot">{SLOT_LABEL[slot]}</span>
+                    <span className="os-outfit__slot">{(l.trad ? TRAD_LABEL : SLOT_LABEL)[slot]}</span>
                     <span className="os-outfit__what">{desc}</span>
                   </li>
                 ))}

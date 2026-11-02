@@ -5,7 +5,7 @@ import os, { errorText } from "../api";
 import { Card, ErrorNote } from "../Bits";
 import { Pics } from "../Pics";
 import type { Outfit, StyleOverview, Suggestion } from "./types";
-import { SLOT_LABEL } from "./types";
+import { SLOT_LABEL, TRAD_LABEL } from "./types";
 import { findCity, todayWeather } from "./weather";
 import type { Weather } from "./weather";
 
@@ -54,7 +54,8 @@ function CityForm({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-function OutfitCard({ o, occasion, worn, onWorn, onShop, best }: { o: Outfit; occasion: string; worn: boolean; onWorn: () => void; onShop: (slot: string, color: string) => void; best: boolean }) {
+function OutfitCard({ o, occasion, worn, onWorn, onShop, best, trad = false }: { o: Outfit; occasion: string; worn: boolean; onWorn: () => void; onShop: (slot: string, color: string) => void; best: boolean; trad?: boolean }) {
+  const label = trad ? TRAD_LABEL : SLOT_LABEL;
   const [busy, setBusy] = useState(false);
   const wear = async () => {
     setBusy(true);
@@ -69,14 +70,14 @@ function OutfitCard({ o, occasion, worn, onWorn, onShop, best }: { o: Outfit; oc
     <Card title={o.name} sub={`${o.structureName} · ${o.owned}/${o.total} in your wardrobe`} accent={best ? "#0f766e" : undefined}>
       <div className="os-outfit__line">
         {o.pieces.map((p) => (
-          <span key={p.slot} className="os-outfit__band" style={{ background: p.hex, opacity: p.optional ? 0.5 : 1 }} title={`${SLOT_LABEL[p.slot]}: ${p.colorName}`} />
+          <span key={p.slot} className="os-outfit__band" style={{ background: p.hex, opacity: p.optional ? 0.5 : 1 }} title={`${label[p.slot]}: ${p.colorName}`} />
         ))}
       </div>
       <ul className="os-outfit">
         {o.pieces.map((p) => (
           <li key={p.slot}>
             <Swatch hex={p.hex} title={p.colorName} />
-            <span className="os-outfit__slot">{SLOT_LABEL[p.slot]}{p.optional ? " (optional)" : ""}</span>
+            <span className="os-outfit__slot">{label[p.slot]}{p.optional ? " (optional)" : ""}</span>
             <span className="os-outfit__what">
               {p.item ? (
                 <strong>{p.item.name}</strong>
@@ -199,7 +200,7 @@ export default function OutfitTab({ data, onChanged, onShop }: { data: StyleOver
           </p>
           <div className="os-grid3">
             {result.outfits.map((o, i) => (
-              <OutfitCard key={o.key} o={o} occasion={result.occasion} best={i === 0} worn={wornKeys.has(o.key)} onWorn={() => setN((x) => x + 1)} onShop={onShop} />
+              <OutfitCard key={o.key} o={o} occasion={result.occasion} trad={result.trad} best={i === 0} worn={wornKeys.has(o.key)} onWorn={() => setN((x) => x + 1)} onShop={onShop} />
             ))}
           </div>
         </>

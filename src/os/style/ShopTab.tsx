@@ -65,11 +65,47 @@ export default function ShopTab({ data, onChanged, focus }: { data: StyleOvervie
   const focused = focus ? g.items.find((i) => !i.owned && i.slot === focus.slot && i.color === focus.color) : undefined;
 
   const have = async (c: CorePiece) => {
-    await os.post("/style/wardrobe", { slot: c.slot, color: c.color, name: c.name.replace(/ \(.*\)$/, "").replace(/, .*$/, "") });
+    const trad = c.group === "traditional";
+    const color = colors[c.color].name;
+    if (trad && / up & down set$/.test(c.name)) {
+      // A set is two pieces: the buba and the sokoto.
+      await os.post("/style/wardrobe", { slot: "top", color: c.color, name: `${color} buba`, trad });
+      await os.post("/style/wardrobe", { slot: "bottom", color: c.color, name: `${color} sokoto`, trad });
+    } else {
+      await os.post("/style/wardrobe", { slot: c.slot, color: c.color, name: c.name.replace(/ \(.*\)$/, "").replace(/, .*$/, ""), trad });
+    }
     onChanged();
   };
 
-  const rows = g.items.filter((i) => showOwned || !i.owned);
+  const visible = g.items.filter((i) => showOwned || !i.owned);
+  const rows = visible.filter((i) => i.group !== "traditional");
+  const tradRows = visible.filter((i) => i.group === "traditional");
+  const table = (list: CorePiece[]) => (
+    <table className="os-table os-table--wide">
+      <tbody>
+        {list.map((c) => (
+          <tr key={c.key} className={c.owned ? "os-muted" : ""}>
+            <td style={{ width: 24 }}><Swatch hex={colors[c.color].hex} /></td>
+            <td>
+              <strong>{c.name}</strong> <span className="os-tag">{PRIORITY[c.priority]}</span>
+              {linksFor(c.key) > 0 && <span className="os-tag os-tag--ok">{linksFor(c.key)} saved</span>}
+              <div className="os-small os-muted">{c.owned ? `You have: ${c.item?.name}` : c.look}</div>
+              {open === c.key && <SaveLink core={c} onSaved={() => { setOpen(""); onChanged(); }} onCancel={() => setOpen("")} />}
+            </td>
+            <td className="os-num">
+              {!c.owned && (
+                <span className="os-row os-small" style={{ justifyContent: "flex-end" }}>
+                  <Pics q={c.search} />
+                  <button className="os-link" onClick={() => setOpen(c.key)}>Save a link</button>
+                  <button className="os-link" onClick={() => have(c)}>I have it</button>
+                </span>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
   const want = data.shop.filter((s) => s.status === "want");
   const bought = data.shop.filter((s) => s.status === "bought");
 
@@ -110,31 +146,14 @@ export default function ShopTab({ data, onChanged, focus }: { data: StyleOvervie
           </label>
         }
       >
-        <table className="os-table os-table--wide">
-          <tbody>
-            {rows.map((c) => (
-              <tr key={c.key} className={c.owned ? "os-muted" : ""}>
-                <td style={{ width: 24 }}><Swatch hex={colors[c.color].hex} /></td>
-                <td>
-                  <strong>{c.name}</strong> <span className="os-tag">{PRIORITY[c.priority]}</span>
-                  {linksFor(c.key) > 0 && <span className="os-tag os-tag--ok">{linksFor(c.key)} saved</span>}
-                  <div className="os-small os-muted">{c.owned ? `You have: ${c.item?.name}` : c.look}</div>
-                  {open === c.key && <SaveLink core={c} onSaved={() => { setOpen(""); onChanged(); }} onCancel={() => setOpen("")} />}
-                </td>
-                <td className="os-num">
-                  {!c.owned && (
-                    <span className="os-row os-small" style={{ justifyContent: "flex-end" }}>
-                      <Pics q={c.search} />
-                      <button className="os-link" onClick={() => setOpen(c.key)}>Save a link</button>
-                      <button className="os-link" onClick={() => have(c)}>I have it</button>
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {table(rows)}
         {rows.length === 0 && <p className="os-ok">You have every core piece. Shop for fit upgrades from here.</p>}
+      </Card>
+
+      <Card title="Native wear" sub="Sewn by a tailor: the set, a matching fila, the agbada, and loafers.">
+        {table(tradRows)}
+        {tradRows.length === 0 && <p className="os-ok">You have the native pieces your guide calls for.</p>}
+        <p className="os-small os-muted os-flat">{data.guide.tradNotes[0]}</p>
       </Card>
 
       <Card title="Saved links" sub="Paste a product link; the picture, title and price come with it when the store shares them.">

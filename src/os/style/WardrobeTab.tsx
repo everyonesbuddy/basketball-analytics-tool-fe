@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import os, { errorText } from "../api";
 import { Card, ErrorNote } from "../Bits";
 import type { Slot, StyleOverview, WardrobeItem } from "./types";
-import { SLOTS, SLOT_LABEL } from "./types";
+import { SLOTS, SLOT_LABEL, TRAD_LABEL } from "./types";
 import { Swatch } from "./OutfitTab";
 
 export function ColorPicker({ colors, value, onChange }: { colors: StyleOverview["guide"]["colors"]; value: string; onChange: (c: string) => void }) {
@@ -23,6 +23,7 @@ export default function WardrobeTab({ data, onChanged }: { data: StyleOverview; 
   const [slot, setSlot] = useState<Slot>("top");
   const [color, setColor] = useState("black");
   const [name, setName] = useState("");
+  const [trad, setTrad] = useState(false);
   const [error, setError] = useState("");
   const colors = data.guide.colors;
 
@@ -30,7 +31,7 @@ export default function WardrobeTab({ data, onChanged }: { data: StyleOverview; 
     e.preventDefault();
     setError("");
     try {
-      await os.post("/style/wardrobe", { slot, color, name: name.trim() });
+      await os.post("/style/wardrobe", { slot, color, name: name.trim(), trad: trad || slot === "cap" });
       setName("");
       onChanged();
     } catch (err) {
@@ -48,12 +49,15 @@ export default function WardrobeTab({ data, onChanged }: { data: StyleOverview; 
         <form className="os-form" onSubmit={add}>
           <div className="os-seg">
             {SLOTS.map((s) => (
-              <button key={s} type="button" className={slot === s ? "on" : ""} onClick={() => setSlot(s)}>{SLOT_LABEL[s]}</button>
+              <button key={s} type="button" className={slot === s ? "on" : ""} onClick={() => setSlot(s)}>{trad ? TRAD_LABEL[s] : SLOT_LABEL[s]}</button>
             ))}
           </div>
+          <label className="os-check">
+            <input type="checkbox" checked={trad || slot === "cap"} disabled={slot === "cap"} onChange={(e) => setTrad(e.target.checked)} /> Native wear (buba, sokoto, agbada, fila)
+          </label>
           <ColorPicker colors={colors} value={color} onChange={setColor} />
           <div className="os-row">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`e.g. ${colors[color].name} ${slot === "top" ? "heavyweight tee" : slot === "bottom" ? "straight jeans" : slot === "layer" ? "overshirt" : "minimal sneakers"}`} maxLength={160} style={{ maxWidth: 360 }} />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={trad || slot === "cap" ? `e.g. ${colors[color].name} ${TRAD_LABEL[slot].toLowerCase()}` : `e.g. ${colors[color].name} ${slot === "top" ? "heavyweight tee" : slot === "bottom" ? "straight jeans" : slot === "layer" ? "overshirt" : "minimal sneakers"}`} maxLength={160} style={{ maxWidth: 360 }} />
             <button className="os-btn os-btn--primary" type="submit">Add</button>
           </div>
           {error && <ErrorNote text={error} />}
@@ -74,6 +78,7 @@ export default function WardrobeTab({ data, onChanged }: { data: StyleOverview; 
                       <Swatch hex={colors[i.color]?.hex || "#999"} title={colors[i.color]?.name} />
                       <span className="os-outfit__what">
                         {i.link ? <a href={i.link} target="_blank" rel="noreferrer">{i.name}</a> : i.name}
+                        {i.trad && <span className="os-tag" style={{ marginLeft: 6 }}>native</span>}
                         {!i.active && " (put away)"}
                         <span className="os-row os-small">
                           <button className="os-link" onClick={() => patch(i, { active: !i.active })}>{i.active ? "Put away" : "Bring back"}</button>
