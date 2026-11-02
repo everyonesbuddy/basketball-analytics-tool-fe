@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FiCheck } from "react-icons/fi";
 import os, { errorText } from "./api";
-import type { Mode, Outcome } from "./types";
+import type { Outcome } from "./types";
 
 /** What you tapped, said back the same way. */
 const OUTCOME_DONE: Record<Outcome, string> = {
@@ -31,19 +31,19 @@ export function CheckedIn({ outcome, logId, onUndone }: { outcome: Outcome | nul
   );
 }
 
-/** How to attack a goal today, by where you are with it (the framework's modes). The one you were in last is marked. */
-export function ModeReminders({ mode }: { mode: Mode | null }) {
-  const rows: [boolean, string, string][] = [
-    [mode === "m1", "Missing a tool or resource?", "Today's work is getting it (Mode 1)."],
-    [mode === "m2single", "Have what you need?", "Attack the obstacle and clear it (Mode 2)."],
-    [mode === "m2tiered", "Too big for one go?", "Clear a % of it today; that's a real win (Mode 2)."],
+/** How to attack a goal today, depending on where you feel you are with it (the framework's modes). Your call, so none is marked. */
+export function ModeReminders() {
+  const rows: [string, string][] = [
+    ["Missing a tool or resource?", "Today's work is getting it (Mode 1)."],
+    ["Have what you need?", "Attack the obstacle and clear it (Mode 2)."],
+    ["Too big for one go?", "Clear a % of it today; that's a real win (Mode 2)."],
   ];
   return (
     <div className="os-modehints">
       <span className="os-kicker">How to attack it today</span>
       <ul>
-        {rows.map(([on, q, a]) => (
-          <li key={q} className={on ? "on" : ""}>
+        {rows.map(([q, a]) => (
+          <li key={q}>
             {q} <span>{a}</span>
           </li>
         ))}

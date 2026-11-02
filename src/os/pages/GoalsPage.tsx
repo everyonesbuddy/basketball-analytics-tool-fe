@@ -179,7 +179,7 @@ export default function GoalsPage() {
       <PageHead title="Goals & schedule" sub="Your six goals, one per category, each with its window, its next step and today's check-in." />
       <HowItWorks open />
       <Card>
-        <ModeReminders mode={null} />
+        <ModeReminders />
       </Card>
       {groups.map((group) => (
         <div key={group} className="os-group">
