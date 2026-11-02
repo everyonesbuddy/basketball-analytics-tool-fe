@@ -1,3 +1,27 @@
+# Personal OS (Frontend)
+
+A personal dashboard for guidance and decisions: goals and the daily schedule first, with gifting, style, events, travel and money widgets to come. The original basketball analytics tool lives on under **Sports**.
+
+## Widgets
+
+| Widget | Status |
+| --- | --- |
+| Today | Built: the block you're in, its goal and mode and why, what needs a decision, the full day, your six goals, a quote |
+| Goals & schedule | Built: one goal per category, obstacle classification, tool check, session logging, end of window (completed, expand, roll over) |
+| Weekly review | Built: sessions and % this week, the ceiling check and a next action per goal |
+| Framework | Built: the cheat sheet, printable |
+| Sports | Built: the existing analytics tools, unchanged |
+| Gifting, Style, Events & concerts, Travel, Money | Coming next |
+
+## Setup
+
+- The API is the same backend (`/api/os`), which needs `MONGODB_URI` and `JWT_SECRET` set. See the backend README.
+- Sign-in uses the login made with the backend's `scripts/create-user.js`.
+- `public/_redirects` sends every path to the app, so links like `/goals` work on Netlify.
+- Code for the OS is in `src/os/`; the sports code is unchanged in `src/components/`.
+
+---
+
 # Basketball Analytics Tool (Frontend)
 
 React + TypeScript + Vite frontend for player and team analytics powered by the backend ESPN aggregation service.
@@ -101,3 +125,13 @@ npm run build
 - Team workflow now hydrates efficiency + need-gap analysis from backend in the same load action.
 - Season type controls are integrated for team efficiency.
 - Season/year tagging is integrated across major analytics tables and labels.
+
+## Install as an app (PWA)
+
+- `public/manifest.webmanifest`, `public/icons/` and `public/sw.js` make it installable with its own icon, full screen, and push notifications. `public/_headers` keeps the worker and manifest fresh on Netlify.
+- iPhone: open the site in Safari → Share → Add to Home Screen, then open it from the home screen and go to Settings → Turn on notifications (iOS 16.4+). Android: Chrome → Install app.
+- Notification types, quiet hours and the daily cap are in Settings. The backend needs the VAPID keys (see the backend README).
+
+## Backend address
+
+`VITE_API_URL` (Netlify → Site configuration → Environment variables), e.g. `https://your-app.herokuapp.com/api`, sets where the API lives. Without it, the current Heroku app is used.
