@@ -301,7 +301,6 @@
 .os-how-box summary { cursor: pointer; color: #334155; }
 .os-how-box summary .os-link { margin-left: 6px; font-size: 0.82rem; }
 .os-how-box[open] summary { margin-bottom: 10px; }
-.os-nextstep-form { margin: 6px 0 10px; }
 .os-checkedin { display: inline-flex; align-items: center; gap: 4px; }
 
 /* Events */

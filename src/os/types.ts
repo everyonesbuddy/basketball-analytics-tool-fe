@@ -11,7 +11,6 @@ export interface Goal {
   windowStart: string;
   windowEnd: string;
   obstacle: { text: string; kind: "single" | "tiered"; bounded: boolean | null; parallel: boolean | null };
-  nextStep?: string;
   percent: number;
   notes: string;
   completedAt?: string | null;
@@ -50,7 +49,6 @@ export interface Block {
   mode: Mode | null;
   modeName: string | null;
   reason: string | null;
-  nextStep: string;
   tiered: boolean;
   loggedToday: boolean;
   outcomeToday: Outcome | null;
@@ -67,7 +65,6 @@ export interface Upcoming {
   category: Category | null;
   goalId: string | null;
   goalTitle: string | null;
-  nextStep: string;
   minutesAway: number;
 }
 
@@ -156,7 +153,6 @@ export interface ReviewGoal {
   goalId: string;
   category: Category;
   title: string;
-  nextStep?: string;
   mode: Mode;
   modeName: string;
   reason: string;

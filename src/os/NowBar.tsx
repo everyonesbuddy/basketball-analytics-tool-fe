@@ -43,7 +43,6 @@ export default function NowBar() {
           <>
             {b.category && <CategoryTag category={b.category} />}
             <strong>{b.goalTitle || `${b.label}: no goal set`}</strong>
-            {b.nextStep && <span className="os-small">→ {b.nextStep}</span>}
             <span className="os-muted os-small">until {clock(b.end)}</span>
           </>
         ) : f.state === "review" ? (

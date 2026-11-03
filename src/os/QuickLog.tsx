@@ -64,8 +64,7 @@ export default function QuickLog({ goalId, block, date, onSaved, links = false }
     setBusy(true);
     setError("");
     try {
-      // Cleared for the period: the goal is done, so its next step is too.
-      await os.post("/logs", { goal: goalId, outcome, block, date, ...(outcome === "cleared" ? { nextStep: "" } : {}) });
+      await os.post("/logs", { goal: goalId, outcome, block, date });
       onSaved(outcome);
     } catch (err) {
       setError(errorText(err, "Couldn't save."));

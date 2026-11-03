@@ -16,7 +16,7 @@ export default function HowItWorks({ open = false }: { open?: boolean }) {
         <strong>A block for each goal, every weekday:</strong> one schedule for Monday, Wednesday and Friday, another for Tuesday and Thursday. Weekends are free, with a 30-minute weekly review.
       </p>
       <p>
-        <strong>In each block:</strong> work the goal's next step. At the end, tap <em>Moved it forward today</em> or <em>Cleared the goal for this period</em>. The weekly review sets next week's next steps.
+        <strong>In each block:</strong> work on the goal. At the end, tap <em>Moved it forward today</em> or <em>Cleared the goal for this period</em>. That's the only check-in. The weekly review looks at where each goal stands.
       </p>
       <p className="os-small os-muted">
         Full framework and the two schedules: <Link to="/framework">Framework</Link>.
