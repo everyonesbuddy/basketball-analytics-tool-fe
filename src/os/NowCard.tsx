@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
 import { CategoryTag } from "./Bits";
-import NextStep from "./NextStep";
 import QuickLog, { CheckedIn, ModeReminders } from "./QuickLog";
 import { CATEGORY_COLOR, clock } from "./format";
 import type { Focus } from "./types";
 import { whenText } from "./when";
 
 /**
- * The one thing to know: what to work on now (and its next step), or that
+ * The one thing to know: what to work on now, or that
  * nothing's on and what's next and when. The check-in is one tap.
  */
 export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged: () => void }) {
@@ -23,7 +22,6 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
         {n.category && <CategoryTag category={n.category} />}
         <strong>{n.review ? "Weekly review" : n.goalTitle || `${n.label} (no goal set)`}</strong>
       </div>
-      {n.nextStep && <span className="os-small">First step: {n.nextStep}</span>}
     </div>
   ) : null;
 
@@ -38,7 +36,6 @@ export default function NowCard({ focus, onChanged }: { focus: Focus; onChanged:
           </div>
           {b.goalId ? (
             <>
-              <NextStep goalId={b.goalId} value={b.nextStep} onSaved={onChanged} />
               {b.loggedToday ? (
                 <CheckedIn outcome={b.outcomeToday} logId={b.logIdToday} onUndone={onChanged} />
               ) : (

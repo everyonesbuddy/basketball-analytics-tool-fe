@@ -9,15 +9,10 @@ import { useLoad } from "../useLoad";
 type Data = {
   week: { start: string; end: string };
   goals: ReviewGoal[];
-  saved: { entries: { goal: string; nextAction: string }[]; notes: string } | null;
+  saved: { notes: string } | null;
 };
 
 function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
-  const [next, setNext] = useState<Record<string, string>>(() => ({
-    // Start from each goal's current next step; a saved review's answers win.
-    ...Object.fromEntries(data.goals.map((g) => [g.goalId, g.nextStep || ""])),
-    ...Object.fromEntries((data.saved?.entries || []).filter((e) => e.nextAction).map((e) => [String(e.goal), e.nextAction])),
-  }));
   const [notes, setNotes] = useState(data.saved?.notes || "");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +20,7 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
   const save = async () => {
     setError("");
     try {
-      await os.post("/review", { date: data.week.start, notes, entries: data.goals.map((g) => ({ goal: g.goalId, nextAction: next[g.goalId] || "", mode: g.mode })) });
+      await os.post("/review", { date: data.week.start, notes, entries: data.goals.map((g) => ({ goal: g.goalId })) });
       setMsg("Review saved.");
       onSaved();
     } catch (err) {
@@ -60,10 +55,6 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
             </div>
           </dl>
           {g.window.next && <div className="os-note">{g.window.next.text}</div>}
-          <label className="os-form">
-            Next step (shows at this goal's next block)
-            <input value={next[g.goalId] || ""} onChange={(e) => setNext({ ...next, [g.goalId]: e.target.value })} placeholder="The next concrete step" />
-          </label>
         </Card>
       ))}
       <Card title="Notes">
@@ -78,14 +69,14 @@ function ReviewForm({ data, onSaved }: { data: Data; onSaved: () => void }) {
   );
 }
 
-/** The weekend review: check-ins this week, the window, and next week's next step for each goal. */
+/** The weekend review: check-ins this week and the window for each goal, plus notes. */
 export default function ReviewPage() {
   const { data, error, reload } = useLoad<Data>(() => os.get("/review").then((r) => r.data));
   if (error) return <ErrorNote text={error} />;
   if (!data) return <Loading />;
   return (
     <div className="os-page">
-      <PageHead title="Weekly review" sub={`Week of ${shortDate(data.week.start)} to ${shortDate(data.week.end)} · Saturday or Sunday, 2:00 to 2:30 PM. Where each goal stands, and the next step for each so Monday starts itself.`} />
+      <PageHead title="Weekly review" sub={`Week of ${shortDate(data.week.start)} to ${shortDate(data.week.end)} · Saturday or Sunday, 2:00 to 2:30 PM. Where each goal stands this week, and anything to adjust.`} />
       <HowItWorks />
       <ReviewForm key={data.week.start + (data.saved ? "s" : "")} data={data} onSaved={reload} />
     </div>

@@ -9,8 +9,8 @@ type Settings = { brief: boolean; blocks: boolean; checkin: boolean; review: boo
 type Device = { _id: string; label: string; endpoint: string; lastOk: string | null; createdAt: string };
 
 const TYPES: [keyof Settings, string, string][] = [
-  ["brief", "Morning brief", "Your first block and its next step, tonight's dinner, anything due today."],
-  ["blocks", "Goal block starts", "The goal and its next step, when each goal block starts. Never for breaks."],
+  ["brief", "Morning brief", "Your first goal block, tonight's dinner, anything due today."],
+  ["blocks", "Goal block starts", "The goal, when each goal block starts. Never for breaks."],
   ["checkin", "Check-in at block end", "\"Moved it forward / Cleared it\" (buttons on Android). Skipped if you already checked in."],
   ["review", "Weekly review", "At your weekend slot, and Sunday 6 PM if it's still not done."],
   ["meals", "Meals", "Tonight's planned dinner at 4:30 PM; Sunday 4 PM if next week isn't planned."],

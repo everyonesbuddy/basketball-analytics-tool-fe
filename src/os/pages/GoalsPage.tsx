@@ -3,7 +3,6 @@ import os, { errorText } from "../api";
 import { Card, CategoryTag, ErrorNote, Loading, PageHead, Progress } from "../Bits";
 import GoalForm from "../GoalForm";
 import HowItWorks from "../HowItWorks";
-import NextStep from "../NextStep";
 import QuickLog, { CheckedIn, ModeReminders } from "../QuickLog";
 import { CATEGORY_COLOR, shortDate } from "../format";
 import type { CategoryInfo, Framework, Goal, GoalLog, Today, TodayGoal } from "../types";
@@ -115,7 +114,6 @@ function GoalCard({ info, row, onChanged }: { info: CategoryInfo; row: TodayGoal
               </div>
             )}
           </dl>
-          <NextStep goalId={g._id} value={g.nextStep || ""} onSaved={onChanged} />
           {g.percent >= 100 ? (
             <p className="os-ok">Cleared for this period.</p>
           ) : (
@@ -174,7 +172,7 @@ export default function GoalsPage() {
 
   return (
     <div className="os-page">
-      <PageHead title="Goals & schedule" sub="Your six goals, one per category, each with its window, its next step and today's check-in." />
+      <PageHead title="Goals & schedule" sub="Your six goals, one per category, each with its window and today's check-in." />
       <HowItWorks open />
       <Card>
         <ModeReminders />

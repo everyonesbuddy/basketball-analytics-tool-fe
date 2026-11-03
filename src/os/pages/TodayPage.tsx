@@ -67,7 +67,7 @@ export default function TodayPage() {
                     <QuickLog goalId={b.goalId} block={b.start} links onSaved={reload} />
                   )}
                 </div>
-                {b.goalTitle && <div className="os-muted os-small">{b.label}{b.nextStep && !b.past ? ` · next step: ${b.nextStep}` : ""}</div>}
+                {b.goalTitle && <div className="os-muted os-small">{b.label}</div>}
               </div>
             </li>
           ))}
