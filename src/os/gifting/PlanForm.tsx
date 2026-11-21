@@ -10,13 +10,13 @@ const GROUP_LABEL: Record<Group, string> = { child: "Children", young: "Young ad
  * Plan a gift: a group on a budget (like December in Nigeria) or one person's
  * hamper. The suggestion updates as you type; save it to get a checklist.
  */
-export default function PlanForm({ data, personId, onSaved, onCancel }: { data: Overview; personId?: string; onSaved: (id: string) => void; onCancel?: () => void }) {
+export default function PlanForm({ data, personId, budget, onSaved, onCancel }: { data: Overview; personId?: string; budget?: number; onSaved: (id: string) => void; onCancel?: () => void }) {
   const person = data.people.find((p) => p._id === personId);
   const [kind, setKind] = useState<"group" | "one">(person ? "one" : "group");
   const [title, setTitle] = useState(person ? `Gift for ${person.name}` : "December in Nigeria");
   const [date, setDate] = useState("");
   const [group, setGroup] = useState<GroupInputs>({ budget: 150, counts: { child: 10, young: 5, adult: 10, elder: 3 }, special: 2, womenShare: 0.5, suitcases: 1 });
-  const [one, setOne] = useState<OneInputs>({ budget: 50, relationship: person?.relationship || "mother", likes: person?.likes || "", services: person ? Boolean(person.servicesOk) : true, where: "any" });
+  const [one, setOne] = useState<OneInputs>({ budget: budget && budget > 0 ? budget : 50, relationship: person?.relationship || "mother", likes: person?.likes || "", services: person ? Boolean(person.servicesOk) : true, where: "any" });
   const [who, setWho] = useState(personId || "");
   const [result, setResult] = useState<GroupResult | HamperResult | null>(null);
   const [error, setError] = useState("");

@@ -12,6 +12,7 @@ export interface Person {
   sizes: { shirt: string; shoe: string };
   likes: string;
   servicesOk?: boolean;
+  inCircle?: boolean;
   notes: string;
   gifts: { _id?: string; date: string; what: string; cost: number | null }[];
 }
@@ -117,7 +118,9 @@ export interface Idea {
 }
 
 export interface Reminder {
-  kind: "date" | "overdue" | "shop" | "pack" | "nudge";
+  kind: "date" | "overdue" | "shop" | "pack" | "nudge" | "care" | "circle";
+  size?: "small" | "big";
+  ideaKey?: string;
   personId?: string;
   planId?: string;
   priority: number;
@@ -135,4 +138,84 @@ export interface Overview {
     groups: { key: Group; name: string }[];
     packaging: { theme: string; note: string };
   };
+}
+
+// ── Care for your wife, and the gift circle ──────────────────────────────
+
+export type CareKind = "pamper" | "active" | "social" | "quality" | "service" | "words" | "surprise";
+
+export interface CareIdea {
+  key: string;
+  title: string;
+  size: "small" | "big";
+  kind: CareKind;
+  price: number;
+  lead: number;
+  find: string | null;
+  how: string;
+  fits?: boolean;
+  links: { label: string; url: string }[];
+}
+
+export interface CareDue {
+  every: number;
+  lastDone: string | null;
+  since: number | null;
+  nextOn: string;
+  due: boolean;
+  planned: { id: string; title: string; on: string } | null;
+}
+
+export interface CircleNext {
+  personId: string;
+  name: string;
+  relationship: string;
+  last: string | null;
+  since: number | null;
+  hamper: { key: string; name: string; total: number; items: string[] };
+  service: { key: string; name: string; price: number } | null;
+}
+
+export interface CareEntry {
+  _id: string;
+  kind: "care" | "circle";
+  ideaKey: string | null;
+  size: "small" | "big" | null;
+  personId: string | null;
+  title: string;
+  status: "planned" | "done" | "skipped";
+  date: string;
+  plannedFor: string | null;
+  cost: number | null;
+  note: string;
+}
+
+export interface CarePrefs {
+  spouseId: string | null;
+  spouseName: string;
+  likesKinds: CareKind[];
+  dislikes: string[];
+  wishlist: string;
+  budgetSmall: number;
+  budgetBig: number;
+  smallEveryDays: number;
+  bigEveryDays: number;
+  circleOn: boolean;
+  circleEveryDays: number;
+  circleBudget: number;
+  circleRelationships: string[];
+}
+
+export interface CareView {
+  today: string;
+  prefs: CarePrefs;
+  spouse: { _id: string; name: string } | null;
+  kinds: Record<CareKind, string>;
+  ideas: CareIdea[];
+  suggestions: { big: CareIdea[]; small: CareIdea[] };
+  due: { small: CareDue; big: CareDue };
+  circle: { every: number; budget: number; lastDone: string | null; nextOn: string; due: boolean; planned: { id: string; personId: string; title: string; on: string | null } | null; next: CircleNext[]; eligible: number };
+  log: CareEntry[];
+  people: { _id: string; name: string; relationship: string; inCircle: boolean; last: string | null }[];
+  relationships: { key: string; name: string }[];
 }

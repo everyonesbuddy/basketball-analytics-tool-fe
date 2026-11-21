@@ -339,3 +339,12 @@
 .os-notify-type { align-items: flex-start !important; }
 .os-notify-type input { margin-top: 3px; }
 .os-notify-type > span { display: grid; gap: 1px; }
+
+/* Gifting: care ideas and the gift circle */
+.os-idea { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); align-content: start; }
+.os-idea--big { border-color: #f9a8d4; background: #fff7fb; }
+.os-idea__head { display: grid; gap: 2px; }
+.os-idea__head strong { display: inline-flex; align-items: center; gap: 6px; }
+.os-idea .os-row a { display: inline-flex; align-items: center; gap: 4px; }
+.os-chip--on { border-color: #db2777; color: #9d174d; background: #fdf2f8; padding-right: 10px; }
+button.os-chip { cursor: pointer; padding-right: 10px; }
