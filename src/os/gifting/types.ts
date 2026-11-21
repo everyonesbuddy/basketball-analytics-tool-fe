@@ -166,10 +166,11 @@ export interface CareDue {
   planned: { id: string; title: string; on: string } | null;
 }
 
+/** A kind of person in the gift circle (an uncle, a friend…), with a hamper idea. */
 export interface CircleNext {
-  personId: string;
-  name: string;
   relationship: string;
+  name: string; // "Uncle"
+  phrase: string; // "an uncle"
   last: string | null;
   since: number | null;
   hamper: { key: string; name: string; total: number; items: string[] };
@@ -181,7 +182,9 @@ export interface CareEntry {
   kind: "care" | "circle";
   ideaKey: string | null;
   size: "small" | "big" | null;
-  personId: string | null;
+  personId: string | null; // older circle entries
+  relationship?: string | null;
+  who?: string;
   title: string;
   status: "planned" | "done" | "skipped";
   date: string;
@@ -214,7 +217,7 @@ export interface CareView {
   ideas: CareIdea[];
   suggestions: { big: CareIdea[]; small: CareIdea[] };
   due: { small: CareDue; big: CareDue };
-  circle: { every: number; budget: number; lastDone: string | null; nextOn: string; due: boolean; planned: { id: string; personId: string; title: string; on: string | null } | null; next: CircleNext[]; eligible: number };
+  circle: { every: number; budget: number; lastDone: string | null; nextOn: string; due: boolean; planned: { id: string; relationship: string | null; who: string; title: string; on: string | null } | null; next: CircleNext[]; eligible: number };
   log: CareEntry[];
   people: { _id: string; name: string; relationship: string; inCircle: boolean; last: string | null }[];
   relationships: { key: string; name: string }[];

@@ -99,12 +99,14 @@ function NewPlanRoute({ data, reload }: { data: Overview; reload: () => void }) 
   const navigate = useNavigate();
   const person = params.get("person") || undefined;
   const budget = Number(params.get("budget")) || undefined;
+  const relationship = params.get("relationship") || undefined;
   return (
     <PlanForm
-      key={`${person || "new"}:${budget || ""}`}
+      key={`${person || "new"}:${budget || ""}:${relationship || ""}`}
       data={data}
       personId={person}
       budget={budget}
+      relationship={relationship}
       onSaved={(id) => {
         reload();
         navigate(`/gifting/plan/${id}`);
@@ -141,7 +143,7 @@ export default function GiftingPage() {
       <Routes>
         <Route index element={<ComingUp data={data} />} />
         <Route path="care" element={<CareTab />} />
-        <Route path="circle" element={<CircleTab onPeopleChanged={refresh} />} />
+        <Route path="circle" element={<CircleTab />} />
         <Route path="new" element={<NewPlanRoute data={data} reload={refresh} />} />
         <Route path="plan/:id" element={<PlanRoute data={data} reload={refresh} />} />
         <Route path="people" element={<PeopleTab data={data} onChanged={refresh} onPlan={(id) => navigate(`/gifting/new?person=${id}`)} />} />
