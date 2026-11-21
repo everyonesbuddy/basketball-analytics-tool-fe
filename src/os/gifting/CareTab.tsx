@@ -13,7 +13,7 @@ const dueText = (d: CareDue, what: string) => {
 };
 
 /** One idea with its actions: plan it for a date, did it, not now, never. */
-export function IdeaCard({ idea, kinds, onLog, onNever, big = false }: { idea: CareIdea; kinds: Record<CareKind, string>; onLog: (status: "planned" | "done" | "skipped", plannedFor?: string) => void; onNever?: () => void; big?: boolean }) {
+export function IdeaCard({ idea, kinds, onLog, onNever, big = false, compact = false }: { idea: CareIdea; kinds: Record<CareKind, string>; onLog: (status: "planned" | "done" | "skipped", plannedFor?: string) => void; onNever?: () => void; big?: boolean; compact?: boolean }) {
   const [planning, setPlanning] = useState(false);
   const [on, setOn] = useState("");
   return (
@@ -54,10 +54,12 @@ export function IdeaCard({ idea, kinds, onLog, onNever, big = false }: { idea: C
           <button className="os-btn os-btn--small" onClick={() => onLog("done")}>
             <FiCheck /> Did it
           </button>
-          <button className="os-btn os-btn--small os-btn--ghost" onClick={() => onLog("skipped")} title="Suggest something else; this comes back in 2 weeks">
-            Not now
-          </button>
-          {onNever && (
+          {!compact && (
+            <button className="os-btn os-btn--small os-btn--ghost" onClick={() => onLog("skipped")} title="Suggest something else; this comes back in 2 weeks">
+              Not now
+            </button>
+          )}
+          {onNever && !compact && (
             <button className="os-btn os-btn--small os-btn--ghost" onClick={onNever} title="She's not into this; never suggest it">
               Not her thing
             </button>
@@ -164,6 +166,7 @@ function Settings({ view, onSave }: { view: CareView; onSave: (p: Partial<CarePr
 export default function CareTab() {
   const { view, error, act } = useCare();
   const [kindFilter, setKindFilter] = useState<CareKind | "all">("all");
+  const [showAll, setShowAll] = useState(false);
   if (!view) return error ? <ErrorNote text={error} /> : <Loading />;
   const her = view.prefs.spouseName || "her";
   const log = (idea: CareIdea, status: "planned" | "done" | "skipped", plannedFor?: string) => act(() => os.post("/gifting/care/log", { kind: "care", ideaKey: idea.key, status, plannedFor }));
@@ -228,7 +231,17 @@ export default function CareTab() {
         )}
       </Card>
 
-      <Card title="Every idea" sub="Pick one yourself any time.">
+      <Card
+        title="Every idea"
+        sub={`${view.ideas.length - view.prefs.dislikes.length} ideas. Pick one yourself any time.`}
+        right={
+          <button className="os-btn os-btn--small" onClick={() => setShowAll(!showAll)}>
+            {showAll ? "Hide" : "Show all"}
+          </button>
+        }
+      >
+        {showAll && (
+        <>
         <div className="os-row" style={{ marginBottom: 12 }}>
           <button className={`os-chip ${kindFilter === "all" ? "os-chip--on" : ""}`} onClick={() => setKindFilter("all")}>
             All
@@ -241,9 +254,11 @@ export default function CareTab() {
         </div>
         <div className="os-grid3">
           {ideas.map((i) => (
-            <IdeaCard key={i.key} idea={i} kinds={view.kinds} onLog={(s, on) => log(i, s, on)} onNever={() => never(i)} />
+            <IdeaCard key={i.key} idea={i} kinds={view.kinds} compact onLog={(s, on) => log(i, s, on)} />
           ))}
         </div>
+        </>
+        )}
         {view.prefs.dislikes.length > 0 && (
           <p className="os-small os-muted" style={{ marginTop: 12 }}>
             Not her thing: {view.prefs.dislikes.map((k) => view.ideas.find((i) => i.key === k)?.title || k).join(", ")}.{" "}
