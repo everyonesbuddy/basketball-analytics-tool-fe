@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { noteName, midiOf, STRINGS, type StringName } from "./theory";
 
 export type DotRole = "now" | "next" | "later" | "hit" | "wrong" | "shape" | "heard";
@@ -40,9 +41,19 @@ export default function Fretboard({ dots = [], frets = 12, names = false, onTap 
   const centerX = (n: number) => (n === 0 ? nut - 24 : (fretX(n - 1) + fretX(n)) / 2);
   const strY = (s: StringName) => y0 + top.indexOf(s) * rowH;
 
+  // On a narrow screen the neck scrolls sideways: keep the note to play in view.
+  const wrap = useRef<HTMLDivElement>(null);
+  const now = dots.find((d) => d.role === "now");
+  const nowX = now ? centerX(now.fret) / W : null;
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el || nowX === null || el.scrollWidth <= el.clientWidth) return;
+    el.scrollTo({ left: Math.max(0, nowX * el.scrollWidth - el.clientWidth / 2), behavior: "smooth" });
+  }, [nowX]);
+
   return (
-    <div className="os-fretboard-wrap">
-    <svg viewBox={`0 0 ${W} ${H}`} className="os-fretboard" role="img" aria-label="Bass fretboard">
+    <div className="os-fretboard-wrap" ref={wrap}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="os-fretboard" style={{ minWidth: 90 + frets * 46 }} role="img" aria-label="Bass fretboard">
       <rect x={nut} y={y0 - 12} width={W - nut - right} height={rowH * (top.length - 1) + 24} rx={4} fill="#3b2a1e" />
       {MARKERS.filter((m) => m <= frets).map((m) => (
         <circle key={m} cx={centerX(m)} cy={y0 + rowH * 2} r={6} fill="#d6c7b0" opacity={0.7} />

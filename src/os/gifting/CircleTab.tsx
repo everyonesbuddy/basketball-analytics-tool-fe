@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiCheck, FiClock, FiGift, FiSkipForward } from "react-icons/fi";
+import { FiCalendar, FiCheck, FiGift, FiShoppingBag, FiSkipForward } from "react-icons/fi";
 import os from "../api";
 import { Card, ErrorNote, Loading } from "../Bits";
 import { shortDate } from "../format";
@@ -9,6 +9,13 @@ import { useCare } from "./useCare";
 import type { CarePrefs, CareView, CircleNext } from "./types";
 
 const ago = (n: CircleNext) => (n.last ? `last gift ${n.since} days ago` : "no gift logged yet");
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
 
 /** The person up next, with a hamper and a service idea, and what to do about it. */
 function NextUp({ n, view, act }: { n: CircleNext; view: CareView; act: ReturnType<typeof useCare>["act"] }) {
@@ -19,27 +26,41 @@ function NextUp({ n, view, act }: { n: CircleNext; view: CareView; act: ReturnTy
   const rel = view.relationships.find((r) => r.key === n.relationship)?.name || n.relationship;
   const log = (status: "planned" | "done" | "skipped", extra: Record<string, unknown> = {}) => act(() => os.post("/gifting/care/log", { kind: "circle", personId: n.personId, title: extra.title || `${n.hamper.name} hamper`, status, ...extra }));
   return (
-    <div className="os-idea os-idea--big">
-      <div className="os-idea__head">
-        <strong>
-          <FiGift /> {n.name}
-        </strong>
-        <span className="os-small os-muted">
-          {rel} · {ago(n)}
+    <div className="os-circle">
+      <div className="os-circle__who">
+        <span className="os-avatar os-avatar--big">{initials(n.name)}</span>
+        <span>
+          <strong>{n.name}</strong>
+          <span className="os-small os-muted">
+            {rel} · {ago(n)}
+          </span>
         </span>
       </div>
-      <p className="os-flat">
-        <strong>Idea:</strong> a {n.hamper.name.toLowerCase()} hamper, about ${Math.round(n.hamper.total)}
-        {n.hamper.items.length > 0 && <span className="os-small os-muted"> ({n.hamper.items.join(", ")})</span>}
-      </p>
-      {n.service && (
-        <p className="os-small os-flat">
-          Or a service: {n.service.name.toLowerCase()}, about ${n.service.price}.
-        </p>
-      )}
+      <div className="os-circle__idea">
+        <span className="os-circle__label">
+          <FiGift /> The idea
+        </span>
+        <strong>
+          A {n.hamper.name.toLowerCase()} hamper <span className="os-muted">· about ${Math.round(n.hamper.total)}</span>
+        </strong>
+        {n.hamper.items.length > 0 && (
+          <div className="os-row os-circle__items">
+            {n.hamper.items.map((it) => (
+              <span key={it} className="os-pill">
+                {it}
+              </span>
+            ))}
+          </div>
+        )}
+        {n.service && (
+          <span className="os-small os-muted">
+            Or a service instead: {n.service.name.toLowerCase()}, about ${n.service.price}.
+          </span>
+        )}
+      </div>
       {mode === "plan" ? (
-        <div className="os-row">
-          <input type="date" value={on} onChange={(e) => setOn(e.target.value)} aria-label="Send it on" />
+        <div className="os-care__actions">
+          <input type="date" className="os-input" value={on} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setOn(e.target.value)} aria-label="Send it on" autoFocus />
           <button className="os-btn os-btn--small os-btn--primary" disabled={!on} onClick={() => log("planned", { plannedFor: on })}>
             Save
           </button>
@@ -48,9 +69,12 @@ function NextUp({ n, view, act }: { n: CircleNext; view: CareView; act: ReturnTy
           </button>
         </div>
       ) : mode === "gave" ? (
-        <div className="os-row">
-          <input value={what} onChange={(e) => setWhat(e.target.value)} aria-label="What you gave" style={{ minWidth: 200 }} />
-          <input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)} aria-label="Cost" style={{ width: 90 }} />
+        <div className="os-care__actions">
+          <input className="os-input" value={what} onChange={(e) => setWhat(e.target.value)} aria-label="What you gave" style={{ flex: "1 1 200px" }} />
+          <span className="os-prefix" style={{ width: 110 }}>
+            <span>$</span>
+            <input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)} aria-label="Cost" />
+          </span>
           <button className="os-btn os-btn--small os-btn--primary" onClick={() => log("done", { title: what, cost: Number(cost) || null })}>
             Save
           </button>
@@ -59,19 +83,21 @@ function NextUp({ n, view, act }: { n: CircleNext; view: CareView; act: ReturnTy
           </button>
         </div>
       ) : (
-        <div className="os-row">
+        <div className="os-care__actions">
           <Link className="os-btn os-btn--small os-btn--primary" to={`/gifting/new?person=${n.personId}&budget=${view.prefs.circleBudget}`}>
-            Build the hamper
+            <FiShoppingBag /> Build the hamper
           </Link>
           <button className="os-btn os-btn--small" onClick={() => setMode("plan")}>
-            <FiClock /> Plan a date
+            <FiCalendar /> Plan a date
           </button>
           <button className="os-btn os-btn--small" onClick={() => setMode("gave")}>
             <FiCheck /> Gave it
           </button>
-          <button className="os-btn os-btn--small os-btn--ghost" onClick={() => log("skipped")} title="Someone else this time; they come back in 2 weeks">
-            <FiSkipForward /> Someone else
-          </button>
+          <span className="os-care__later">
+            <button className="os-link os-link--muted" onClick={() => log("skipped")} title="Someone else this time; they come back in 2 weeks">
+              <FiSkipForward /> Someone else
+            </button>
+          </span>
         </div>
       )}
     </div>
@@ -85,24 +111,28 @@ function Settings({ view, onSave, onPerson }: { view: CareView; onSave: (p: Part
   const inScope = view.people.filter((x) => x._id !== view.prefs.spouseId && x.relationship !== "wife");
   return (
     <Card title="How the circle works" sub="Every few weeks, the person who's gone longest without a gift comes up, with an idea in your budget.">
+      <div className="os-form os-settings">
       <label className="os-check">
-        <input type="checkbox" checked={p.circleOn} onChange={(e) => setP({ ...p, circleOn: e.target.checked })} /> Remind me
+        <input type="checkbox" checked={p.circleOn} onChange={(e) => setP({ ...p, circleOn: e.target.checked })} /> Remind me when someone's up
       </label>
-      <div className="os-grid4" style={{ marginTop: 8 }}>
+      <div className="os-grid4">
         <label>
           Someone every
-          <span className="os-row">
-            <input type="number" min={14} max={180} value={p.circleEveryDays} onChange={(e) => setP({ ...p, circleEveryDays: Number(e.target.value) || 45 })} /> days
+          <span className="os-suffix">
+            <input type="number" min={14} max={180} value={p.circleEveryDays} onChange={(e) => setP({ ...p, circleEveryDays: Number(e.target.value) || 45 })} />
+            <span>days</span>
           </span>
         </label>
         <label>
-          Budget each ($)
-          <input type="number" min={10} value={p.circleBudget} onChange={(e) => setP({ ...p, circleBudget: Number(e.target.value) || 50 })} />
+          Budget each
+          <span className="os-prefix">
+            <span>$</span>
+            <input type="number" min={10} value={p.circleBudget} onChange={(e) => setP({ ...p, circleBudget: Number(e.target.value) || 50 })} />
+          </span>
         </label>
       </div>
-      <p className="os-small os-muted os-flat" style={{ marginTop: 12 }}>
+      <div className="os-field">
         Who's in it
-      </p>
       <div className="os-row">
         {rels.map((r) => (
           <button key={r.key} type="button" className={`os-chip ${p.circleRelationships.includes(r.key) ? "os-chip--on" : ""}`} onClick={() => toggle(r.key)}>
@@ -110,26 +140,30 @@ function Settings({ view, onSave, onPerson }: { view: CareView; onSave: (p: Part
           </button>
         ))}
       </div>
+      </div>
       <div className="os-actions">
         <button className="os-btn os-btn--primary" onClick={() => onSave({ circleOn: p.circleOn, circleEveryDays: p.circleEveryDays, circleBudget: p.circleBudget, circleRelationships: p.circleRelationships })}>
           Save
         </button>
       </div>
       {inScope.length > 0 && (
-        <>
-          <p className="os-small os-muted" style={{ marginTop: 16 }}>
-            Untick anyone who shouldn't come up.
-          </p>
-          <div className="os-grid3">
+        <div className="os-field">
+          People (untick anyone who shouldn't come up)
+          <div className="os-peoplegrid">
             {inScope.map((x) => (
-              <label key={x._id} className="os-check">
-                <input type="checkbox" checked={x.inCircle} onChange={(e) => onPerson(x._id, e.target.checked)} /> {x.name}
-                <span className="os-small os-muted"> · {x.last ? `last gift ${shortDate(x.last)}` : "no gift yet"}</span>
+              <label key={x._id} className={`os-person ${x.inCircle ? "" : "off"}`}>
+                <input type="checkbox" checked={x.inCircle} onChange={(e) => onPerson(x._id, e.target.checked)} />
+                <span className="os-avatar">{initials(x.name)}</span>
+                <span>
+                  <strong>{x.name}</strong>
+                  <small>{x.last ? `last gift ${shortDate(x.last)}` : "no gift yet"}</small>
+                </span>
               </label>
             ))}
           </div>
-        </>
+        </div>
       )}
+      </div>
     </Card>
   );
 }
@@ -155,32 +189,49 @@ export default function CircleTab({ onPeopleChanged }: { onPeopleChanged?: () =>
           </p>
         </Card>
       ) : (
-        <Card title="Up next" sub={`${status} · every ${c.every} days, about $${c.budget} each`} accent={c.due ? "#db2777" : undefined}>
+        <Card title="Up next" sub={`${status} · every ${c.every} days, about $${c.budget} each`} accent={c.due && !c.planned ? "#db2777" : undefined} right={c.due && !c.planned ? <span className="os-tag os-tag--due">Due</span> : undefined}>
           {c.planned ? (
-            <div className="os-row">
-              <span>
-                {c.planned.title} for {nameOf(c.planned.personId)}
+            <div className="os-care os-care--planned">
+              <span className="os-care__when">
+                <FiCalendar /> {c.planned.on ? shortDate(c.planned.on, true) : "Planned"}
               </span>
-              <button className="os-btn os-btn--small os-btn--primary" onClick={() => act(() => os.patch(`/gifting/care/log/${c.planned!.id}`, { status: "done" }))}>
-                <FiCheck /> Sent it
-              </button>
+              <strong className="os-care__title">
+                {c.planned.title} for {nameOf(c.planned.personId)}
+              </strong>
+              <div className="os-care__actions">
+                <button className="os-btn os-btn--small os-btn--primary" onClick={() => act(() => os.patch(`/gifting/care/log/${c.planned!.id}`, { status: "done" }))}>
+                  <FiCheck /> Sent it
+                </button>
+                <button className="os-link os-link--muted" onClick={() => act(() => os.delete(`/gifting/care/log/${c.planned!.id}`))}>
+                  Cancel the plan
+                </button>
+              </div>
             </div>
           ) : (
             first && <NextUp key={first.personId} n={first} view={view} act={act} />
           )}
           {after.length > 0 && (
-            <p className="os-small os-muted" style={{ marginTop: 12 }}>
-              After them: {after.map((n) => `${n.name} (${ago(n)})`).join(", ")}.
-            </p>
+            <div className="os-queue">
+              <span className="os-circle__label">After them</span>
+              <ol>
+                {after.map((n) => (
+                  <li key={n.personId}>
+                    <span className="os-avatar">{initials(n.name)}</span>
+                    <strong>{n.name}</strong>
+                    <span className="os-small os-muted">{ago(n)}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           )}
         </Card>
       )}
 
       <Card title="Circle gifts">
         {entries.length === 0 ? (
-          <p className="os-muted os-flat">None yet.</p>
+          <p className="os-muted os-flat">None yet. When you give one, it shows here and on their gift history.</p>
         ) : (
-          <ul className="os-list">
+          <ul className="os-loglist">
             {entries.slice(0, 15).map((e) => (
               <LogRow key={e._id} e={e} who={nameOf(e.personId)} onDone={() => act(() => os.patch(`/gifting/care/log/${e._id}`, { status: "done" }))} onRemove={() => act(() => os.delete(`/gifting/care/log/${e._id}`))} />
             ))}
