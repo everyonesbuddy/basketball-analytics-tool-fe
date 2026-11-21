@@ -8,6 +8,7 @@ import CareTab from "../gifting/CareTab";
 import CircleTab from "../gifting/CircleTab";
 import PeopleTab from "../gifting/PeopleTab";
 import PlanDetail from "../gifting/PlanDetail";
+import GiftingHow from "../gifting/GiftingHow";
 import PlanForm from "../gifting/PlanForm";
 import type { GroupResult, HamperResult, Overview, Plan, Reminder } from "../gifting/types";
 import { daysTo, usd } from "../gifting/util";
@@ -99,12 +100,14 @@ function NewPlanRoute({ data, reload }: { data: Overview; reload: () => void }) 
   const navigate = useNavigate();
   const person = params.get("person") || undefined;
   const budget = Number(params.get("budget")) || undefined;
+  const relationship = params.get("relationship") || undefined;
   return (
     <PlanForm
-      key={`${person || "new"}:${budget || ""}`}
+      key={`${person || "new"}:${budget || ""}:${relationship || ""}`}
       data={data}
       personId={person}
       budget={budget}
+      relationship={relationship}
       onSaved={(id) => {
         reload();
         navigate(`/gifting/plan/${id}`);
@@ -128,6 +131,7 @@ export default function GiftingPage() {
   return (
     <div className="os-page">
       <PageHead title="Gifting" sub="Looking after your wife, surprising the people you love now and then, and planning gifts on a budget." />
+      <GiftingHow wifeName={data.people.find((p) => p.relationship === "wife")?.name} />
       <SubNav
         items={[
           ["/gifting", "Coming up", true],
@@ -141,7 +145,7 @@ export default function GiftingPage() {
       <Routes>
         <Route index element={<ComingUp data={data} />} />
         <Route path="care" element={<CareTab />} />
-        <Route path="circle" element={<CircleTab onPeopleChanged={refresh} />} />
+        <Route path="circle" element={<CircleTab />} />
         <Route path="new" element={<NewPlanRoute data={data} reload={refresh} />} />
         <Route path="plan/:id" element={<PlanRoute data={data} reload={refresh} />} />
         <Route path="people" element={<PeopleTab data={data} onChanged={refresh} onPlan={(id) => navigate(`/gifting/new?person=${id}`)} />} />
