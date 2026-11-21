@@ -4,6 +4,8 @@ import os from "../api";
 import { Card, ErrorNote, Loading, PageHead, Progress } from "../Bits";
 import { SubNav } from "../gifting/SubNav";
 import IdeasTab from "../gifting/IdeasTab";
+import CareTab from "../gifting/CareTab";
+import CircleTab from "../gifting/CircleTab";
 import PeopleTab from "../gifting/PeopleTab";
 import PlanDetail from "../gifting/PlanDetail";
 import PlanForm from "../gifting/PlanForm";
@@ -12,7 +14,7 @@ import { daysTo, usd } from "../gifting/util";
 import { shortDate } from "../format";
 import { useLoad } from "../useLoad";
 
-const REMINDER_TAG: Record<Reminder["kind"], string> = { date: "Coming up", overdue: "It's been a while", shop: "Shop", pack: "Pack", nudge: "Gift someone" };
+const REMINDER_TAG: Record<Reminder["kind"], string> = { date: "Coming up", overdue: "It's been a while", shop: "Shop", pack: "Pack", nudge: "Gift someone", care: "For her", circle: "Gift circle" };
 
 function PlanCard({ p, data }: { p: Plan; data: Overview }) {
   const bought = p.checklist.filter((c) => c.bought).length;
@@ -44,7 +46,7 @@ function ComingUp({ data }: { data: Overview }) {
             {data.reminders.map((r, i) => (
               <li key={i}>
                 <span className="os-tag os-tag--warn">{REMINDER_TAG[r.kind]}</span> {r.text}{" "}
-                {r.planId ? <Link to={`/gifting/plan/${r.planId}`}>Open plan</Link> : r.personId ? <Link to={`/gifting/new?person=${r.personId}`}>Plan a gift</Link> : <Link to="/gifting/new">Plan a gift</Link>}
+                {r.kind === "care" ? <Link to="/gifting/care">See ideas</Link> : r.kind === "circle" ? <Link to="/gifting/circle">See the idea</Link> : r.planId ? <Link to={`/gifting/plan/${r.planId}`}>Open plan</Link> : r.personId ? <Link to={`/gifting/new?person=${r.personId}`}>Plan a gift</Link> : <Link to="/gifting/new">Plan a gift</Link>}
               </li>
             ))}
           </ul>
@@ -96,11 +98,13 @@ function NewPlanRoute({ data, reload }: { data: Overview; reload: () => void }) 
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const person = params.get("person") || undefined;
+  const budget = Number(params.get("budget")) || undefined;
   return (
     <PlanForm
-      key={person || "new"}
+      key={`${person || "new"}:${budget || ""}`}
       data={data}
       personId={person}
+      budget={budget}
       onSaved={(id) => {
         reload();
         navigate(`/gifting/plan/${id}`);
@@ -123,10 +127,12 @@ export default function GiftingPage() {
   };
   return (
     <div className="os-page">
-      <PageHead title="Gifting" sub="Who to gift soon, what to give, and how to package it, on budget." />
+      <PageHead title="Gifting" sub="Looking after your wife, surprising the people you love now and then, and planning gifts on a budget." />
       <SubNav
         items={[
           ["/gifting", "Coming up", true],
+          ["/gifting/care", `For ${data.people.find((p) => p.relationship === "wife")?.name || "my wife"}`],
+          ["/gifting/circle", "Gift circle"],
           ["/gifting/new", "Plan a gift"],
           ["/gifting/people", `People (${data.people.length})`],
           ["/gifting/ideas", `Ideas (${data.ideas.length})`],
@@ -134,6 +140,8 @@ export default function GiftingPage() {
       />
       <Routes>
         <Route index element={<ComingUp data={data} />} />
+        <Route path="care" element={<CareTab />} />
+        <Route path="circle" element={<CircleTab onPeopleChanged={refresh} />} />
         <Route path="new" element={<NewPlanRoute data={data} reload={refresh} />} />
         <Route path="plan/:id" element={<PlanRoute data={data} reload={refresh} />} />
         <Route path="people" element={<PeopleTab data={data} onChanged={refresh} onPlan={(id) => navigate(`/gifting/new?person=${id}`)} />} />

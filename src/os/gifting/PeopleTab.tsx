@@ -38,6 +38,7 @@ function PersonForm({ data, person, onSaved, onCancel }: { data: Overview; perso
     shoe: person?.sizes?.shoe || "",
     likes: person?.likes || "",
     servicesOk: Boolean(person?.servicesOk),
+    inCircle: person?.inCircle !== false,
     notes: person?.notes || "",
   });
   const [error, setError] = useState("");
@@ -55,6 +56,7 @@ function PersonForm({ data, person, onSaved, onCancel }: { data: Overview; perso
       sizes: { shirt: f.shirt, shoe: f.shoe },
       likes: f.likes,
       servicesOk: f.servicesOk,
+      inCircle: f.inCircle,
       notes: f.notes,
     };
     try {
@@ -111,6 +113,11 @@ function PersonForm({ data, person, onSaved, onCancel }: { data: Overview; perso
       <label className="os-check">
         <input type="checkbox" checked={f.servicesOk} onChange={(e) => setF({ ...f, servicesOk: e.target.checked })} /> Open to a service or experience instead of a thing (spa day, dinner, a class, data top-up)
       </label>
+      {f.relationship !== "wife" && (
+        <label className="os-check">
+          <input type="checkbox" checked={f.inCircle} onChange={(e) => setF({ ...f, inCircle: e.target.checked })} /> Can come up in the gift circle (a surprise gift every month or two)
+        </label>
+      )}
       {error && <ErrorNote text={error} />}
       <div className="os-actions">
         <button className="os-btn os-btn--primary" type="submit">{person ? "Save" : "Add person"}</button>

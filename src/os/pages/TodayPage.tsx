@@ -46,7 +46,7 @@ export default function TodayPage() {
             {attention.map((a, i) => (
               <li key={i}>
                 <span className="os-tag os-tag--warn">{ATTENTION_LABEL[a.kind]}</span> {a.text}{" "}
-                {a.kind === "review" ? <Link to="/review">Open review</Link> : a.kind === "gift" ? <Link to="/gifting">Open gifting</Link> : a.kind === "event" ? <Link to="/events/saved">Open events</Link> : a.kind === "food" ? <Link to="/food/week">Plan meals</Link> : <Link to="/goals">Open goals</Link>}
+                {a.kind === "review" ? <Link to="/review">Open review</Link> : a.kind === "gift" ? <Link to={a.to || "/gifting"}>{a.to ? "See ideas" : "Open gifting"}</Link> : a.kind === "event" ? <Link to="/events/saved">Open events</Link> : a.kind === "food" ? <Link to="/food/week">Plan meals</Link> : <Link to="/goals">Open goals</Link>}
               </li>
             ))}
           </ul>

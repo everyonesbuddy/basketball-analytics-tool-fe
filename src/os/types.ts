@@ -91,6 +91,7 @@ export interface TodayGoal {
 
 export interface Attention {
   kind: "missing" | "early" | "on-time" | "rollover" | "review" | "gift" | "event" | "food";
+  to?: string; // where its link goes, when not the usual page
   category?: Category;
   goalId?: string;
   text: string;

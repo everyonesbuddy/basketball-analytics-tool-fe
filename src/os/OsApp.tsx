@@ -15,6 +15,8 @@ import GiftingPage from "./pages/GiftingPage";
 import StylePage from "./pages/StylePage";
 import EventsPage from "./pages/EventsPage";
 import FoodPage from "./pages/FoodPage";
+import BassPage from "./pages/BassPage";
+import { GiGuitarBassHead } from "react-icons/gi";
 import { MdRestaurantMenu } from "react-icons/md";
 import NowBar from "./NowBar";
 import "./os.css";
@@ -37,6 +39,7 @@ const NAV: { title: string; items: Item[] }[] = [
       { to: "/gifting", label: "Gifting", icon: <FiGift /> },
       { to: "/style", label: "Style", icon: <FiFeather /> },
       { to: "/food", label: "Food", icon: <MdRestaurantMenu /> },
+      { to: "/bass", label: "Bass", icon: <GiGuitarBassHead /> },
     ],
   },
   {
@@ -88,6 +91,7 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
           <Route path="/style/*" element={<StylePage />} />
           <Route path="/events/*" element={<EventsPage />} />
           <Route path="/food/*" element={<FoodPage />} />
+          <Route path="/bass/*" element={<BassPage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />
