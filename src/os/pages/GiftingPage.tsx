@@ -8,6 +8,7 @@ import CareTab from "../gifting/CareTab";
 import CircleTab from "../gifting/CircleTab";
 import PeopleTab from "../gifting/PeopleTab";
 import PlanDetail from "../gifting/PlanDetail";
+import GiftingHow from "../gifting/GiftingHow";
 import PlanForm from "../gifting/PlanForm";
 import type { GroupResult, HamperResult, Overview, Plan, Reminder } from "../gifting/types";
 import { daysTo, usd } from "../gifting/util";
@@ -130,6 +131,7 @@ export default function GiftingPage() {
   return (
     <div className="os-page">
       <PageHead title="Gifting" sub="Looking after your wife, surprising the people you love now and then, and planning gifts on a budget." />
+      <GiftingHow wifeName={data.people.find((p) => p.relationship === "wife")?.name} />
       <SubNav
         items={[
           ["/gifting", "Coming up", true],
