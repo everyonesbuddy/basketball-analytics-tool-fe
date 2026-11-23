@@ -182,9 +182,11 @@ function OptionRow({ o, onTrack }: { o: OptionPick; onTrack: () => void }) {
 export default function IdeaCard({
   idea,
   onTracked,
+  openOptions = false,
 }: {
   idea: Idea;
   onTracked: () => void;
+  openOptions?: boolean;
 }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const up = idea.direction === "up";
@@ -303,6 +305,15 @@ export default function IdeaCard({
                 {money(idea.size.qty * idea.entry, 0)}, risking about{" "}
                 {money(idea.size.maxLoss, 0)} at the stop
               </>
+            ) : idea.size?.budget ? (
+              <>
+                one {idea.kind === "crypto" ? "coin" : "share"} risks{" "}
+                {money(Math.abs(idea.entry - idea.stop))} at the stop, more than
+                this base's {money(idea.size.budget, 0)} of your weekly risk.
+                {idea.kind === "crypto"
+                  ? " Buy a fraction, or skip it."
+                  : " Skip it, or raise the budget in Settings."}
+              </>
             ) : (
               "set a weekly risk budget in Settings to size it"
             )}
@@ -314,7 +325,7 @@ export default function IdeaCard({
       )}
 
       {idea.options && idea.options.length > 0 && (
-        <details className="os-tr-ladder">
+        <details className="os-tr-ladder" open={openOptions}>
           <summary>
             <strong>
               {idea.options.length} {up ? "call" : "put"}
