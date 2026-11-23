@@ -710,3 +710,4 @@ button.os-chip { cursor: pointer; padding-right: 10px; }
 .os-sp-futures .os-tr-tablewrap table, .os-sp-ratings .os-tr-tablewrap table { min-width: 460px; }
 .os-main, .os-page, .os-card { min-width: 0; }
 .os-sp-futures > *, .os-sp-ratings > * { min-width: 0; }
+.os-tr-idea > *, .os-tr-ideas > *, .os-tr-ladder > * { min-width: 0; }
