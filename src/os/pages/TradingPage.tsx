@@ -206,8 +206,13 @@ function Ideas({ view, reload }: { view: TradingView; reload: () => void }) {
         </Card>
       ) : (
         <div className="os-tr-ideas">
-          {ideas.map((i) => (
-            <IdeaCard key={i.id} idea={i} onTracked={reload} />
+          {ideas.map((i, n) => (
+            <IdeaCard
+              key={i.id}
+              idea={i}
+              onTracked={reload}
+              openOptions={n < 2}
+            />
           ))}
         </div>
       )}
