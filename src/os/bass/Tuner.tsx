@@ -48,7 +48,7 @@ export default function Tuner({ sensitivity = 1, onMinutes }: { sensitivity?: nu
   const hint = centsOff === null ? "" : inTune ? "In tune" : Math.abs(centsOff) > 100 ? (centsOff > 0 ? "Way sharp: loosen" : "Way flat: tighten") : centsOff > 0 ? `${centsOff} cents sharp: loosen a little` : `${-centsOff} cents flat: tighten a little`;
 
   return (
-    <Card title="Tuner" sub="Standard 5-string tuning, low to high: B E A D G. Play one open string at a time and let it ring.">
+    <Card title="Tuner" sub="Standard 4-string tuning, low to high: E A D G. Play one open string at a time and let it ring.">
       <div className="os-tuner">
         <div className={`os-tuner__display ${inTune ? "ok" : ""} ${on ? "on" : ""}`}>
           {n ? (

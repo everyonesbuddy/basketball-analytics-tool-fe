@@ -113,7 +113,7 @@ export default function BassPage() {
   };
   return (
     <div className="os-page">
-      <PageHead title="Bass" sub="Learn the 5-string by playing: see it on the neck, hear it, then play it while the app listens." />
+      <PageHead title="Bass" sub="Learn the 4-string by playing: see it on the neck, hear it, then play it while the app listens." />
       <SubNav
         items={[
           ["/bass", "Lessons", true],

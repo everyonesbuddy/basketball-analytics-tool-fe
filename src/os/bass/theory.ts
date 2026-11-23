@@ -1,15 +1,15 @@
 /**
- * 5-string bass basics: strings, notes, frequencies, and the note format
+ * 4-string bass basics: strings, notes, frequencies, and the note format
  * lessons are written in. No React here, so it's easy to test.
  *
- * Standard 5-string tuning, low to high: B0 E1 A1 D2 G2.
+ * Standard 4-string tuning, low to high: E1 A1 D2 G2.
  */
 
-export const STRINGS = ["B", "E", "A", "D", "G"] as const;
+export const STRINGS = ["E", "A", "D", "G"] as const;
 export type StringName = (typeof STRINGS)[number];
 
 /** MIDI number of each open string. */
-export const OPEN: Record<StringName, number> = { B: 23, E: 28, A: 33, D: 38, G: 43 };
+export const OPEN: Record<StringName, number> = { E: 28, A: 33, D: 38, G: 43 };
 
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -43,7 +43,7 @@ export function parse(text: string): Step[] {
   const out: Step[] = [];
   for (const tok of text.trim().split(/\s+/)) {
     if (!tok || tok === "|") continue;
-    const m = /^([BEADGr])(\d{0,2})(?:-(\d+(?:\.\d+)?))?$/.exec(tok);
+    const m = /^([EADGr])(\d{0,2})(?:-(\d+(?:\.\d+)?))?$/.exec(tok);
     if (!m) throw new Error(`Can't read "${tok}"`);
     const beats = m[3] ? Number(m[3]) : 1;
     if (m[1] === "r") {

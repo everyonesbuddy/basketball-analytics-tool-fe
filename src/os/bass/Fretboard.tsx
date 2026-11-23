@@ -23,12 +23,12 @@ const COLORS: Record<DotRole, { fill: string; stroke: string; text: string }> = 
 const MARKERS = [3, 5, 7, 9, 15, 17];
 
 /**
- * A 5-string bass neck seen from the front: G on top, low B at the bottom
+ * A 4-string bass neck seen from the front: G on top, low E at the bottom
  * (the way tab and diagrams show it). Dots show what to play; tap a fret to
  * hear it.
  */
 export default function Fretboard({ dots = [], frets = 12, names = false, onTap }: { dots?: Dot[]; frets?: number; names?: boolean; onTap?: (s: StringName, fret: number) => void }) {
-  const top = STRINGS.slice().reverse(); // G D A E B, top to bottom
+  const top = STRINGS.slice().reverse(); // G D A E, top to bottom
   const W = 900;
   const nut = 78;
   const right = 14;
@@ -56,12 +56,12 @@ export default function Fretboard({ dots = [], frets = 12, names = false, onTap 
     <svg viewBox={`0 0 ${W} ${H}`} className="os-fretboard" style={{ minWidth: 90 + frets * 46 }} role="img" aria-label="Bass fretboard">
       <rect x={nut} y={y0 - 12} width={W - nut - right} height={rowH * (top.length - 1) + 24} rx={4} fill="#3b2a1e" />
       {MARKERS.filter((m) => m <= frets).map((m) => (
-        <circle key={m} cx={centerX(m)} cy={y0 + rowH * 2} r={6} fill="#d6c7b0" opacity={0.7} />
+        <circle key={m} cx={centerX(m)} cy={y0 + rowH * (top.length - 1) / 2} r={6} fill="#d6c7b0" opacity={0.7} />
       ))}
       {frets >= 12 && (
         <>
-          <circle cx={centerX(12)} cy={y0 + rowH * 1} r={6} fill="#d6c7b0" opacity={0.7} />
-          <circle cx={centerX(12)} cy={y0 + rowH * 3} r={6} fill="#d6c7b0" opacity={0.7} />
+          <circle cx={centerX(12)} cy={y0 + rowH * ((top.length - 1) / 2 - 1)} r={6} fill="#d6c7b0" opacity={0.7} />
+          <circle cx={centerX(12)} cy={y0 + rowH * ((top.length - 1) / 2 + 1)} r={6} fill="#d6c7b0" opacity={0.7} />
         </>
       )}
       <rect x={nut - 5} y={y0 - 12} width={6} height={rowH * (top.length - 1) + 24} fill="#f5f0e6" />
