@@ -720,3 +720,7 @@ button.os-chip { cursor: pointer; padding-right: 10px; }
 .os-tr-why { margin-top: 8px; font-size: 0.86rem; }
 .os-tr-why summary { cursor: pointer; color: #475569; }
 .os-tr-why ul { margin: 8px 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.45; }
+
+/* Sports: shop range and filters */
+.os-sp-shop { display: grid; gap: 2px; font-size: 0.82rem; line-height: 1.4; padding: 8px 10px; border-radius: 8px; background: #f8fafc; width: 100%; box-sizing: border-box; }
+.os-sp-filter { margin-bottom: 10px; flex-wrap: wrap; }

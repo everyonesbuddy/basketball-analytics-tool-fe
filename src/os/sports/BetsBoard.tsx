@@ -12,9 +12,18 @@ import {
   money,
   odds,
   pct,
+  shopText,
   when,
 } from "./format";
-import type { Board, FuturesView, Game, Leg, Parlay, Sport } from "./types";
+import type {
+  Board,
+  FuturesView,
+  Game,
+  Leg,
+  Parlay,
+  PropsView,
+  Sport,
+} from "./types";
 
 /** The bet slip: picks you're adding, a stake, and save it as a bet you placed. */
 function Slip({
@@ -82,6 +91,15 @@ function Slip({
               <span className="os-muted">
                 ({odds(l.odds)}) · {l.matchup}
               </span>
+              {l.shop?.worstOdds != null && (
+                <span className="os-small os-muted">
+                  {" "}
+                  · take at {odds(l.shop.worstOdds)} or better
+                  {l.shop.worstLine !== null && l.shop.worstLine !== l.line
+                    ? `, line as far as ${l.shop.worstLine}`
+                    : ""}
+                </span>
+              )}
             </span>
             <button
               className="os-btn os-btn--ghost os-btn--small"
@@ -123,8 +141,9 @@ function Slip({
         </button>
       </div>
       <p className="os-small os-muted os-flat">
-        Place it with your sportsbook, then save it here to track it. It settles
-        itself when the games end.
+        Place it with your sportsbook, then save it here to track it. If your
+        book's line or price is different, change the label to what you
+        actually got. It settles itself when the games end.
       </p>
       {msg && <p className="os-small os-flat">{msg}</p>}
     </div>
@@ -152,6 +171,21 @@ function AddButton({
   );
 }
 
+/** "Take X at -125 or better; fine as far as Y; past that, skip": betting at your own book, not ESPN's number. */
+function Shop({ l }: { l: Leg }) {
+  const t = shopText(l);
+  if (!t) return null;
+  return (
+    <div className="os-sp-shop">
+      <span>
+        Take <strong>{t.take}</strong>.
+      </span>
+      {t.range && <span>{t.range}</span>}
+      <span className="os-muted">{t.skip}</span>
+    </div>
+  );
+}
+
 function IdeaTile({
   l,
   slip,
@@ -168,7 +202,7 @@ function IdeaTile({
           {CONF_LABEL[l.confidence || "low"]}
         </span>
         <span className="os-small os-muted">
-          {l.matchup} · {when(l.date)}
+          {MARKET_NAME[l.market]} · {l.matchup} · {when(l.date)}
         </span>
       </div>
       <strong className="os-sp-idea__label">
@@ -178,15 +212,112 @@ function IdeaTile({
         <span>
           Our chance <strong>{pct(l.prob)}</strong>
         </span>
-        <span title="The chance it has to win to break even at this price">
-          Needs <strong>{pct(1 / decimalOf(l.odds))}</strong>
-        </span>
         <span className="os-ok">
           Edge <strong>{edgePct(l.edge)}</strong>
         </span>
+        {l.market === "prop" && l.recent && (
+          <span title={`Last 5: ${l.recent.last5.join(", ")}`}>
+            Last {l.recent.of}: <strong>{l.recent.hits}</strong> of{" "}
+            {l.recent.of} {l.side}
+          </span>
+        )}
+        {l.market === "prop" && l.projection !== undefined && (
+          <span>
+            We have <strong>{l.projection}</strong>
+          </span>
+        )}
       </div>
+      {l.market === "prop" && l.recent && (
+        <span className="os-small os-muted">
+          Last 5 games: {l.recent.last5.join(", ")}
+        </span>
+      )}
+      <Shop l={l} />
+      {l.warning && <p className="os-tr-warn os-flat">{l.warning}</p>}
       <AddButton leg={l} slip={slip} toggle={toggle} />
     </div>
+  );
+}
+
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+const MARKET_NAME: Record<Leg["market"], string> = {
+  spread: "Spread",
+  total: "Total",
+  moneyline: "Moneyline",
+  prop: "Prop",
+  future: "Future",
+};
+
+/** Player props: DraftKings' main lines (via ESPN) against each player's recent games. */
+function Props({
+  sport,
+  slip,
+  toggle,
+}: {
+  sport: Sport;
+  slip: Leg[];
+  toggle: (l: Leg) => void;
+}) {
+  const [stat, setStat] = useState("all");
+  const { data, error } = useLoad<PropsView>(
+    () => os.get(`/sports/props?sport=${sport}`).then((r) => r.data),
+    sport,
+  );
+  if (error) return <ErrorNote text={error} />;
+  if (!data)
+    return (
+      <p className="os-small os-muted os-flat">
+        Reading players' recent box scores… the first load takes a few
+        seconds.
+      </p>
+    );
+  const stats = [...new Set(data.ideas.map((l) => l.stat || ""))];
+  const shown = data.ideas.filter((l) => stat === "all" || l.stat === stat);
+  return (
+    <>
+      {data.problems.map((p) => (
+        <p key={p} className="os-tr-warn">
+          {p}
+        </p>
+      ))}
+      {stats.length > 1 && (
+        <div className="os-seg os-sp-filter" role="tablist" aria-label="Stat">
+          <button
+            className={stat === "all" ? "on" : ""}
+            onClick={() => setStat("all")}
+          >
+            All ({data.ideas.length})
+          </button>
+          {stats.map((k) => (
+            <button
+              key={k}
+              className={stat === k ? "on" : ""}
+              onClick={() => setStat(k)}
+            >
+              {cap(data.stats[k] || k)} (
+              {data.ideas.filter((l) => l.stat === k).length})
+            </button>
+          ))}
+        </div>
+      )}
+      {shown.length === 0 ? (
+        <p className="os-muted os-flat">
+          {data.lines
+            ? `Looked at ${data.lines} prop lines: none with an edge the player's recent games back up.`
+            : "No prop lines posted yet for the next games. They usually show up the morning of the game."}
+        </p>
+      ) : (
+        <div className="os-sp-ideas">
+          {shown.map((l) => (
+            <IdeaTile key={legKey(l)} l={l} slip={slip} toggle={toggle} />
+          ))}
+        </div>
+      )}
+      <p className="os-small os-muted os-flat" style={{ marginTop: 10 }}>
+        {data.note}
+      </p>
+    </>
   );
 }
 
@@ -209,6 +340,12 @@ function ParlayTile({ p, add }: { p: Parlay; add: (legs: Leg[]) => void }) {
             <span className="os-muted">
               ({odds(l.odds)}) · {l.matchup}
             </span>
+            {l.shop?.worstOdds != null && (
+              <span className="os-small os-muted">
+                {" "}
+                · take at {odds(l.shop.worstOdds)} or better
+              </span>
+            )}
           </li>
         ))}
       </ul>
@@ -242,7 +379,7 @@ function GameRow({
       <button
         className={`os-sp-cell ${good ? "good" : ""} ${slip.some((s) => legKey(s) === legKey(l)) ? "on" : ""}`}
         onClick={() => toggle(l)}
-        title={`Our chance ${pct(l.prob)} · needs ${pct(l.marketProb)} · edge ${edgePct(l.edge)}`}
+        title={`Our chance ${pct(l.prob)} · edge ${edgePct(l.edge)}${l.shop?.worstOdds != null && good ? ` · take at ${odds(l.shop.worstOdds)} or better` : ""}`}
       >
         <span>
           {l.market === "total"
@@ -401,6 +538,9 @@ export default function BetsBoard() {
   const [sport, setSport] = useState<Sport>("nba");
   const [slip, setSlip] = useState<Leg[]>([]);
   const [showFutures, setShowFutures] = useState(false);
+  const [market, setMarket] = useState<
+    "all" | "spread" | "total" | "moneyline"
+  >("all");
   const { data, error } = useLoad<Board>(
     () => os.get(`/sports/board?sport=${sport}`).then((r) => r.data),
     sport,
@@ -412,6 +552,8 @@ export default function BetsBoard() {
         : [...s, l],
     );
   const addAll = (legs: Leg[]) => setSlip(legs);
+  const ideas =
+    data?.ideas.filter((l) => market === "all" || l.market === market) || [];
   const futureOnSlip = slip.some((l) => l.market === "future");
 
   return (
@@ -458,19 +600,50 @@ export default function BetsBoard() {
           ))}
           <Card
             title="Best bets"
-            sub={`Where our numbers and the price disagree most. Our chance is our model blended half and half with the market, so these are leans, not locks.`}
+            sub="Where our numbers and the price disagree most. Lines are ESPN's (DraftKings); each pick says the worst line and price still worth taking at your book. Our chance is our model blended half and half with the market, so these are leans, not locks."
           >
-            {data.ideas.length === 0 ? (
+            <div className="os-seg os-sp-filter" role="tablist" aria-label="Market">
+              {(
+                [
+                  ["all", "All"],
+                  ["spread", "Spreads"],
+                  ["total", "Totals"],
+                  ["moneyline", "Moneylines"],
+                ] as const
+              ).map(([k, name]) => (
+                <button
+                  key={k}
+                  className={market === k ? "on" : ""}
+                  onClick={() => setMarket(k)}
+                >
+                  {name} (
+                  {k === "all"
+                    ? data.ideas.length
+                    : data.ideas.filter((l) => l.market === k).length}
+                  )
+                </button>
+              ))}
+            </div>
+            {ideas.length === 0 ? (
               <p className="os-muted os-flat">
-                No edges worth a bet in the next games. Passing is a bet too.
+                {data.ideas.length
+                  ? "No edges in this market right now. Tap a price in the games below to look at any line."
+                  : "No edges worth a bet in the next games. Passing is a bet too."}
               </p>
             ) : (
               <div className="os-sp-ideas">
-                {data.ideas.slice(0, 9).map((l) => (
+                {ideas.slice(0, market === "all" ? 9 : 18).map((l) => (
                   <IdeaTile key={legKey(l)} l={l} slip={slip} toggle={toggle} />
                 ))}
               </div>
             )}
+          </Card>
+
+          <Card
+            title="Player props"
+            sub="Points, rebounds, assists, threes (NBA) and yards and catches (NFL): the line against each player's last 15 games."
+          >
+            <Props sport={sport} slip={slip} toggle={toggle} />
           </Card>
 
           {data.parlays.length > 0 && (
