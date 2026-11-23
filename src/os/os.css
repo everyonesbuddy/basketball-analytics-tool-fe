@@ -711,3 +711,4 @@ button.os-chip { cursor: pointer; padding-right: 10px; }
 .os-main, .os-page, .os-card { min-width: 0; }
 .os-sp-futures > *, .os-sp-ratings > * { min-width: 0; }
 .os-tr-idea > *, .os-tr-ideas > *, .os-tr-ladder > * { min-width: 0; }
+.os-tr-ladder { display: block; } .os-tr-ladder > p { margin: 0 0 6px; } .os-tr-tablewrap { max-width: 100%; }
