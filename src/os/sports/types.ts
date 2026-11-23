@@ -6,7 +6,7 @@ export interface Leg {
   date: string;
   day?: string;
   matchup: string;
-  market: "spread" | "total" | "moneyline" | "future";
+  market: "spread" | "total" | "moneyline" | "prop" | "future";
   side: string;
   line: number | null;
   odds: number;
@@ -18,6 +18,26 @@ export interface Leg {
   ev?: number;
   confidence?: "low" | "medium" | "high";
   result?: "pending" | "won" | "lost" | "push";
+  /** What to accept at your own book: worst price at this line, worst line at -110. */
+  shop?: { worstOdds: number | null; worstLine: number | null } | null;
+  // Props
+  stat?: string;
+  athleteId?: string;
+  player?: string;
+  team?: string;
+  projection?: number;
+  recent?: { hits: number; of: number; last5: number[]; games: number };
+  warning?: string | null;
+}
+
+export interface PropsView {
+  sport: Sport;
+  stats: Record<string, string>;
+  games: { id: string; name: string; date: string; day: string; props: number }[];
+  lines: number;
+  ideas: Leg[];
+  problems: string[];
+  note: string;
 }
 
 export interface Team {
@@ -130,7 +150,7 @@ export interface BetsView {
   record: {
     all: Group;
     byKind: Record<"straight" | "parlay" | "future", Group>;
-    byMarket: Record<"spread" | "total" | "moneyline", Group>;
+    byMarket: Record<"spread" | "total" | "moneyline", Group> & { prop?: Group };
     pending: number;
   };
   stakedThisWeek: number;

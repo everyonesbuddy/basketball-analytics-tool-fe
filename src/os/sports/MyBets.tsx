@@ -192,6 +192,7 @@ export default function MyBets() {
                 ["Spreads", r.byMarket.spread],
                 ["Totals", r.byMarket.total],
                 ["Moneylines", r.byMarket.moneyline],
+                ...(r.byMarket.prop ? [["Props", r.byMarket.prop] as const] : []),
                 ["Parlays", r.byKind.parlay],
                 ["Futures", r.byKind.future],
               ] as const
