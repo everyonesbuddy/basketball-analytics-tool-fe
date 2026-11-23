@@ -2,7 +2,8 @@ import { useState } from "react";
 import { FiArrowDownRight, FiArrowUpRight, FiPlus } from "react-icons/fi";
 import os, { errorText } from "../api";
 import { BaseTag } from "./BaseTag";
-import { BASE_NAME, money, pctOf, signed } from "./format";
+import { Link } from "react-router-dom";
+import { BASE_NAME, money, pctOf, scoreParts, signed } from "./format";
 import type { BaseKey, Idea, OptionPick } from "./types";
 
 type Draft = {
@@ -178,6 +179,42 @@ function OptionRow({ o, onTrack }: { o: OptionPick; onTrack: () => void }) {
   );
 }
 
+/** The score split into its parts, with what each means for this idea. */
+function WhyScore({ idea }: { idea: Idea }) {
+  const p = scoreParts(idea);
+  const h = idea.history;
+  const checks = Math.round(idea.strength / 20);
+  return (
+    <details className="os-tr-why">
+      <summary>
+        Why {idea.score}? Fit {p.fit} + reward {p.rr} + record {p.past}
+      </summary>
+      <ul>
+        <li>
+          <strong>Fit {p.fit}/30:</strong> {checks} of 5 checks passed for{" "}
+          {idea.setupName.toLowerCase()} (the ticks above).
+        </li>
+        <li>
+          <strong>Reward {p.rr}/24:</strong> {idea.rewardRisk.toFixed(1)} : 1.
+          The target is {idea.gainPct}% away and the stop {idea.lossPct}%, set
+          from support, resistance and this symbol's normal daily range.
+        </li>
+        <li>
+          <strong>Record {p.past}/50:</strong>{" "}
+          {h.n >= 5
+            ? `in the last two years this setup fired ${h.n} times on ${idea.symbol.replace("-USD", "")} and reached the same gain before the same loss ${h.wins} times (${pctOf(h.hitRate)}), averaging ${signed(h.avgReturnPct)}.`
+            : h.n
+              ? `only ${h.n} past example${h.n === 1 ? "" : "s"} here, so it gets a neutral ${p.past} instead of a real hit rate.`
+              : "no past examples here, so it gets a neutral 10."}
+        </li>
+      </ul>
+      <Link to="/trading/how" className="os-small">
+        How the desk decides
+      </Link>
+    </details>
+  );
+}
+
 /** One idea: why it fired, the plan, how it's done before, and the ways to play it. */
 export default function IdeaCard({
   idea,
@@ -291,6 +328,7 @@ export default function IdeaCard({
         ))}
       </ul>
       {idea.warning && <p className="os-tr-warn">{idea.warning}</p>}
+      <WhyScore idea={idea} />
 
       {!idea.optionsOnly && (
         <div className="os-tr-shares">
