@@ -79,6 +79,7 @@ export interface Board {
       oppPpg: number;
     }[];
   };
+  problems?: string[];
   disclaimer: string;
 }
 
