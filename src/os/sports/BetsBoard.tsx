@@ -451,6 +451,11 @@ export default function BetsBoard() {
         !error && <Loading />
       ) : (
         <>
+          {data.problems?.map((p) => (
+            <p key={p} className="os-tr-warn">
+              {p}
+            </p>
+          ))}
           <Card
             title="Best bets"
             sub={`Where our numbers and the price disagree most. Our chance is our model blended half and half with the market, so these are leans, not locks.`}

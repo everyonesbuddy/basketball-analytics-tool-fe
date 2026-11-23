@@ -43,10 +43,12 @@ os.interceptors.response.use(
   },
 );
 
-/** The server's message, or a fallback. */
+/** The server's message (with its detail, when it gives one), or a fallback. */
 export const errorText = (err: unknown, fallback: string): string => {
-  const e = err as { response?: { data?: { error?: { message?: string } } }; message?: string };
-  return e?.response?.data?.error?.message || (e?.message === "Network Error" ? "Can't reach the server." : fallback);
+  const e = err as { response?: { data?: { error?: { message?: string; detail?: string } } }; message?: string };
+  const m = e?.response?.data?.error;
+  if (m?.message) return m.detail ? `${m.message} (${m.detail})` : m.message;
+  return e?.message === "Network Error" ? "Can't reach the server." : fallback;
 };
 
 export default os;
