@@ -21,11 +21,11 @@ export interface Lesson {
 }
 
 export const LEVELS = [
-  { level: 1, name: "Meet the bass", goal: "The five open strings and how to pluck them." },
+  { level: 1, name: "Meet the bass", goal: "The four open strings and how to pluck them." },
   { level: 2, name: "Frets and fingers", goal: "Pressing notes cleanly, one finger per fret." },
   { level: 3, name: "Rhythm", goal: "Playing in time: quarter notes, eighth notes and rests." },
   { level: 4, name: "Roots and shapes", goal: "The shapes bass players use under every song." },
-  { level: 5, name: "Scales", goal: "Major and minor pentatonic, and using the low B." },
+  { level: 5, name: "Scales", goal: "Major and minor pentatonic, in two places on the neck." },
   { level: 6, name: "Grooves", goal: "Putting notes and rhythm together in different styles." },
   { level: 7, name: "Songs", goal: "Whole tunes, start to finish." },
 ];
@@ -43,15 +43,15 @@ export const LESSONS: Lesson[] = [
     notes: "E0 E0 E0 E0 | A0 A0 A0 A0 | D0 D0 D0 D0 | G0 G0 G0 G0",
   },
   {
-    key: "low-b",
+    key: "all-four",
     level: 1,
-    title: "The low B string",
-    concept: "Your fifth string: the deepest note on the bass.",
-    explain: ["The low B is the thickest string, above the E.", "Rest your thumb on it when you play the other strings, so it doesn't ring by accident.", "Then all five, low to high and back."],
+    title: "All four strings",
+    concept: "Low to high and back, letting each note ring its full beat.",
+    explain: ["The E is the thickest string, at the bottom of the neck picture.", "Rest your thumb on the E string when you play the higher ones, so it doesn't ring by accident.", "Then all four, low to high and back."],
     bpm: 60,
     beatsPerBar: 4,
-    notes: "B0 B0 B0 B0 | E0 E0 E0 E0 | B0 E0 A0 D0 | G0 D0 A0 E0",
-    tip: "Muting the strings you're not playing is half of sounding clean on a 5-string.",
+    notes: "E0 A0 D0 G0 | G0 D0 A0 E0 | E0 A0 D0 G0 | G0 D0 A0 E0",
+    tip: "Muting the strings you're not playing is half of sounding clean.",
   },
   {
     key: "string-jumps",
@@ -61,7 +61,7 @@ export const LESSONS: Lesson[] = [
     explain: ["Keep your plucking hand loose and move it with the string.", "Try it once slowly looking, then without looking."],
     bpm: 66,
     beatsPerBar: 4,
-    notes: "E0 A0 E0 A0 | A0 D0 A0 D0 | D0 G0 D0 G0 | B0 E0 B0 E0",
+    notes: "E0 A0 E0 A0 | A0 D0 A0 D0 | D0 G0 D0 G0 | E0 G0 E0 G0",
   },
 
   // 2 · Frets and fingers
@@ -194,14 +194,14 @@ export const LESSONS: Lesson[] = [
     notes: "E5 E8 A5 A7 | D5 D7 G5 G7 | G5 D7 D5 A7 | A5 E8 E5-2",
   },
   {
-    key: "low-b-scale",
+    key: "open-pentatonic",
     level: 5,
-    title: "Down low on the B string",
-    concept: "E minor pentatonic starting on the low B: what the 5th string is for.",
-    explain: ["B string, 5th fret is low E, the same note as the open E string.", "Playing it on the B string lets you stay in one hand position."],
+    title: "Open-string pentatonic",
+    concept: "E minor pentatonic down by the nut, using the open strings.",
+    explain: ["The same five notes as the 5th-fret box, an octave lower.", "Open string, then frets 2 or 3: finger 2 on fret 2, finger 3 on fret 3."],
     bpm: 66,
     beatsPerBar: 4,
-    notes: "B5 B8 E5 E7 | A5 A7 D5 D7 | D5 A7 A5 E7 | E5 B8 B5-2",
+    notes: "E0 E3 A0 A2 | D0 D2 G0 G2 | G0 D2 D0 A2 | A0 E3 E0-2",
   },
 
   // 6 · Grooves (original patterns)

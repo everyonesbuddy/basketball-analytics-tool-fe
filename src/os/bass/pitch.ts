@@ -3,7 +3,7 @@
  * a take against the lesson. Plain functions, no browser APIs, so they're
  * tested with made-up sound.
  *
- * Bass notes are low (low B is 31 Hz), so the sound is low-passed and
+ * Bass notes are low (low E is 41 Hz), so the sound is low-passed and
  * downsampled before detection: fewer samples, same notes, much faster.
  */
 import { nearest, sameNote } from "./theory";
@@ -36,9 +36,9 @@ export const rmsOf = (buf: Float32Array) => {
 
 /**
  * YIN pitch detection. Returns null when it's quiet or not a clear note.
- * minF/maxF: the bass range (low B at 31 Hz up to about the 20th fret on G).
+ * minF/maxF: the bass range (low E at 41 Hz up to about the 20th fret on G).
  */
-export function detect(buf: Float32Array, sampleRate: number, { minF = 28, maxF = 420, threshold = 0.15, minRms = 0.008 } = {}): Pitch | null {
+export function detect(buf: Float32Array, sampleRate: number, { minF = 34, maxF = 420, threshold = 0.15, minRms = 0.008 } = {}): Pitch | null {
   const rms = rmsOf(buf);
   if (rms < minRms) return null;
   const tauMin = Math.max(2, Math.floor(sampleRate / maxF));
