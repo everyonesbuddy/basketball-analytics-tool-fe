@@ -285,8 +285,29 @@ const readPersistedDraftState = (): PersistedDraftState => {
   }
 };
 
-const Dashboard = () => {
-  const [activeFeature, setActiveFeature] = useState<FeatureKey>("profile");
+/**
+ * The tools kept in the Personal OS's Sports area, by tab. The rest stay in
+ * the code but aren't shown: the sports side had grown too many tools.
+ */
+export type SportsSection = "fantasy" | "nba";
+const SECTION_TOOLS: Record<SportsSection, { key: FeatureKey; label: string; hint: string }[]> = {
+  fantasy: [
+    { key: "trade", label: "Trade analyzer", hint: "Is this trade good for you? Value in, value out, and how your lineup changes." },
+    { key: "start-sit", label: "Start / sit", hint: "Who to start this week from your roster." },
+    { key: "waivers", label: "Waiver wire", hint: "The best players nobody has, for your open spots." },
+    { key: "fantasy-team-grade", label: "Team grade", hint: "How your roster stacks up, position by position." },
+    { key: "draft-board", label: "Draft board", hint: "Draft-day values and your picks so far." },
+  ],
+  nba: [
+    { key: "profile", label: "Player", hint: "One player's season, splits and trends." },
+    { key: "compare", label: "Compare players", hint: "Two players side by side." },
+    { key: "team", label: "Team", hint: "A team's efficiency and what it needs." },
+    { key: "nba-fantasy", label: "NBA fantasy & trades", hint: "Points-league values, trades and roster comparisons." },
+  ],
+};
+
+const Dashboard = ({ section }: { section?: SportsSection } = {}) => {
+  const [activeFeature, setActiveFeature] = useState<FeatureKey>(section ? SECTION_TOOLS[section][0].key : "profile");
   const [healthToast, setHealthToast] = useState("");
   const [playerId, setPlayerId] = useState("1966");
   const [playerBId, setPlayerBId] = useState("3945274");
@@ -1227,8 +1248,24 @@ const Dashboard = () => {
       ? getComparableSplitMetrics(comparison[0], comparison[1])
       : [];
 
+  const tools = section ? SECTION_TOOLS[section] : null;
+  const tool = tools?.find((t) => t.key === activeFeature);
+
   return (
-    <main className="dashboard-shell app-shell">
+    <main className={section ? "os-sports-tools" : "dashboard-shell app-shell"}>
+      {tools ? (
+        <div className="os-sports-tools__bar">
+          <div className="os-seg" role="tablist" aria-label="Tools">
+            {tools.map((t) => (
+              <button key={t.key} type="button" role="tab" aria-selected={activeFeature === t.key} className={activeFeature === t.key ? "on" : ""} onClick={() => setActiveFeature(t.key)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {tool ? <p className="os-small os-muted os-flat">{tool.hint}</p> : null}
+        </div>
+      ) : null}
+      {!section ? (
       <nav className="app-sidebar" aria-label="Feature navigation">
         <div className="app-sidebar__brand">
           <h1>Analytics Tool</h1>
@@ -1256,9 +1293,11 @@ const Dashboard = () => {
           </div>
         ))}
       </nav>
+      ) : null}
 
       <div className="app-content">
         <header className="app-topbar">
+          {!section ? (
           <div className="app-topbar__row">
             <button type="button" onClick={checkHealth}>
               Check API Health
@@ -1290,6 +1329,7 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
+          ) : null}
 
           {healthToast ? (
             <div className="health-toast" role="status" aria-live="polite">

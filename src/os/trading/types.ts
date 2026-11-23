@@ -53,10 +53,24 @@ export interface Idea {
   lossPct: number;
   rewardRisk: number;
   base: BaseKey;
-  history: { n: number; wins: number; losses: number; timeouts: number; hitRate: number | null; avgReturnPct: number | null };
+  history: {
+    n: number;
+    wins: number;
+    losses: number;
+    timeouts: number;
+    hitRate: number | null;
+    avgReturnPct: number | null;
+  };
   warning: string | null;
   score: number;
-  indicators: { rsi: number; stochK: number; macdHist: number; atr: number; volRatio: number; ema50: number };
+  indicators: {
+    rsi: number;
+    stochK: number;
+    macdHist: number;
+    atr: number;
+    volRatio: number;
+    ema50: number;
+  };
   options?: OptionPick[];
   optionsError?: string;
   size?: Size;
@@ -70,7 +84,11 @@ export interface Play {
   direction: "up" | "down";
   base: BaseKey;
   setup: string;
-  option?: { type: "call" | "put" | null; strike: number | null; expiration: string | null };
+  option?: {
+    type: "call" | "put" | null;
+    strike: number | null;
+    expiration: string | null;
+  };
   entryPrice: number;
   qty: number;
   target: number | null;
@@ -109,9 +127,20 @@ export interface Settings {
 export interface TradingView {
   settings: Settings;
   bases: { key: BaseKey; name: string; stock: number[]; option: number[] }[];
-  scan: { at: string | null; lastStockScan: string | null; lastCryptoScan: string | null; skipped: { symbol: string; why: string }[]; hidden: number };
+  scan: {
+    at: string | null;
+    lastStockScan: string | null;
+    lastCryptoScan: string | null;
+    skipped: { symbol: string; why: string }[];
+    hidden: number;
+  };
   ideas: Idea[];
   plays: Play[];
-  record: { all: Group; byBase: Record<BaseKey, Group>; byKind: Record<Kind, Group>; open: number };
+  record: {
+    all: Group;
+    byBase: Record<BaseKey, Group>;
+    byKind: Record<Kind, Group>;
+    open: number;
+  };
   disclaimer: string;
 }

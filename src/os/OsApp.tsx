@@ -3,7 +3,6 @@ import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation } fr
 import { FiActivity, FiBookOpen, FiCheckSquare, FiDollarSign, FiFeather, FiGift, FiMusic, FiNavigation, FiSettings, FiSun, FiTarget, FiTrendingUp } from "react-icons/fi";
 import type { ReactNode } from "react";
 import os, { SIGNED_OUT, getToken } from "./api";
-import Dashboard from "../components/Dashboard";
 import TodayPage from "./pages/TodayPage";
 import GoalsPage from "./pages/GoalsPage";
 import ReviewPage from "./pages/ReviewPage";
@@ -17,6 +16,7 @@ import EventsPage from "./pages/EventsPage";
 import FoodPage from "./pages/FoodPage";
 import BassPage from "./pages/BassPage";
 import TradingPage from "./pages/TradingPage";
+import SportsPage from "./pages/SportsPage";
 import { GiGuitarBassHead } from "react-icons/gi";
 import { MdRestaurantMenu } from "react-icons/md";
 import NowBar from "./NowBar";
@@ -100,6 +100,7 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
           <Route path="/food/*" element={<FoodPage />} />
           <Route path="/bass/*" element={<BassPage />} />
           <Route path="/trading/*" element={<TradingPage />} />
+          <Route path="/sports/*" element={<SportsPage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />
@@ -122,19 +123,6 @@ function ScrollTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
   return null;
-}
-
-/** Sports keeps its own full-width layout (it has its own sidebar). */
-function SportsPage() {
-  return (
-    <>
-      <div className="os-backbar no-print">
-        <Link to="/">← Personal OS</Link>
-        <span>Sports</span>
-      </div>
-      <Dashboard />
-    </>
-  );
 }
 
 export default function OsApp() {
@@ -163,7 +151,6 @@ export default function OsApp() {
     <BrowserRouter>
       <ScrollTop />
       <Routes>
-        <Route path="/sports" element={<SportsPage />} />
         <Route path="/*" element={<Shell email={email} onSignOut={() => setEmail(null)} />} />
       </Routes>
     </BrowserRouter>
