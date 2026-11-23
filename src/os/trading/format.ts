@@ -36,3 +36,25 @@ export const signed = (n: number | null | undefined, suffix = "%") =>
   n === null || n === undefined ? "–" : `${n > 0 ? "+" : ""}${n}${suffix}`;
 export const pctOf = (n: number | null | undefined) =>
   n === null || n === undefined ? "–" : `${Math.round(n * 100)}%`;
+
+/**
+ * The score's three parts, the same sums as scoreFor in the backend
+ * (utils/os/trading.js); keep the two in step.
+ */
+export function scoreParts(idea: {
+  strength: number;
+  rewardRisk: number;
+  history: { n: number; hitRate: number | null; avgReturnPct: number | null };
+}) {
+  const h = idea.history;
+  const fit = idea.strength * 0.3;
+  const rr = Math.min(idea.rewardRisk, 3) * 8;
+  const past =
+    h.n >= 5
+      ? (h.hitRate ?? 0) * 40 +
+        Math.max(-5, Math.min(5, h.avgReturnPct ?? 0)) * 2
+      : h.n >= 2
+        ? 14
+        : 10;
+  return { fit: Math.round(fit), rr: Math.round(rr), past: Math.round(past) };
+}

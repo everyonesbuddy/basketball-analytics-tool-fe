@@ -712,3 +712,11 @@ button.os-chip { cursor: pointer; padding-right: 10px; }
 .os-sp-futures > *, .os-sp-ratings > * { min-width: 0; }
 .os-tr-idea > *, .os-tr-ideas > *, .os-tr-ladder > * { min-width: 0; }
 .os-tr-ladder { display: block; } .os-tr-ladder > p { margin: 0 0 6px; } .os-tr-tablewrap { max-width: 100%; }
+
+/* Trading: how it decides */
+.os-tr-steps { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 6px; line-height: 1.5; }
+.os-tr-checks { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; font-size: 0.86rem; line-height: 1.4; }
+.os-tr-checks--warn li::marker { color: #b45309; }
+.os-tr-why { margin-top: 8px; font-size: 0.86rem; }
+.os-tr-why summary { cursor: pointer; color: #475569; }
+.os-tr-why ul { margin: 8px 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.45; }

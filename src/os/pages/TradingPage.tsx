@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Link, Route, Routes } from "react-router-dom";
 import { FiRefreshCw, FiSearch } from "react-icons/fi";
 import os, { errorText } from "../api";
 import { Card, ErrorNote, Loading, PageHead } from "../Bits";
 import { SubNav } from "../gifting/SubNav";
 import { useLoad } from "../useLoad";
 import IdeaCard from "../trading/IdeaCard";
+import HowItWorks from "../trading/HowItWorks";
 import { BaseTag } from "../trading/BaseTag";
 import {
   BASE_COLOR,
@@ -138,6 +139,37 @@ function Ideas({ view, reload }: { view: TradingView; reload: () => void }) {
   };
   return (
     <div className="os-page">
+      <details className="os-how-box">
+        <summary>
+          <strong>What it's reading:</strong> two years of daily prices, five
+          chart setups, and how each setup did on that symbol before.{" "}
+          <span className="os-link">The short version</span>
+        </summary>
+        <div className="os-how">
+          <p>
+            Each idea is a <strong>setup</strong> (a pattern like a pullback in
+            an uptrend) confirmed by checks on trend, RSI, Bollinger bands,
+            stochastic, MACD and volume. The ticks on a card are the checks that
+            passed.
+          </p>
+          <p>
+            The <strong>stop</strong> sits under support and the{" "}
+            <strong>target</strong> at the next resistance, both sized to the
+            symbol's normal daily move. The target must pay at least 1.5x the
+            risk.
+          </p>
+          <p>
+            <strong>Before, here</strong> replays the same setup on the same
+            symbol over two years: how often it reached the target before the
+            stop. That's half the <strong>score</strong>. Tap “Why?” on any
+            card for its breakdown.
+          </p>
+          <p>
+            <Link to="/trading/how">Read how it decides</Link>, including what
+            it can't see (news, earnings, the wider market).
+          </p>
+        </div>
+      </details>
       <div className="os-tr-bar">
         <div className="os-seg" role="tablist" aria-label="What">
           {(
@@ -734,6 +766,7 @@ export default function TradingPage() {
           ],
           ["/trading/record", "Record"],
           ["/trading/settings", "Settings"],
+          ["/trading/how", "How it decides"],
         ]}
       />
       {error && <ErrorNote text={error} />}
@@ -748,6 +781,7 @@ export default function TradingPage() {
               element={<Plays view={data} reload={reload} />}
             />
             <Route path="record" element={<Record view={data} />} />
+            <Route path="how" element={<HowItWorks />} />
             <Route
               path="settings"
               element={
