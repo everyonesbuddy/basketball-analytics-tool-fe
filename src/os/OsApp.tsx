@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { FiActivity, FiBookOpen, FiCheckSquare, FiDollarSign, FiFeather, FiGift, FiMusic, FiNavigation, FiSettings, FiSun, FiTarget } from "react-icons/fi";
+import { FiActivity, FiBookOpen, FiCheckSquare, FiDollarSign, FiFeather, FiGift, FiMusic, FiNavigation, FiSettings, FiSun, FiTarget, FiTrendingUp } from "react-icons/fi";
 import type { ReactNode } from "react";
 import os, { SIGNED_OUT, getToken } from "./api";
 import Dashboard from "../components/Dashboard";
@@ -16,6 +16,7 @@ import StylePage from "./pages/StylePage";
 import EventsPage from "./pages/EventsPage";
 import FoodPage from "./pages/FoodPage";
 import BassPage from "./pages/BassPage";
+import TradingPage from "./pages/TradingPage";
 import { GiGuitarBassHead } from "react-icons/gi";
 import { MdRestaurantMenu } from "react-icons/md";
 import NowBar from "./NowBar";
@@ -49,7 +50,13 @@ const NAV: { title: string; items: Item[] }[] = [
       { to: "/sports", label: "Sports", icon: <FiActivity /> },
     ],
   },
-  { title: "Money", items: [{ to: "/money", label: "Money", icon: <FiDollarSign />, soon: true }] },
+  {
+    title: "Money",
+    items: [
+      { to: "/trading", label: "Trading", icon: <FiTrendingUp /> },
+      { to: "/money", label: "Money", icon: <FiDollarSign />, soon: true },
+    ],
+  },
   { title: "", items: [{ to: "/settings", label: "Settings", icon: <FiSettings /> }] },
 ];
 
@@ -92,6 +99,7 @@ function Shell({ email, onSignOut }: { email: string; onSignOut: () => void }) {
           <Route path="/events/*" element={<EventsPage />} />
           <Route path="/food/*" element={<FoodPage />} />
           <Route path="/bass/*" element={<BassPage />} />
+          <Route path="/trading/*" element={<TradingPage />} />
           <Route path="/" element={<TodayPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/review" element={<ReviewPage />} />
