@@ -28,6 +28,7 @@ export interface Leg {
   projection?: number;
   recent?: { hits: number; of: number; last5: number[]; games: number };
   warning?: string | null;
+  explain?: PropExplain;
 }
 
 export interface PropsView {
@@ -35,6 +36,7 @@ export interface PropsView {
   stats: Record<string, string>;
   games: { id: string; name: string; date: string; day: string; props: number }[];
   lines: number;
+  notPosted?: number;
   ideas: Leg[];
   problems: string[];
   note: string;
@@ -69,7 +71,25 @@ export interface Game {
     awayMl: number | null;
   } | null;
   projection: { margin: number; total: number; games: number } | null;
+  explain?: Explain;
   legs: Leg[];
+}
+
+/** Our line, the book's, the middle we bet from, how we got ours and why they differ. */
+export interface Explain {
+  ours: { spread: number; total: number; homeWin: number | null };
+  book: { spread: number | null; total: number | null; homeWin: number | null };
+  middle: { spread: number | null; total: number | null; homeWin: number | null };
+  how: string[];
+  why: string[];
+}
+
+export interface PropExplain {
+  ours: number;
+  book: number;
+  middle: number;
+  how: string[];
+  why: string[];
 }
 
 export interface Parlay {

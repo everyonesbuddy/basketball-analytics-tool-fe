@@ -125,13 +125,24 @@ function TrackForm({
   );
 }
 
-function OptionRow({ o, onTrack }: { o: OptionPick; onTrack: () => void }) {
+function OptionRow({
+  o,
+  onTrack,
+  maxContract,
+}: {
+  o: OptionPick;
+  onTrack: () => void;
+  maxContract: number | null;
+}) {
   return (
-    <tr>
+    <tr className={o.overBudget ? "os-tr-over" : ""}>
       <td>
         <BaseTag base={o.base} />
       </td>
       <td>
+        {o.intent === "budget" && (
+          <span className="os-tr-budgettag">Best under ${maxContract}</span>
+        )}
         <strong>
           ${o.strike} {o.type}
         </strong>
@@ -141,7 +152,10 @@ function OptionRow({ o, onTrack }: { o: OptionPick; onTrack: () => void }) {
       </td>
       <td className="os-num">
         {money(o.mid, 2)}
-        <div className="os-small os-muted">{money(o.cost, 0)} each</div>
+        <div className={`os-small ${o.overBudget ? "os-bad" : "os-muted"}`}>
+          {money(o.cost, 0)} each
+          {o.overBudget ? ` · over your $${maxContract}` : ""}
+        </div>
       </td>
       <td className="os-num os-ok">{signed(o.gainPct)}</td>
       <td className="os-num os-bad">-{o.lossPct}%</td>
@@ -220,10 +234,12 @@ export default function IdeaCard({
   idea,
   onTracked,
   openOptions = false,
+  maxContract = null,
 }: {
   idea: Idea;
   onTracked: () => void;
   openOptions?: boolean;
+  maxContract?: number | null;
 }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const up = idea.direction === "up";
@@ -379,6 +395,11 @@ export default function IdeaCard({
           <p className="os-small os-muted os-flat">
             Priced at the mid. Gain and loss if the stock reaches the target or
             stop in about two weeks (or halfway to expiry).
+            {maxContract
+              ? idea.options.every((o) => o.overBudget)
+                ? ` Nothing on ${idea.symbol} fits your $${maxContract} a contract: it's shown so you can see it, but this one is probably a pass. Try Find symbols for cheaper names.`
+                : ` Contracts over your $${maxContract} are greyed out at the bottom.`
+              : " Set a max per contract in Settings to see what fits your budget first."}
           </p>
           <div className="os-tr-tablewrap">
             <table className="os-table os-table--wide">
@@ -394,13 +415,16 @@ export default function IdeaCard({
                 </tr>
               </thead>
               <tbody>
-                {idea.options.map((o) => (
-                  <OptionRow
-                    key={o.contract}
-                    o={o}
-                    onTrack={() => trackOption(o)}
-                  />
-                ))}
+                {[...idea.options]
+                  .sort((a, b) => Number(!!a.overBudget) - Number(!!b.overBudget))
+                  .map((o) => (
+                    <OptionRow
+                      key={o.contract}
+                      o={o}
+                      onTrack={() => trackOption(o)}
+                      maxContract={maxContract}
+                    />
+                  ))}
               </tbody>
             </table>
           </div>

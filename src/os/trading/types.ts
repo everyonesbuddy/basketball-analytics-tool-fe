@@ -9,7 +9,9 @@ export interface Size {
 }
 
 export interface OptionPick {
-  intent: BaseKey;
+  /** The base it was picked for, or "budget": the best contract under your max. */
+  intent: BaseKey | "budget";
+  overBudget?: boolean;
   base: BaseKey;
   note: string;
   contract: string;
@@ -122,6 +124,33 @@ export interface Settings {
   split: Record<BaseKey, number>;
   minScore: number;
   alerts: boolean;
+  /** $ per option contract you'll pay; null = no limit. */
+  maxContract: number | null;
+}
+
+export interface FindRow {
+  symbol: string;
+  price: number;
+  avgVolume: number;
+  fit: {
+    n: number;
+    wins: number;
+    losses: number;
+    timeouts: number;
+    hitRate: number | null;
+    avgReturnPct: number | null;
+  };
+  atm: { cost: number; strike: number; expiration: string; openInterest: number } | null;
+  onList: boolean;
+  fitsBudget: boolean | null;
+}
+
+export interface FindView {
+  kind: "stock" | "crypto";
+  maxPrice: number | null;
+  maxContract: number | null;
+  rows: FindRow[];
+  note: string;
 }
 
 export interface TradingView {
