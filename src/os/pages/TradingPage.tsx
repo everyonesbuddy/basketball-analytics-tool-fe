@@ -7,6 +7,7 @@ import { SubNav } from "../gifting/SubNav";
 import { useLoad } from "../useLoad";
 import IdeaCard from "../trading/IdeaCard";
 import HowItWorks from "../trading/HowItWorks";
+import FindSymbols from "../trading/FindSymbols";
 import { BaseTag } from "../trading/BaseTag";
 import {
   BASE_COLOR,
@@ -38,7 +39,13 @@ const ago = (iso: string | null) => {
 
 // ── Ideas ──────────────────────────────────────────────────────────────
 
-function Lookup({ onTracked }: { onTracked: () => void }) {
+function Lookup({
+  onTracked,
+  maxContract,
+}: {
+  onTracked: () => void;
+  maxContract: number | null;
+}) {
   const [sym, setSym] = useState("");
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<{
@@ -101,7 +108,12 @@ function Lookup({ onTracked }: { onTracked: () => void }) {
             </p>
           ) : (
             res.ideas.map((i) => (
-              <IdeaCard key={i.setup} idea={i} onTracked={onTracked} />
+              <IdeaCard
+                key={i.setup}
+                idea={i}
+                onTracked={onTracked}
+                maxContract={maxContract}
+              />
             ))
           )}
         </div>
@@ -244,11 +256,12 @@ function Ideas({ view, reload }: { view: TradingView; reload: () => void }) {
               idea={i}
               onTracked={reload}
               openOptions={n < 2}
+              maxContract={view.settings.maxContract}
             />
           ))}
         </div>
       )}
-      <Lookup onTracked={reload} />
+      <Lookup onTracked={reload} maxContract={view.settings.maxContract} />
     </div>
   );
 }
@@ -612,6 +625,9 @@ function SettingsTab({
   const [split, setSplit] = useState<Settings["split"]>(s.split);
   const [minScore, setMinScore] = useState(String(s.minScore));
   const [alerts, setAlerts] = useState(s.alerts);
+  const [maxContract, setMaxContract] = useState(
+    s.maxContract ? String(s.maxContract) : "",
+  );
   const [msg, setMsg] = useState("");
   const total = BASES.reduce((a, b) => a + (Number(split[b]) || 0), 0);
   const save = async () => {
@@ -624,6 +640,7 @@ function SettingsTab({
         split,
         minScore: Number(minScore),
         alerts,
+        maxContract: maxContract.trim() ? Number(maxContract) : null,
       });
       setMsg("Saved.");
       onSaved();
@@ -673,6 +690,19 @@ function SettingsTab({
                   min={0}
                   value={weeklyRisk}
                   onChange={(e) => setWeeklyRisk(e.target.value)}
+                />
+              </span>
+            </label>
+            <label>
+              Most you'll pay per option contract
+              <span className="os-prefix">
+                <span>$</span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="no limit"
+                  value={maxContract}
+                  onChange={(e) => setMaxContract(e.target.value)}
                 />
               </span>
             </label>
@@ -770,6 +800,7 @@ export default function TradingPage() {
             `My plays${openCount ? ` (${openCount}${hits ? `, ${hits} hit` : ""})` : ""}`,
           ],
           ["/trading/record", "Record"],
+          ["/trading/find", "Find symbols"],
           ["/trading/settings", "Settings"],
           ["/trading/how", "How it decides"],
         ]}
@@ -787,6 +818,10 @@ export default function TradingPage() {
             />
             <Route path="record" element={<Record view={data} />} />
             <Route path="how" element={<HowItWorks />} />
+            <Route
+              path="find"
+              element={<FindSymbols view={data} onAdded={reload} />}
+            />
             <Route
               path="settings"
               element={

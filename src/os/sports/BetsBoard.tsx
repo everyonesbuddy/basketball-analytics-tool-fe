@@ -15,6 +15,7 @@ import {
   shopText,
   when,
 } from "./format";
+import { GameLines, LegLines } from "./LineCompare";
 import type {
   Board,
   FuturesView,
@@ -190,10 +191,12 @@ function IdeaTile({
   l,
   slip,
   toggle,
+  game,
 }: {
   l: Leg;
   slip: Leg[];
   toggle: (l: Leg) => void;
+  game?: Game;
 }) {
   return (
     <div className={`os-sp-idea conf-${l.confidence}`}>
@@ -233,6 +236,7 @@ function IdeaTile({
         </span>
       )}
       <Shop l={l} />
+      <LegLines l={l} game={game} />
       {l.warning && <p className="os-tr-warn os-flat">{l.warning}</p>}
       <AddButton leg={l} slip={slip} toggle={toggle} />
     </div>
@@ -306,6 +310,9 @@ function Props({
           {data.lines
             ? `Looked at ${data.lines} prop lines: none with an edge the player's recent games back up.`
             : "No prop lines posted yet for the next games. They usually show up the morning of the game."}
+          {data.lines && data.notPosted
+            ? ` ${data.notPosted} game${data.notPosted === 1 ? " doesn't" : "s don't"} have props posted yet.`
+            : ""}
         </p>
       ) : (
         <div className="os-sp-ideas">
@@ -314,6 +321,13 @@ function Props({
           ))}
         </div>
       )}
+      {shown.length > 0 && data.notPosted ? (
+        <p className="os-small os-muted os-flat" style={{ marginTop: 10 }}>
+          {data.notPosted} more game{data.notPosted === 1 ? " doesn't" : "s don't"}{" "}
+          have props posted yet: DraftKings usually posts them the morning of
+          the game.
+        </p>
+      ) : null}
       <p className="os-small os-muted os-flat" style={{ marginTop: 10 }}>
         {data.note}
       </p>
@@ -434,12 +448,16 @@ function GameRow({
             {cell("total:under")}
             {cell("moneyline:home")}
           </div>
-          {P && (
-            <p className="os-small os-muted os-flat">
-              We have {fav} by {Math.abs(P.margin).toFixed(1)}, total{" "}
-              {P.total.toFixed(0)}
-              {P.games < 5 ? " (early season: low confidence)" : ""}.
-            </p>
+          {g.explain ? (
+            <GameLines g={g} />
+          ) : (
+            P && (
+              <p className="os-small os-muted os-flat">
+                We have {fav} by {Math.abs(P.margin).toFixed(1)}, total{" "}
+                {P.total.toFixed(0)}
+                {P.games < 5 ? " (early season: low confidence)" : ""}.
+              </p>
+            )
           )}
         </div>
       ) : (
@@ -633,7 +651,13 @@ export default function BetsBoard() {
             ) : (
               <div className="os-sp-ideas">
                 {ideas.slice(0, market === "all" ? 9 : 18).map((l) => (
-                  <IdeaTile key={legKey(l)} l={l} slip={slip} toggle={toggle} />
+                  <IdeaTile
+                    key={legKey(l)}
+                    l={l}
+                    slip={slip}
+                    toggle={toggle}
+                    game={data.games.find((g) => g.id === l.eventId)}
+                  />
                 ))}
               </div>
             )}

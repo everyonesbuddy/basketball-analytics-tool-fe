@@ -311,6 +311,14 @@ export default function HowItWorks() {
             volatility. That's where the option's gain and loss % come from,
             and so its base.
           </p>
+          <p>
+            <strong>Your budget</strong>: set the most you'll pay per contract
+            in Settings. Each base then picks the best contract under it.
+            One that can't fit is still shown, greyed out. If fewer than two
+            fit, it adds the best contract under your max. Cheaper stocks mean
+            cheaper contracts: Find symbols lists liquid ones and how the
+            setups have done on each.
+          </p>
           <p className="os-small os-muted">
             It's an estimate. Implied volatility often drops after a move, and
             time decay speeds up near expiry, so short contracts usually do

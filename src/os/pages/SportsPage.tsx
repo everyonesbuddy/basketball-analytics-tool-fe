@@ -4,6 +4,7 @@ import { SubNav } from "../gifting/SubNav";
 import Dashboard from "../../components/Dashboard";
 import BetsBoard from "../sports/BetsBoard";
 import MyBets from "../sports/MyBets";
+import HowItWorks from "../sports/HowItWorks";
 
 /**
  * Sports in one place: bet ideas from the numbers, the bets you placed, and
@@ -22,6 +23,7 @@ export default function SportsPage() {
           ["/sports/my-bets", "My bets"],
           ["/sports/fantasy", "Fantasy"],
           ["/sports/nba", "NBA"],
+          ["/sports/how", "How it decides"],
         ]}
       />
       <Routes>
@@ -32,6 +34,7 @@ export default function SportsPage() {
           element={<Dashboard key="fantasy" section="fantasy" />}
         />
         <Route path="nba" element={<Dashboard key="nba" section="nba" />} />
+        <Route path="how" element={<HowItWorks />} />
       </Routes>
     </div>
   );

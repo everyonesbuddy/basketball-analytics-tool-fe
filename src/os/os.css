@@ -724,3 +724,25 @@ button.os-chip { cursor: pointer; padding-right: 10px; }
 /* Sports: shop range and filters */
 .os-sp-shop { display: grid; gap: 2px; font-size: 0.82rem; line-height: 1.4; padding: 8px 10px; border-radius: 8px; background: #f8fafc; width: 100%; box-sizing: border-box; }
 .os-sp-filter { margin-bottom: 10px; flex-wrap: wrap; }
+
+/* Sports: our line vs the book's */
+.os-sp-compare { display: grid; gap: 6px; margin-top: 8px; }
+.os-sp-compare__table { border-collapse: collapse; font-size: 0.8rem; width: 100%; max-width: 360px; }
+.os-sp-compare__table th { font-weight: 600; color: #64748b; text-align: left; padding: 2px 6px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.os-sp-compare__table td { padding: 3px 6px; border-top: 1px solid var(--line); white-space: nowrap; }
+.os-sp-compare__table td:first-child { color: #64748b; }
+.os-sp-why { font-size: 0.82rem; width: 100%; }
+.os-sp-why summary { cursor: pointer; color: #334155; }
+.os-sp-why ul { margin: 6px 0; padding-left: 18px; display: grid; gap: 5px; line-height: 1.45; color: #334155; }
+.os-sp-why__h { margin: 8px 0 0; font-weight: 650; font-size: 0.78rem; }
+
+/* Trading: budget */
+.os-tr-over td { opacity: 0.55; }
+.os-tr-budgettag { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #dcfce7; color: #166534; margin-bottom: 2px; }
+.os-tr-findprice { display: flex; align-items: center; gap: 6px; }
+.os-tr-findprice .os-prefix { width: 100px; }
+.os-tr-ladder .os-table td:nth-child(2) { min-width: 128px; }
+.os-tr-ladder .os-table td:nth-child(3) { min-width: 96px; }
+.os-tr-budgettag { display: block; width: max-content; }
+.os-tr-findwrap table { min-width: 0; }
+.os-tr-findwrap td, .os-tr-findwrap th { padding: 6px 4px; }
